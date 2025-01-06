@@ -3,3 +3,9 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
+
+
+  /* Invert color for dark mode */
+  .dark #logo {
+    filter: invert(1);
+  }

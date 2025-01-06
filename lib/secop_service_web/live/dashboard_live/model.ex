@@ -22,4 +22,25 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     # IO.inspect(model)
     model
   end
+
+
+
+  def set_new_current_node(model, new_node_id) do
+
+
+
+    model = put_in(model,[:active_nodes,model.current_node.node_id], model.current_node)
+
+
+
+    new_current_node = model.active_nodes |> Map.get(new_node_id)
+
+
+
+    model = Map.put(model, :current_node, new_current_node)
+    model
+  end
+
+
+
 end

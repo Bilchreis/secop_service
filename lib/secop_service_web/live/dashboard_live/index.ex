@@ -32,6 +32,22 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
+  @impl true
+  def handle_event("node-select", %{"pubsubtopic" => new_pubsub_topic}, socket) do
+    Phoenix.PubSub.unsubscribe(:secop_parameter_pubsub,socket.assigns.model.current_node.pubsub_topic)
+    new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
+
+
+    new_model = SecopServiceWeb.DashboardLive.Model.set_new_current_node(socket.assigns.model, new_node_id)
+
+    socket = assign(socket, :model, new_model)
+
+    Phoenix.PubSub.subscribe(:secop_parameter_pubsub,socket.assigns.model.current_node.pubsub_topic)
+
+
+    {:noreply, socket}
+  end
+
 
 
 
@@ -62,5 +78,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     current_node
   end
 
+
+  defp pubsubtopic_to_node_id(pubsub_topic) do
+    [ip, port] = String.split(pubsub_topic, ":")
+    {String.to_charlist(ip), String.to_integer(port)}
+  end
 
 end

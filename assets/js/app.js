@@ -49,10 +49,16 @@ function darkExpected() {
 
 function initDarkMode() {
   // On page load or when changing themes, best to add inline in `head` to avoid FOUC
-  if (darkExpected()) document.documentElement.classList.add('dark');
-  else document.documentElement.classList.remove('dark');
+  if (darkExpected()) {
+    document.documentElement.classList.add('dark');
+    document.getElementById('theme-toggle-dark-icon').classList.add('hidden');
+    document.getElementById('theme-toggle-light-icon').classList.remove('hidden');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.getElementById('theme-toggle-dark-icon').classList.remove('hidden');
+    document.getElementById('theme-toggle-light-icon').classList.add('hidden');
+  }
 }
-
 window.addEventListener("toogle-darkmode", e => {
   if (darkExpected()) localStorage.theme = 'light';
   else localStorage.theme = 'dark';

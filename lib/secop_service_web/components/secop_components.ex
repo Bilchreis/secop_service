@@ -9,11 +9,11 @@ defmodule SECoPComponents do
 
   def node_button(assigns) do
     ~H"""
-    <button class={
+    <button phx-click="node-select" phx-value-pubsubtopic={@pubsub_topic} class={
       if @current do
-        "bg-green-500 hover:bg-green-700 text-white text-left font-bold py-2 px-4 rounded"
+        "bg-purple-500 hover:bg-purple-700  text-white text-left font-bold py-2 px-4 rounded"
       else
-        "bg-blue-500 hover:bg-blue-700 text-white text-left font-bold py-2 px-4 rounded"
+        "bg-zinc-500 hover:bg-sinz-700 text-white text-left font-bold py-2 px-4 rounded"
       end
     }>
       <div class="text-xl"><%= @equipment_id %></div>
@@ -68,9 +68,9 @@ defmodule SECoPComponents do
     ~H"""
     <button class={
       if @current do
-        "min-w-full bg-green-500 hover:bg-green-700 text-white text-left font-bold py-2 px-4 rounded"
+        "min-w-full bg-purple-500 hover:bg-purple-700 text-white text-left font-bold py-2 px-4 rounded"
       else
-        "min-w-full bg-blue-500 hover:bg-blue-700 text-white text-left font-bold py-2 px-4 rounded"
+        "min-w-full bg-zinc-500 hover:bg-zinc-700 text-white text-left font-bold py-2 px-4 rounded"
       end
     }>
       <div class="flex items-center">
@@ -94,7 +94,7 @@ defmodule SECoPComponents do
       statmap =
         case status[:value] do
           nil -> %{stat_code: "stat_code",stat_string: "stat_string", status_color: "bg-gray-500"}
-          [[stat_code,stat_string]|_rest] -> %{stat_code: stat_code_lookup(stat_code,status.datainfo),stat_string: stat_string, status_color: "bg-green-500"}
+          [[stat_code,stat_string]|_rest] -> %{stat_code: stat_code_lookup(stat_code,status.datainfo),stat_string: stat_string, status_color: stat_code_to_color(stat_code)}
         end
 
 
@@ -113,6 +113,17 @@ defmodule SECoPComponents do
           nil -> :unknown
         end
       _ -> :unknown
+    end
+  end
+
+  defp stat_code_to_color(stat_code) do
+    cond  do
+      0   <= stat_code and stat_code < 100 -> "bg-gray-500" # Disabled
+      100 <= stat_code and stat_code < 200 -> "bg-green-500" # IDLE
+      200 <= stat_code and stat_code < 300 -> "bg-yellow-500" # WARNING
+      300 <= stat_code and stat_code < 400 -> "bg-orange-500" # BUSY
+      400 <= stat_code and stat_code < 500 -> "bg-red-500" # ERROR
+      true -> "bg-white"
     end
   end
 
