@@ -13,6 +13,14 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     model = SecopServiceWeb.DashboardLive.Model.get_initial_model()
     Phoenix.PubSub.subscribe(:secop_parameter_pubsub,model.current_node.pubsub_topic)
 
+    model = Map.put(model,:current_node,update_values(model.current_node, nil))
+
+    active_nodes = Enum.reduce(model.active_nodes, %{}, fn {node_id, node} , acc ->
+      Map.put(acc,node_id,update_values(node, nil))
+    end)
+
+    model = Map.put(model,:active_nodes,active_nodes)
+
 
     socket = assign(socket, :model, model)
 
@@ -55,16 +63,16 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     modules =
       Enum.reduce(current_node[:description][:modules], %{}, fn {module_name, module_description}, acc ->
         parameters = Enum.reduce(module_description[:parameters], %{}, fn {parameter_name, parameter_description}, param_acc ->
-          new_val = Map.get(values_map, module_name) |> Map.get(parameter_name)
+          new_val = case values_map do
+            nil -> nil
+            _ -> Map.get(values_map, module_name) |> Map.get(parameter_name)
 
-          updated_param_acc =
-            if new_val do
-              new_param_description = Map.put(parameter_description, :value, new_val)
-              Map.put(param_acc, parameter_name, new_param_description)
-            else
-              Logger.warning("No value found for #{module_name}.#{parameter_name}")
-              param_acc
-            end
+          end
+
+          new_param_description = update_param_descr(new_val, parameter_name, parameter_description)
+
+
+          updated_param_acc = Map.put(param_acc, parameter_name, new_param_description)
 
           updated_param_acc
         end)
@@ -75,8 +83,67 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     current_node = put_in(current_node[:description][:modules], modules)
 
+
     current_node
   end
+
+
+
+  defp update_param_descr(new_val, parameter_name, parameter_description) do
+    new_parameter_description = Map.put(parameter_description,:value,new_val)
+
+    new_keys = case parameter_name do
+      :status -> parse_status(new_parameter_description)
+      _ -> %{}
+    end
+
+    Map.merge(new_parameter_description, new_keys)
+
+  end
+
+
+  defp parse_status(status) do
+    IO.inspect(status)
+    statmap =
+      case status.value do
+        nil -> %{stat_code: "stat_code", stat_string: "stat_string", status_color: "bg-gray-500"}
+        [[stat_code, stat_string] | _rest] ->
+          %{
+            stat_code: stat_code_lookup(stat_code, status.datainfo),
+            stat_string: stat_string,
+            status_color: stat_code_to_color(stat_code)
+          }
+      end
+
+    statmap
+  end
+
+  defp stat_code_lookup(stat_code, status_datainfo) do
+    status_datainfo.members
+    |> Enum.find(fn member -> member.type == "enum" end)
+    |> case do
+      %{members: members} ->
+        members
+        |> Enum.find(fn {_key, value} -> value == stat_code end)
+        |> case do
+          {key, _value} -> key
+          nil -> :unknown
+        end
+      _ -> :unknown
+    end
+  end
+
+  defp stat_code_to_color(stat_code) do
+    cond do
+      0 <= stat_code and stat_code < 100 -> "bg-gray-500" # Disabled
+      100 <= stat_code and stat_code < 200 -> "bg-green-500" # IDLE
+      200 <= stat_code and stat_code < 300 -> "bg-yellow-500" # WARNING
+      300 <= stat_code and stat_code < 400 -> "bg-orange-500" # BUSY
+      400 <= stat_code and stat_code < 500 -> "bg-red-500" # ERROR
+      true -> "bg-white"
+    end
+  end
+
 
 
   defp pubsubtopic_to_node_id(pubsub_topic) do

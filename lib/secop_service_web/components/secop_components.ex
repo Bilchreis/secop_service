@@ -62,9 +62,7 @@ defmodule SECoPComponents do
   def module_button(assigns) do
 
 
-    assigns = assign(assigns, parse_status(assigns[:status]))
 
-    #IO.inspect(assigns)
     ~H"""
     <button class={
       if @current do
@@ -76,55 +74,19 @@ defmodule SECoPComponents do
       <div class="flex items-center">
         <span class={
           [
-            @status_color,
+            @status.status_color,
             "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
             ]}>
         </span>
         <div>
           <div class="text-xl"><%= @module_name %></div>
-          <div class="text-sm text-white-400 opacity-60"><%= @stat_code %> : <%= @stat_string %></div>
+          <div class="text-sm text-white-400 opacity-60"><%= @status.stat_code %> : <%= @status.stat_string %></div>
         </div>
       </div>
     </button>
     """
   end
 
-  defp parse_status(status) do
 
-      statmap =
-        case status[:value] do
-          nil -> %{stat_code: "stat_code",stat_string: "stat_string", status_color: "bg-gray-500"}
-          [[stat_code,stat_string]|_rest] -> %{stat_code: stat_code_lookup(stat_code,status.datainfo),stat_string: stat_string, status_color: stat_code_to_color(stat_code)}
-        end
-
-
-    statmap
-  end
-
-  defp stat_code_lookup(stat_code,status_datainfo) do
-    status_datainfo.members
-    |> Enum.find(fn member -> member.type == "enum" end)
-    |> case do
-      %{members: members} ->
-        members
-        |> Enum.find(fn {_key, value} -> value == stat_code end)
-        |> case do
-          {key, _value} -> key
-          nil -> :unknown
-        end
-      _ -> :unknown
-    end
-  end
-
-  defp stat_code_to_color(stat_code) do
-    cond  do
-      0   <= stat_code and stat_code < 100 -> "bg-gray-500" # Disabled
-      100 <= stat_code and stat_code < 200 -> "bg-green-500" # IDLE
-      200 <= stat_code and stat_code < 300 -> "bg-yellow-500" # WARNING
-      300 <= stat_code and stat_code < 400 -> "bg-orange-500" # BUSY
-      400 <= stat_code and stat_code < 500 -> "bg-red-500" # ERROR
-      true -> "bg-white"
-    end
-  end
 
 end
