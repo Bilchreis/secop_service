@@ -1,9 +1,13 @@
-alias SecopClient
-
 
 defmodule SecopServiceWeb.DashboardLive.Model do
+
+  alias SEC_Node_Statem
+
   def get_initial_model() do
-    active_nodes = SecopClient.get_active_nodes()
+
+
+
+    active_nodes = get_active_nodes()
 
     # Get an arbitrary entry from the active_nodes map
     {current_node_key, current_node_value} = Map.to_list(active_nodes) |> List.first()
@@ -39,6 +43,22 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
     model = Map.put(model, :current_node, new_current_node)
     model
+  end
+
+
+  defp get_active_nodes() do
+    Supervisor.which_children(SEC_Node_Supervisor)
+    |> Enum.reduce(%{}, fn {_id, pid, _type, _module}, acc ->
+      case SEC_Node_Statem.get_state(pid) do
+        {:ok, state} ->
+          node_id = state.node_id
+
+          Map.put(acc, node_id, state)
+
+        _ ->
+          acc
+      end
+    end)
   end
 
 

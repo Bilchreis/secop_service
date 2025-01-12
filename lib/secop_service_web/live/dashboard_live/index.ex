@@ -11,7 +11,12 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     model = SecopServiceWeb.DashboardLive.Model.get_initial_model()
-    Phoenix.PubSub.subscribe(:secop_parameter_pubsub,model.current_node.pubsub_topic)
+    Phoenix.PubSub.subscribe(:secop_client_pubsub,model.current_node.pubsub_topic)
+    Phoenix.PubSub.subscribe(:secop_client_pubsub,"descriptive_data_change")
+    Phoenix.PubSub.subscribe(:secop_client_pubsub,"state_change")
+    Phoenix.PubSub.subscribe(:secop_client_pubsub,"secop_conn_state")
+    Phoenix.PubSub.subscribe(:secop_client_pubsub,"new_node")
+
 
     model = Map.put(model,:current_node,update_values(model.current_node, nil))
 
@@ -28,6 +33,8 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:ok, socket}
   end
 
+
+  ### New Values Map Update
   @impl true
   def handle_info({:values_map,pubsub_topic,values_map}, socket) do
     socket =
@@ -42,7 +49,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
   @impl true
   def handle_event("node-select", %{"pubsubtopic" => new_pubsub_topic}, socket) do
-    Phoenix.PubSub.unsubscribe(:secop_parameter_pubsub,socket.assigns.model.current_node.pubsub_topic)
+    Phoenix.PubSub.unsubscribe(:secop_client_pubsub,socket.assigns.model.current_node.pubsub_topic)
     new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
 
 
@@ -50,7 +57,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     socket = assign(socket, :model, new_model)
 
-    Phoenix.PubSub.subscribe(:secop_parameter_pubsub,socket.assigns.model.current_node.pubsub_topic)
+    Phoenix.PubSub.subscribe(:secop_client_pubsub,socket.assigns.model.current_node.pubsub_topic)
 
 
     {:noreply, socket}
@@ -103,7 +110,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
 
   defp parse_status(status) do
-    IO.inspect(status)
     statmap =
       case status.value do
         nil -> %{stat_code: "stat_code", stat_string: "stat_string", status_color: "bg-gray-500"}

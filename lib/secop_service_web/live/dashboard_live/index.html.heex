@@ -49,7 +49,7 @@
     <% end %>
   </ul>
 
-  <div class="text-medium  w-full scrollable-content max-h-screen overflow-y-auto  ">
+  <div class="text-medium  w-full ">
     <%= for {mod_name,module} <- @model.current_node.description.modules do %>
       <div class="p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-full mb-4">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2"><%= mod_name %></h3>
