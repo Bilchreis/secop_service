@@ -61,15 +61,17 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   def handle_info({:state_change,pubsub_topic,new_state},socket)do
-    socket.assigns.model
+    Logger.debug("new node status: #{pubsub_topic} #{new_state}")
 
+    updated_model = Model.set_state(
+      socket.assigns.model,
+      pubsubtopic_to_node_id(pubsub_topic),
+      new_state)
 
-    {:noreply,socket}
+    {:noreply,assign(socket,:model,updated_model)}
   end
 
   def handle_info({:new_node,pubsub_topic,state},socket)do
-
-
     {:noreply,socket}
   end
 

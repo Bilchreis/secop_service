@@ -44,6 +44,12 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     current_node
   end
 
+  def set_state(model,node_id,state) do
+    model = put_in(model,[:active_nodes,node_id,:state],state)
+
+    model
+  end
+
 
 
 

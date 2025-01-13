@@ -6,23 +6,51 @@ defmodule SECoPComponents do
   attr :equipment_id, :string, required: true
   attr :pubsub_topic, :string, required: true
   attr :current, :boolean, default: false
+  attr :state, :atom, required: true
+
+
 
   def node_button(assigns) do
+
+
+  assigns =  assign(assigns,:border_col,state_to_col(assigns.state))
+
+
+  assigns = case assigns.current do
+    true  ->  assign(assigns,:button_col,"bg-purple-500 hover:bg-purple-700")
+    false ->  assign(assigns,:button_col,"bg-zinc-500 hover:bg-zinc-700")
+  end
+
+
+
+
     ~H"""
-    <button phx-click="node-select" phx-value-pubsubtopic={@pubsub_topic} class={
-      if @current do
-        "bg-purple-500 hover:bg-purple-700  text-white text-left font-bold py-2 px-4 rounded"
-      else
-        "bg-zinc-500 hover:bg-sinz-700 text-white text-left font-bold py-2 px-4 rounded"
-      end
-    }>
+    <button phx-click="node-select" phx-value-pubsubtopic={@pubsub_topic}
+      class={[
+        @button_col,
+        @border_col,
+        "border-4 text-white text-left font-bold py-2 px-4 rounded"]}>
       <div class="text-xl"><%= @equipment_id %></div>
       <div class="text-sm text-white-400 opacity-60"><%= @pubsub_topic %></div>
+      <div> <%= @state %> </div>
     </button>
     """
   end
 
+  defp state_to_col(state) do
 
+    col = case state do
+      :connected -> "border-orange-500"
+      :disconnected -> "border-red-500"
+      :initialized -> "border-green-500"
+      nil -> "border-gray-500"
+
+
+    end
+
+
+    col
+  end
 
   attr :parameter, :string, required: true
   attr :parameter_name, :string, required: true
@@ -58,8 +86,20 @@ defmodule SECoPComponents do
   attr :module_name, :string, required: true
   attr :status, :string, required: true
   attr :current, :boolean, default: false
+  attr :node_status, :atom, required: true
 
   def module_button(assigns) do
+
+
+    assigns = case assigns.node_status do
+      :initialized  ->  assigns
+      _ ->  status = assigns.status
+        status = %{status | status_color: "gray-500"}
+
+        assign(assigns,:status,status)
+    end
+
+
 
 
 
@@ -68,7 +108,7 @@ defmodule SECoPComponents do
       if @current do
         "min-w-full bg-purple-500 hover:bg-purple-700 text-white text-left font-bold py-2 px-4 rounded"
       else
-        "min-w-full bg-zinc-500 hover:bg-zinc-700 text-white text-left font-bold py-2 px-4 rounded"
+        "min-w-full bg-zinc-500  hover:bg-zinc-700 text-white text-left font-bold py-2 px-4 rounded"
       end
     }>
       <div class="flex items-center">

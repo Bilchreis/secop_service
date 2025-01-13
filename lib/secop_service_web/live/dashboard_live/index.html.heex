@@ -4,7 +4,7 @@
 <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
   <%= for {_addr,node} <- @model.active_nodes do %>
     <li class="me-2">
-      <.node_button equipment_id={node.equipment_id} pubsub_topic={node.pubsub_topic} current={node.node_id == @model.current_node_key}/>
+      <.node_button equipment_id={node.equipment_id} pubsub_topic={node.pubsub_topic} current={node.node_id == @model.current_node_key} state= {node.state}/>
     </li>
   <% end %>
 </ul>
@@ -46,7 +46,7 @@
   <ul class = "space-y space-y-4 text-sm font-medium">
     <%= for {mod_name,module} <- @model.active_nodes[@model.current_node_key].description.modules do %>
     <li class="me-2 flex-1 min-w-full">
-      <.module_button module_name={mod_name} status={module.parameters.status} current={mod_name == @model.current_module_key}/>
+      <.module_button module_name={mod_name} status={module.parameters.status} current={mod_name == @model.current_module_key} node_status = {@model.active_nodes[@model.current_node_key].state}/>
     </li>
     <% end %>
   </ul>
