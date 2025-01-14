@@ -61,7 +61,8 @@ defmodule SecopService.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.14"}
+      {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.14"},
+      {:contex, "~> 0.5.0"}
     ]
   end
 

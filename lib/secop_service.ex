@@ -8,5 +8,4 @@ defmodule SecopService do
   """
 
   alias SecopClient
-
 end

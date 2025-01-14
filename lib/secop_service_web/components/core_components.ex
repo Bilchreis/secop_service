@@ -89,10 +89,6 @@ defmodule SecopServiceWeb.CoreComponents do
     """
   end
 
-
-
-
-
   @doc """
   Renders flash notices.
 
