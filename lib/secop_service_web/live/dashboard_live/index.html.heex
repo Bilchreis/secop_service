@@ -1,4 +1,11 @@
 <div class=" ">
+  <%= if Enum.empty?(@model.active_nodes) do %> 
+  <div>
+    No Nodes detected yet
+  </div>
+  
+  <% else %> 
+  
   <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
     <%= for {_addr,node} <- @model.active_nodes do %>
       <li class="me-2">
@@ -12,7 +19,8 @@
     <% end %>
   </ul>
 
-  <div class="md:flex mt-4">
+  <div :if={@model.active_nodes[@model.current_node_key].description} class="md:flex mt-4">
+    
     <div class="flex-column mr-4  p-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-1/2">
       <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Node Properties</h3>
       <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
@@ -40,14 +48,14 @@
   </div>
 
   <div class="md:flex mt-4">
-    <div class="flex-column   text-gray-500 dark:text-gray-400 md:me-4 mb-4 md:mb-0 ">
+    <div :if={@model.active_nodes[@model.current_node_key].description} class="flex-column   text-gray-500 dark:text-gray-400 md:me-4 mb-4 md:mb-0 ">
       <span class="text-lg font-bold  text-black dark:text-white "> Modules</span>
       <ul class="space-y space-y-4 text-sm font-medium">
         <%= for {mod_name,module} <- @model.active_nodes[@model.current_node_key].description.modules do %>
           <li class="me-2 flex-1 min-w-full">
             <.module_button
               module_name={mod_name}
-              status={module.parameters.status}
+              module = {module}
               current={mod_name == @model.current_module_key}
               node_status={@model.active_nodes[@model.current_node_key].state}
             />
@@ -56,7 +64,7 @@
       </ul>
     </div>
 
-    <div class="text-medium  w-full ">
+    <div :if={@model.active_nodes[@model.current_node_key].description} class="text-medium  w-full ">
       <%= for {mod_name,module} <- @model.active_nodes[@model.current_node_key].description.modules do %>
         <.module_box
           mod_name={mod_name}
@@ -66,4 +74,5 @@
       <% end %>
     </div>
   </div>
+  <% end %>
 </div>

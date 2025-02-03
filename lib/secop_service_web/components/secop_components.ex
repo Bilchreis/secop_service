@@ -102,22 +102,37 @@ defmodule SECoPComponents do
   end
 
   attr :module_name, :string, required: true
-  attr :status, :string, required: true
+  attr :module, :map, required: true
   attr :current, :boolean, default: false
   attr :node_status, :atom, required: true
+  attr :hide_indicator, :string, default: ""
 
   def module_button(assigns) do
-    assigns =
-      case assigns.node_status do
-        :initialized ->
-          assigns
 
-        _ ->
-          status = assigns.status
-          status = %{status | status_color: "gray-500"}
+    assigns = if Map.has_key?(assigns.module.parameters,:status) do
 
-          assign(assigns, :status, status)
-      end
+      assigns = assign(assigns,:status, assigns.module.parameters.status)
+
+      assigns =
+        case assigns.node_status do
+          :initialized ->
+            assigns
+
+          _ ->
+            status = assigns.status
+            status = %{status | status_color: "gray-500"}
+
+            assign(assigns, :status, status)
+        end
+
+
+        assigns
+      else
+        status = %{status_color: "bg-gray-500", stat_code: 0, stat_string: "blah"}
+      assign(assigns,:status, status) |>
+      assign(:hide_indicator,"hidden")
+    end
+
 
     ~H"""
     <button class={
@@ -128,11 +143,14 @@ defmodule SECoPComponents do
       end
     }>
       <div class="flex items-center">
+      <div>
         <span class={[
+          @hide_indicator,
           @status.status_color,
           "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
         ]}>
         </span>
+        </div>
         <div>
           <div class="text-xl">{@module_name}</div>
           <div class="text-sm text-white-400 opacity-60">

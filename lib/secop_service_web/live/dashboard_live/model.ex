@@ -2,27 +2,38 @@ defmodule SecopServiceWeb.DashboardLive.Model do
   alias SEC_Node_Statem
 
   def get_initial_model() do
+
     active_nodes = get_active_nodes()
 
-    # Get an arbitrary entry from the active_nodes map
-    {current_node_key, current_node_value} = Map.to_list(active_nodes) |> List.first()
+    model = cond do
+      active_nodes == %{} -> %{ active_nodes: %{},
+        current_node_key: nil,
+        current_module_key: nil}
 
-    # Get an arbitrary module from the current_node's description
-    {current_module_key, _current_module_value} =
-      current_node_value[:description][:modules] |> Map.to_list() |> List.first()
+      true ->
+        # Get an arbitrary entry from the active_nodes map
+        {current_node_key, current_node_value} = Map.to_list(active_nodes) |> List.first()
 
-    initial_active_nodes =
-      Enum.reduce(active_nodes, %{}, fn {node_id, node}, acc ->
-        Map.put(acc, node_id, update_node_values(node, nil))
-      end)
+        # Get an arbitrary module from the current_node's description
+        {current_module_key, _current_module_value} =
+          current_node_value[:description][:modules] |> Map.to_list() |> List.first()
 
-    model = %{
-      active_nodes: initial_active_nodes,
-      current_node_key: current_node_key,
-      current_module_key: current_module_key
-    }
+        initial_active_nodes =
+          Enum.reduce(active_nodes, %{}, fn {node_id, node}, acc ->
+            Map.put(acc, node_id, update_node_values(node, nil))
+          end)
 
-    # IO.inspect(model)
+        %{
+          active_nodes: initial_active_nodes,
+          current_node_key: current_node_key,
+          current_module_key: current_module_key
+        }
+
+
+    end
+
+
+
     model
   end
 
@@ -33,15 +44,45 @@ defmodule SecopServiceWeb.DashboardLive.Model do
   end
 
   def get_current_node(model) do
-    current_node = model.active_nodes[model.current_node_key]
 
-    current_node
+    current_node = case model.current_node_key do
+      nil -> nil
+      current_node_key -> model.active_nodes[current_node_key]
+
+    end
   end
 
-  def set_state(model, node_id, state) do
-    model = put_in(model, [:active_nodes, node_id, :state], state)
+  def set_state(model, state) do
+    active_nodes = model.active_nodes
+
+
+
+
+    model = case state.state do
+      :initialized ->
+        state = update_node_values(state,nil)
+        active_nodes = Map.put(active_nodes,state.node_id,state)
+        model = case get_current_node(model) do
+          nil -> set_new_current_node(model,state.node_id)
+          _   -> model
+        end
+        IO.inspect(model)
+
+        current_node = get_current_node(model)
+        IO.inspect(current_node)
+        Phoenix.PubSub.subscribe(:secop_client_pubsub, current_node.pubsub_topic)
+        Map.put(model,:active_nodes,active_nodes)
+      _ -> model
+    end
+
+    model = cond do
+      Map.has_key?(model.active_nodes,state.node_id) -> put_in(model, [:active_nodes, state.node_id, :state], state.state)
+      true -> model
+
+    end
 
     model
+
   end
 
   defp get_active_nodes() do
@@ -97,6 +138,26 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     updated_node = put_in(node[:description][:modules], modules)
 
     updated_node
+  end
+
+
+  def add_node(model,node) do
+
+    node_id = node.node_id
+
+    model = cond do
+      model.active_nodes == %{} ->  model |> Map.put(:current_node_key,node_id)
+      true -> model
+    end
+
+
+
+    active_nodes = model.active_nodes |> Map.put(node_id,node)
+
+    model = model |> Map.put(:active_nodes,active_nodes)
+
+
+    model
   end
 
   defp update_param_descr(new_val, parameter_name, parameter_description) do

@@ -11,11 +11,13 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   def mount(_params, _session, socket) do
     model = Model.get_initial_model()
 
-    curr_node_key = model.current_node_key
+    cond  do
+      model.active_nodes == %{} -> Logger.info("No active nodes detected")
+      true   -> values_pubsub_topic = model[:active_nodes][model.current_node_key][:pubsub_topic]
+            Phoenix.PubSub.subscribe(:secop_client_pubsub, values_pubsub_topic)
 
-    values_pubsub_topic = model[:active_nodes][curr_node_key][:pubsub_topic]
+    end
 
-    Phoenix.PubSub.subscribe(:secop_client_pubsub, values_pubsub_topic)
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "descriptive_data_change")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "state_change")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "secop_conn_state")
@@ -41,6 +43,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   def handle_info({:description_change, pubsub_topic, state}, socket) do
+
     {:noreply, socket}
   end
 
@@ -48,21 +51,29 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
-  def handle_info({:state_change, pubsub_topic, new_state}, socket) do
-    Logger.debug("new node status: #{pubsub_topic} #{new_state}")
+  def handle_info({:state_change, pubsub_topic, state}, socket) do
+    Logger.info("new node status: #{pubsub_topic} #{state.state}")
 
+
+    IO.inspect(socket.assigns.model)
     updated_model =
       Model.set_state(
         socket.assigns.model,
-        pubsubtopic_to_node_id(pubsub_topic),
-        new_state
+        state
       )
 
+
     {:noreply, assign(socket, :model, updated_model)}
+
   end
 
-  def handle_info({:new_node, pubsub_topic, state}, socket) do
-    {:noreply, socket}
+  def handle_info({:new_node, _pubsub_topic, state}, socket) do
+    IO.puts("new node messeag\n #{inspect(state)}")
+    updated_model = Model.add_node(socket.assigns.model,state)
+
+
+
+    {:noreply, assign(socket,:model,updated_model)}
   end
 
   @impl true
