@@ -103,21 +103,15 @@ defmodule SECoPComponents do
 
   attr :current_module, :map, required: true
 
-
   def parameter_plot(assigns) do
-
-
-    svg = get_in(assigns,[:current_module,:parameters,:value,:svg_plot])
-
+    svg = get_in(assigns, [:current_module, :parameters, :value, :svg_plot])
 
     assigns = assign(assigns, :svg, Phoenix.HTML.raw(svg))
-
 
     ~H"""
     <div>
       {@svg}
     </div>
-
     """
   end
 
@@ -128,31 +122,29 @@ defmodule SECoPComponents do
   attr :hide_indicator, :string, default: ""
 
   def module_button(assigns) do
+    assigns =
+      if Map.has_key?(assigns.module.parameters, :status) do
+        assigns = assign(assigns, :status, assigns.module.parameters.status)
 
-    assigns = if Map.has_key?(assigns.module.parameters,:status) do
+        assigns =
+          case assigns.node_status do
+            :initialized ->
+              assigns
 
-      assigns = assign(assigns,:status, assigns.module.parameters.status)
+            _ ->
+              status = assigns.status
+              status = %{status | status_color: "gray-500"}
 
-      assigns =
-        case assigns.node_status do
-          :initialized ->
-            assigns
-
-          _ ->
-            status = assigns.status
-            status = %{status | status_color: "gray-500"}
-
-            assign(assigns, :status, status)
-        end
-
+              assign(assigns, :status, status)
+          end
 
         assigns
       else
         status = %{status_color: "bg-gray-500", stat_code: 0, stat_string: "blah"}
-      assign(assigns,:status, status) |>
-      assign(:hide_indicator,"hidden")
-    end
 
+        assign(assigns, :status, status)
+        |> assign(:hide_indicator, "hidden")
+      end
 
     ~H"""
     <button class={
@@ -163,13 +155,13 @@ defmodule SECoPComponents do
       end
     }>
       <div class="flex items-center">
-      <div>
-        <span class={[
-          @hide_indicator,
-          @status.status_color,
-          "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
-        ]}>
-        </span>
+        <div>
+          <span class={[
+            @hide_indicator,
+            @status.status_color,
+            "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
+          ]}>
+          </span>
         </div>
         <div>
           <div class="text-xl">{@module_name}</div>

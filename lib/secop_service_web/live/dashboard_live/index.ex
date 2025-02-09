@@ -11,11 +11,13 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   def mount(_params, _session, socket) do
     model = Model.get_initial_model()
 
-    cond  do
-      model.active_nodes == %{} -> Logger.info("No active nodes detected")
-      true   -> values_pubsub_topic = model[:active_nodes][model.current_node_key][:pubsub_topic]
-            Phoenix.PubSub.subscribe(:secop_client_pubsub, values_pubsub_topic)
+    cond do
+      model.active_nodes == %{} ->
+        Logger.info("No active nodes detected")
 
+      true ->
+        values_pubsub_topic = model[:active_nodes][model.current_node_key][:pubsub_topic]
+        Phoenix.PubSub.subscribe(:secop_client_pubsub, values_pubsub_topic)
     end
 
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "descriptive_data_change")
@@ -45,68 +47,58 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   def handle_info({:description_change, pubsub_topic, state}, socket) do
-    #TODO
+    # TODO
 
     {:noreply, socket}
   end
 
   def handle_info({:conn_state, pubsub_topic, active}, socket) do
-    #TODO
+    # TODO
 
     {:noreply, socket}
   end
 
   # handle Sparkline updates
-  def handle_info({host,port,module,parameter,{:spark, svg}},socket) do
-
+  def handle_info({host, port, module, parameter, {:spark, svg}}, socket) do
     {:noreply, socket}
   end
 
-
   # Handle Plot updates
-  def handle_info({host,port,module,parameter,{:plot, svg}},socket) do
+  def handle_info({host, port, module, parameter, {:plot, svg}}, socket) do
+    {c_host, c_port} = Map.get(socket, :assigns) |> Map.get(:model) |> Map.get(:current_node_key)
+    c_module = Map.get(socket, :assigns) |> Map.get(:model) |> Map.get(:current_module_key)
 
+    updated_model =
+      if {host, port, module, parameter} == {c_host, c_port, c_module, :value} do
+        updated_model =
+          Model.update_plot(socket.assigns.model, {host, port, module, parameter}, svg)
 
-
-    {c_host,c_port} = Map.get(socket,:assigns) |> Map.get(:model) |> Map.get(:current_node_key)
-    c_module = Map.get(socket,:assigns) |> Map.get(:model) |> Map.get(:current_module_key)
-
-    updated_model = if {host,port,module,parameter} == {c_host,c_port,c_module,:value} do
-
-      updated_model = Model.update_plot(socket.assigns.model,{host,port,module,parameter},svg)
-      updated_model
-    else
-      socket.assigns.model
-    end
-
-
+        updated_model
+      else
+        socket.assigns.model
+      end
 
     {:noreply, assign(socket, :model, updated_model)}
   end
 
-
   def handle_info({:state_change, pubsub_topic, state}, socket) do
     Logger.info("new node status: #{pubsub_topic} #{state.state}")
 
-
     IO.inspect(socket.assigns.model)
+
     updated_model =
       Model.set_state(
         socket.assigns.model,
         state
       )
 
-
     {:noreply, assign(socket, :model, updated_model)}
-
   end
 
   def handle_info({:new_node, _pubsub_topic, state}, socket) do
-    updated_model = Model.add_node(socket.assigns.model,state)
+    updated_model = Model.add_node(socket.assigns.model, state)
 
-
-
-    {:noreply, assign(socket,:model,updated_model)}
+    {:noreply, assign(socket, :model, updated_model)}
   end
 
   @impl true
