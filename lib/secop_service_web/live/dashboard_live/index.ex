@@ -22,6 +22,8 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "state_change")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "secop_conn_state")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "new_node")
+    Phoenix.PubSub.subscribe(:secop_client_pubsub, "plot")
+    Phoenix.PubSub.subscribe(:secop_client_pubsub, "spark")
 
     socket = assign(socket, :model, model)
 
@@ -43,13 +45,45 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   def handle_info({:description_change, pubsub_topic, state}, socket) do
+    #TODO
 
     {:noreply, socket}
   end
 
   def handle_info({:conn_state, pubsub_topic, active}, socket) do
+    #TODO
+
     {:noreply, socket}
   end
+
+  # handle Sparkline updates
+  def handle_info({host,port,module,parameter,{:spark, svg}},socket) do
+
+    {:noreply, socket}
+  end
+
+
+  # Handle Plot updates
+  def handle_info({host,port,module,parameter,{:plot, svg}},socket) do
+
+
+
+    {c_host,c_port} = Map.get(socket,:assigns) |> Map.get(:model) |> Map.get(:current_node_key)
+    c_module = Map.get(socket,:assigns) |> Map.get(:model) |> Map.get(:current_module_key)
+
+    updated_model = if {host,port,module,parameter} == {c_host,c_port,c_module,:value} do
+
+      updated_model = Model.update_plot(socket.assigns.model,{host,port,module,parameter},svg)
+      updated_model
+    else
+      socket.assigns.model
+    end
+
+
+
+    {:noreply, assign(socket, :model, updated_model)}
+  end
+
 
   def handle_info({:state_change, pubsub_topic, state}, socket) do
     Logger.info("new node status: #{pubsub_topic} #{state.state}")
@@ -68,7 +102,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   def handle_info({:new_node, _pubsub_topic, state}, socket) do
-    IO.puts("new node messeag\n #{inspect(state)}")
     updated_model = Model.add_node(socket.assigns.model,state)
 
 

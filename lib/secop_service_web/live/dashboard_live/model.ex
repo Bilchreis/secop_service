@@ -1,9 +1,9 @@
 defmodule SecopServiceWeb.DashboardLive.Model do
-  alias SEC_Node_Statem
+  alias SEC_Node_Supervisor
 
   def get_initial_model() do
 
-    active_nodes = get_active_nodes()
+    active_nodes = SEC_Node_Supervisor.get_active_nodes()
 
     model = cond do
       active_nodes == %{} -> %{ active_nodes: %{},
@@ -50,6 +50,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
       current_node_key -> model.active_nodes[current_node_key]
 
     end
+    current_node
   end
 
   def set_state(model, state) do
@@ -66,10 +67,10 @@ defmodule SecopServiceWeb.DashboardLive.Model do
           nil -> set_new_current_node(model,state.node_id)
           _   -> model
         end
-        IO.inspect(model)
+
 
         current_node = get_current_node(model)
-        IO.inspect(current_node)
+
         Phoenix.PubSub.subscribe(:secop_client_pubsub, current_node.pubsub_topic)
         Map.put(model,:active_nodes,active_nodes)
       _ -> model
@@ -85,20 +86,18 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
   end
 
-  defp get_active_nodes() do
-    Supervisor.which_children(SEC_Node_Supervisor)
-    |> Enum.reduce(%{}, fn {_id, pid, _type, _module}, acc ->
-      case SEC_Node_Statem.get_state(pid) do
-        {:ok, state} ->
-          node_id = state.node_id
+  def update_plot(model, path, svg) do
+    {host,port,module,parameter} = path
 
-          Map.put(acc, node_id, state)
+    put_path = [:active_nodes,{host,port},:description,:modules,module,:parameters,parameter,:svg_plot]
 
-        _ ->
-          acc
-      end
-    end)
+
+    updated_model = put_in(model,put_path,svg)
+
+    updated_model
   end
+
+
 
   def update_model_values(model, values_map) do
     curr_node_key = model.current_node_key

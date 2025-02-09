@@ -101,6 +101,26 @@ defmodule SECoPComponents do
     """
   end
 
+  attr :current_module, :map, required: true
+
+
+  def parameter_plot(assigns) do
+
+
+    svg = get_in(assigns,[:current_module,:parameters,:value,:svg_plot])
+
+
+    assigns = assign(assigns, :svg, Phoenix.HTML.raw(svg))
+
+
+    ~H"""
+    <div>
+      {@svg}
+    </div>
+
+    """
+  end
+
   attr :module_name, :string, required: true
   attr :module, :map, required: true
   attr :current, :boolean, default: false
