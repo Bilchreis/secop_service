@@ -1,6 +1,7 @@
 defmodule SECoPComponents do
   use Phoenix.Component
   alias Jason
+  alias Contex.{LinePlot, Dataset, Plot}
 
   attr :equipment_id, :string, required: true
   attr :pubsub_topic, :string, required: true
@@ -58,9 +59,7 @@ defmodule SECoPComponents do
     <div class="flex justify-between items-center py-2  ">
       {@string_value}
     </div>
-    <div class="flex justify-between items-center py-2  ">
-      PLACEHOLDER
-    </div>
+    <div class="flex justify-between items-center py-2  "></div>
     """
   end
 
@@ -101,16 +100,105 @@ defmodule SECoPComponents do
     """
   end
 
-  attr :current_module, :map, required: true
+  attr :datainfo, :map, required: true
+  attr :parameter, :string, required: true
+  attr :module, :string, required: true
+  attr :description, :string, required: true
+  attr :plot_data, :map, default: []
 
-  def parameter_plot(assigns) do
-    svg = get_in(assigns, [:current_module, :parameters, :value, :svg_plot])
+  def line_plot(assigns) do
+    plot =
+      if assigns.plot_data != [] do
+        unit = Map.get(assigns.datainfo, :unit)
 
-    assigns = assign(assigns, :svg, Phoenix.HTML.raw(svg))
+        curr_time = System.os_time(:millisecond) * 0.001
+
+        plot_data =
+          Enum.map(assigns.plot_data, fn {timestamp, value} -> {timestamp - curr_time, value} end)
+          |> Enum.reject(fn {timestamp, _value} -> timestamp < -900 end)
+
+        ds = Dataset.new(plot_data, ["t", "value"])
+
+        custom_x_scale =
+          Contex.ContinuousLinearScale.new()
+          |> Contex.ContinuousLinearScale.domain(-900, 0)
+          |> Contex.ContinuousLinearScale.interval_count(18)
+
+        plot =
+          Plot.new(ds, LinePlot, 600, 240, custom_x_scale: custom_x_scale)
+          |> Plot.plot_options(%{legend_setting: :legend_right})
+          |> Plot.axis_labels("t in s", unit)
+
+        Plot.to_svg(plot)
+      else
+        "Waiting for Data"
+      end
+
+    assigns = assign(assigns, :plot, plot)
 
     ~H"""
-    <div>
-      {@svg}
+    <%= if @plot_data == [] do %>
+      <div class="  animate-pulse  flex items-center justify-center h-full text-center">
+        {@plot}
+      </div>
+    <% else %>
+      <div>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">{@module} : {@parameter}</h3>
+        {@plot}
+      </div>
+    <% end %>
+    """
+  end
+
+  attr :datainfo, :map, required: true
+  attr :parameter, :string, required: true
+  attr :module, :string, required: true
+  attr :description, :string, required: true
+  attr :plot_data, :map, default: []
+
+  def parameter_plot(assigns) do
+    dtype = assigns.datainfo.type
+
+    case dtype do
+      numeric when numeric in ["double", "int", "scaled"] -> line_plot(assigns)
+      # TODO
+      "bool" -> no_plot_available(assigns)
+      # TODO
+      "enum" -> no_plot_available(assigns)
+      # TODO
+      "array" -> no_plot_available(assigns)
+      _ -> no_plot_available(assigns)
+    end
+  end
+
+  attr :datainfo, :map, required: true
+  attr :parameter, :string, required: true
+  attr :module, :string, required: true
+  attr :description, :string, required: true
+  attr :plot_data, :map, default: []
+
+  def no_plot_available(assigns) do
+    ~H"""
+    <div class="flex items-center justify-center h-full text-center">
+      Data not Plottable
+    </div>
+    """
+  end
+
+  attr :parameter, :string, required: true
+  attr :module, :string, required: true
+  attr :parameter_map, :map, required: true
+
+  def hist_widget(assigns) do
+    ~H"""
+    <div class=" h-full pt-5 ">
+      <.parameter_plot
+        datainfo={assigns.parameter_map.datainfo}
+        parameter={assigns.parameter}
+        module={assigns.module}
+        description={assigns.parameter_map.description}
+        plot_data={assigns.parameter_map.plot_data}
+      />
     </div>
     """
   end

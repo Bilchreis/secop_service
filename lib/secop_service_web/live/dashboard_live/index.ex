@@ -46,45 +46,33 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
-  def handle_info({:description_change, pubsub_topic, state}, socket) do
+  def handle_info({:description_change, _pubsub_topic, _state}, socket) do
     # TODO
 
     {:noreply, socket}
   end
 
-  def handle_info({:conn_state, pubsub_topic, active}, socket) do
+  def handle_info({:conn_state, _pubsub_topic, _active}, socket) do
     # TODO
 
     {:noreply, socket}
   end
 
   # handle Sparkline updates
-  def handle_info({host, port, module, parameter, {:spark, svg}}, socket) do
+  def handle_info({_host, _port, _module, _parameter, {:spark_data, _svg}}, socket) do
     {:noreply, socket}
   end
 
   # Handle Plot updates
-  def handle_info({host, port, module, parameter, {:plot, svg}}, socket) do
-    {c_host, c_port} = Map.get(socket, :assigns) |> Map.get(:model) |> Map.get(:current_node_key)
-    c_module = Map.get(socket, :assigns) |> Map.get(:model) |> Map.get(:current_module_key)
-
+  def handle_info({host, port, module, parameter, {:plot_data, svg}}, socket) do
     updated_model =
-      if {host, port, module, parameter} == {c_host, c_port, c_module, :value} do
-        updated_model =
-          Model.update_plot(socket.assigns.model, {host, port, module, parameter}, svg)
-
-        updated_model
-      else
-        socket.assigns.model
-      end
+      Model.update_plot(socket.assigns.model, {host, port, module, parameter}, svg)
 
     {:noreply, assign(socket, :model, updated_model)}
   end
 
   def handle_info({:state_change, pubsub_topic, state}, socket) do
     Logger.info("new node status: #{pubsub_topic} #{state.state}")
-
-    IO.inspect(socket.assigns.model)
 
     updated_model =
       Model.set_state(

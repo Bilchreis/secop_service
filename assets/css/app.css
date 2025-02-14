@@ -4,8 +4,99 @@
 
 /* This file is for your main application CSS */
 
+/*div {
+  border: 1px solid red !important;
+}*/
+
 
   /* Invert color for dark mode */
   .dark #logo {
     filter: invert(1);
   }
+
+/* Default (light mode) styles */
+.exc-tick {
+  stroke: grey;
+}
+
+.exc-tick text {
+  fill: grey;
+  stroke: none;
+}
+
+.exc-tick line {
+  fill: grey;
+  stroke: gray;
+}
+
+.exc-domain {
+  stroke: rgb(207, 207, 207);
+}
+
+.exc-grid {
+  stroke: lightgrey;
+}
+
+.exc-legend {
+  stroke: black;
+}
+
+.exc-legend text {
+  fill: grey;
+  font-size: 0.6rem;
+  stroke: none;
+}
+
+.exc-title {
+  fill: darkslategray;
+  font-size: 0.8rem;
+  stroke: none;
+}
+
+.exc-subtitle {
+  fill: darkgrey;
+  font-size: 0.6rem;
+  stroke: none;
+}
+
+
+
+/* Dark mode styles */
+.dark .exc-tick {
+  stroke: lightgray;
+}
+
+.dark .exc-tick line {
+  fill: grey;
+  stroke: gray;
+}
+
+.dark .exc-tick text {
+  fill: lightgray;
+}
+
+.dark .exc-domain {
+  stroke: rgb(100, 100, 100);
+}
+
+.dark .exc-grid {
+  stroke: rgb(80, 80, 80);
+}
+
+.dark .exc-legend {
+  stroke: gray;
+}
+
+.dark .exc-legend text {
+  fill: lightgray;
+}
+
+.dark .exc-title {
+  fill: white;
+}
+
+.dark .exc-subtitle {
+  fill: lightgray;
+}
+
+

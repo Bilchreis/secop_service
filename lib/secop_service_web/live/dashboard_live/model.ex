@@ -11,21 +11,21 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
         true ->
           # Get an arbitrary entry from the active_nodes map
-          {current_node_key, current_node_value} = Map.to_list(active_nodes) |> List.first()
-
-          # Get an arbitrary module from the current_node's description
-          {current_module_key, _current_module_value} =
-            current_node_value[:description][:modules] |> Map.to_list() |> List.first()
+          {current_node_key, _current_node_value} = Map.to_list(active_nodes) |> List.first()
 
           initial_active_nodes =
             Enum.reduce(active_nodes, %{}, fn {node_id, node}, acc ->
-              Map.put(acc, node_id, update_node_values(node, nil))
+              {current_module_key, _current_module_value} =
+                node[:description][:modules] |> Map.to_list() |> List.first()
+
+              node = Map.put(node, :current_module_key, current_module_key)
+              Map.put(acc, node_id, init_node(node))
             end)
 
           %{
             active_nodes: initial_active_nodes,
             current_node_key: current_node_key,
-            current_module_key: current_module_key
+            current_module_key: initial_active_nodes[current_node_key][:current_module_key]
           }
       end
 
@@ -34,6 +34,13 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
   def set_new_current_node(model, new_node_id) do
     model = %{model | current_node_key: new_node_id}
+
+    model =
+      Map.put(
+        model,
+        :current_module_key,
+        model.active_nodes[model.current_node_key][:current_module_key]
+      )
 
     model
   end
@@ -95,7 +102,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
       module,
       :parameters,
       parameter,
-      :svg_plot
+      :plot_data
     ]
 
     updated_model = put_in(model, put_path, svg)
@@ -112,6 +119,34 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     updated_model = put_in(model, [:active_nodes, curr_node_key], updated_node)
 
     updated_model
+  end
+
+  def init_node(node) do
+    modules =
+      Enum.reduce(node[:description][:modules], %{}, fn {module_name, module_description}, acc ->
+        parameters =
+          Enum.reduce(module_description[:parameters], %{}, fn {parameter_name,
+                                                                parameter_description},
+                                                               param_acc ->
+            new_param_description =
+              Map.put(parameter_description, :value, nil)
+              |> Map.put(:plot_data, [])
+              |> Map.put(:spark_data, [])
+
+            new_param_description =
+              update_param_descr(nil, parameter_name, new_param_description)
+
+            updated_param_acc = Map.put(param_acc, parameter_name, new_param_description)
+
+            updated_param_acc
+          end)
+
+        Map.put(acc, module_name, Map.put(module_description, :parameters, parameters))
+      end)
+
+    updated_node = put_in(node[:description][:modules], modules)
+
+    updated_node
   end
 
   def update_node_values(node, values_map) do
