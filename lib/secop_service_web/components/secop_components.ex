@@ -124,8 +124,23 @@ defmodule SECoPComponents do
           |> Contex.ContinuousLinearScale.domain(-900, 0)
           |> Contex.ContinuousLinearScale.interval_count(18)
 
+        datainfo = assigns.datainfo
+
+
+        custom_y_scale =  if  Map.has_key?(datainfo,:min) and Map.has_key?(datainfo,:max) do
+
+
+          Contex.ContinuousLinearScale.new() |> Contex.ContinuousLinearScale.domain(datainfo.min, datainfo.max)
+        else
+          nil
+        end
+
+
+
+
+
         plot =
-          Plot.new(ds, LinePlot, 600, 240, custom_x_scale: custom_x_scale)
+          Plot.new(ds, LinePlot, 600, 240, custom_x_scale: custom_x_scale, custom_y_scale: custom_y_scale)
           |> Plot.plot_options(%{legend_setting: :legend_right})
           |> Plot.axis_labels("t in s", unit)
 
@@ -170,6 +185,39 @@ defmodule SECoPComponents do
       _ -> no_plot_available(assigns)
     end
   end
+
+  defp get_highest_if_class(module) do
+    #TODO Measurable
+    ifclasses = module.properties.interface_classes
+
+    cond  do
+      Enum.member?(ifclasses, "Drivable") -> :readable
+      Enum.member?(ifclasses, "Readable") -> :drivable
+      Enum.member?(ifclasses, "Communicator") -> :communicator
+      true -> nil
+    end
+
+
+  end
+
+  attr :module_name, :string, required: true
+  attr :module, :map, required: true
+  def module_plot(assigns) do
+
+    IO.inspect(assigns)
+
+    case get_highest_if_class(assigns.module) do
+      :readable -> no_plot_available(assigns)
+      :drivable -> no_plot_available(assigns)
+      :communicator ->  no_plot_available(assigns)
+      _ ->  no_plot_available(assigns)
+
+    end
+
+  end
+
+
+
 
   attr :datainfo, :map, required: true
   attr :parameter, :string, required: true
