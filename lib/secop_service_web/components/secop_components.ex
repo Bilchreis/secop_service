@@ -140,7 +140,7 @@ defmodule SECoPComponents do
 
 
         plot =
-          Plot.new(ds, LinePlot, 600, 240, custom_x_scale: custom_x_scale, custom_y_scale: custom_y_scale)
+          Plot.new(ds, LinePlot, 600, 240, custom_x_scale: custom_x_scale, custom_y_scale: custom_y_scale,colour_palette: [ "a855f7"])
           |> Plot.plot_options(%{legend_setting: :legend_right})
           |> Plot.axis_labels("t in s", unit)
 
@@ -191,8 +191,8 @@ defmodule SECoPComponents do
     ifclasses = module.properties.interface_classes
 
     cond  do
-      Enum.member?(ifclasses, "Drivable") -> :readable
-      Enum.member?(ifclasses, "Readable") -> :drivable
+      Enum.member?(ifclasses, "Drivable") -> :drivable
+      Enum.member?(ifclasses, "Readable") -> :readable
       Enum.member?(ifclasses, "Communicator") -> :communicator
       true -> nil
     end
@@ -204,17 +204,53 @@ defmodule SECoPComponents do
   attr :module, :map, required: true
   def module_plot(assigns) do
 
-    IO.inspect(assigns)
 
     case get_highest_if_class(assigns.module) do
-      :readable -> no_plot_available(assigns)
-      :drivable -> no_plot_available(assigns)
+      :readable -> readable_plot(assigns)
+      :drivable -> drivable_plot(assigns)
       :communicator ->  no_plot_available(assigns)
       _ ->  no_plot_available(assigns)
 
     end
+  end
+
+
+  attr :module_name, :string, required: true
+  attr :module, :map, required: true
+  def readable_plot(assigns) do
+    ~H"""
+    Readable Plot
+    <div class=" h-full pt-5 ">
+      <.parameter_plot
+        datainfo={assigns.module.parameters.value.datainfo}
+        parameter="value"
+        module={assigns.module_name}
+        description={assigns.module.parameters.value.description}
+        plot_data={assigns.module.parameters.value.plot_data}
+      />
+    </div>
+    """
 
   end
+
+  attr :module_name, :string, required: true
+  attr :module, :map, required: true
+  def drivable_plot(assigns) do
+    ~H"""
+    Drivable Plot
+    <div class=" h-full pt-5 ">
+      <.parameter_plot
+        datainfo={assigns.module.parameters.value.datainfo}
+        parameter="value"
+        module={assigns.module_name}
+        description={assigns.module.parameters.value.description}
+        plot_data={assigns.module.parameters.value.plot_data}
+      />
+    </div>
+    """
+
+  end
+
 
 
 
