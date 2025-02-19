@@ -1,7 +1,14 @@
 defmodule SECoPComponents do
   use Phoenix.Component
+  alias Kernel.ParallelCompiler
   alias Jason
-  alias Contex.{LinePlot, Dataset, Plot}
+
+  alias Explorer.DataFrame
+  alias GGity.Plot
+  alias GGity.Element.Rect
+  # alias Contex.Dataset
+  # alias Contex.LinePlot
+  # alias Contex.Plot
 
   attr :equipment_id, :string, required: true
   attr :pubsub_topic, :string, required: true
@@ -106,45 +113,27 @@ defmodule SECoPComponents do
   attr :description, :string, required: true
   attr :plot_data, :map, default: []
 
-  def line_plot(assigns) do
+  def line_plot_ggity(assigns) do
     plot =
       if assigns.plot_data != [] do
-        unit = Map.get(assigns.datainfo, :unit)
-
         curr_time = System.os_time(:millisecond) * 0.001
 
         plot_data =
           Enum.map(assigns.plot_data, fn {timestamp, value} -> {timestamp - curr_time, value} end)
           |> Enum.reject(fn {timestamp, _value} -> timestamp < -900 end)
 
-        ds = Dataset.new(plot_data, ["t", "value"])
+        df =
+          DataFrame.new(%{
+            timestamp: Enum.map(plot_data, fn {ts, _val} -> ts end),
+            value: Enum.map(plot_data, fn {_ts, val} -> val end)
+          })
 
-        custom_x_scale =
-          Contex.ContinuousLinearScale.new()
-          |> Contex.ContinuousLinearScale.domain(-900, 0)
-          |> Contex.ContinuousLinearScale.interval_count(18)
+        raw =
+          Plot.new(df, %{x: :timestamp, y: :value})
+          |> Plot.geom_line()
+          |> Plot.plot()
 
-        datainfo = assigns.datainfo
-
-
-        custom_y_scale =  if  Map.has_key?(datainfo,:min) and Map.has_key?(datainfo,:max) do
-
-
-          Contex.ContinuousLinearScale.new() |> Contex.ContinuousLinearScale.domain(datainfo.min, datainfo.max)
-        else
-          nil
-        end
-
-
-
-
-
-        plot =
-          Plot.new(ds, LinePlot, 600, 240, custom_x_scale: custom_x_scale, custom_y_scale: custom_y_scale,colour_palette: [ "a855f7"])
-          |> Plot.plot_options(%{legend_setting: :legend_right})
-          |> Plot.axis_labels("t in s", unit)
-
-        Plot.to_svg(plot)
+        {:safe, raw}
       else
         "Waiting for Data"
       end
@@ -175,7 +164,7 @@ defmodule SECoPComponents do
     dtype = assigns.datainfo.type
 
     case dtype do
-      numeric when numeric in ["double", "int", "scaled"] -> line_plot(assigns)
+      numeric when numeric in ["double", "int", "scaled"] -> line_plot_ggity(assigns)
       # TODO
       "bool" -> no_plot_available(assigns)
       # TODO
@@ -187,79 +176,173 @@ defmodule SECoPComponents do
   end
 
   defp get_highest_if_class(module) do
-    #TODO Measurable
+    # TODO Measurable
     ifclasses = module.properties.interface_classes
 
-    cond  do
+    cond do
       Enum.member?(ifclasses, "Drivable") -> :drivable
       Enum.member?(ifclasses, "Readable") -> :readable
       Enum.member?(ifclasses, "Communicator") -> :communicator
       true -> nil
     end
-
-
   end
 
   attr :module_name, :string, required: true
   attr :module, :map, required: true
+
   def module_plot(assigns) do
-
-
     case get_highest_if_class(assigns.module) do
       :readable -> readable_plot(assigns)
       :drivable -> drivable_plot(assigns)
-      :communicator ->  no_plot_available(assigns)
-      _ ->  no_plot_available(assigns)
-
+      :communicator -> no_plot_available(assigns)
+      _ -> no_plot_available(assigns)
     end
   end
 
-
   attr :module_name, :string, required: true
   attr :module, :map, required: true
+
   def readable_plot(assigns) do
-    ~H"""
-    Readable Plot
-    <div class=" h-full pt-5 ">
-      <.parameter_plot
-        datainfo={assigns.module.parameters.value.datainfo}
-        parameter="value"
-        module={assigns.module_name}
-        description={assigns.module.parameters.value.description}
-        plot_data={assigns.module.parameters.value.plot_data}
-      />
-    </div>
-    """
+    plottable =
+      case assigns.module.parameters.value.datainfo.type do
+        numeric when numeric in ["double", "int", "scaled"] -> true
+        # TODO
+        "bool" -> false
+        # TODO
+        "enum" -> false
+        # TODO
+        "array" -> false
+        _ -> false
+      end
 
+    assigns = assign(assigns, :plottable, plottable)
+
+    ~H"""
+    <%= if @plottable  do %>
+      <div class=" h-full pt-5 ">
+        <.parameter_plot
+          datainfo={assigns.module.parameters.value.datainfo}
+          parameter="value"
+          module={assigns.module_name}
+          description={assigns.module.parameters.value.description}
+          plot_data={assigns.module.parameters.value.plot_data}
+        />
+      </div>
+    <% else %>
+      <.no_plot_available />
+    <% end %>
+    """
   end
 
   attr :module_name, :string, required: true
   attr :module, :map, required: true
+
   def drivable_plot(assigns) do
+    plottable =
+      case assigns.module.parameters.value.datainfo.type do
+        numeric when numeric in ["double", "int", "scaled"] -> true
+        # TODO
+        "bool" -> false
+        # TODO
+        "enum" -> false
+        # TODO
+        "array" -> false
+        _ -> false
+      end
+
+    assigns = assign(assigns, :plottable, plottable)
+
+    value_data = assigns.module.parameters.value.plot_data
+    target_data = assigns.module.parameters.target.plot_data
+
+    plot =
+      if value_data != [] do
+        curr_time = System.os_time(:millisecond) * 0.001
+
+        value_plot_data =
+          Enum.map(value_data, fn {timestamp, value} -> {timestamp - curr_time, value} end)
+          |> Enum.reject(fn {timestamp, _value} -> timestamp < -900 end)
+
+        target_plot_data =
+          Enum.map(target_data, fn {timestamp, value} -> {timestamp - curr_time, value} end)
+          |> Enum.reject(fn {timestamp, _value} -> timestamp < -900 end)
+
+        df =
+          DataFrame.new(%{
+            timestamp:
+              Enum.map(value_plot_data, fn {ts, _val} -> ts end) ++
+                Enum.map(target_plot_data, fn {ts, _val} -> ts end),
+            value:
+              Enum.map(value_plot_data, fn {_ts, val} -> val end) ++
+                Enum.map(target_plot_data, fn {_ts, val} -> val end),
+            variable:
+              Enum.map(value_plot_data, fn {_ts, _val} -> "value" end) ++
+                Enum.map(target_plot_data, fn {_ts, _val} -> "target" end)
+          })
+
+        datainfo = assigns.module.parameters.value.datainfo
+
+        unit =
+          if Map.has_key?(datainfo, :unit) do
+            datainfo.unit
+          else
+            nil
+          end
+
+        raw =
+          Plot.new(df, %{x: :timestamp, y: :value, color: "variable"}, aspect_ratio: 2.5)
+          |> Plot.geom_line()
+          |> Plot.labs(x: "time in s", y: unit)
+          |> Plot.theme(
+            text: nil,
+            axis_line: nil,
+            axis_line_x: nil,
+            axis_line_y: nil,
+            axis_text: nil,
+            axis_ticks: nil,
+            axis_line_x: nil,
+            axis_line_y: nil,
+            axis_title: nil,
+            axis_title_x: nil,
+            axis_title_y: nil,
+            panel_background: nil,
+            legend_title: nil,
+            legend_text: nil,
+            panel_border: nil,
+            panel_grid: nil,
+            panel_grid_major: nil,
+            panel_grid_minor: nil,
+            plot_title: nil,
+            plot_background: nil
+          )
+          |> Plot.plot()
+
+        {:safe, raw}
+      else
+        "Waiting for Data"
+      end
+
+    assigns = assign(assigns, :plot, plot)
+
     ~H"""
-    Drivable Plot
-    <div class=" h-full pt-5 ">
-      <.parameter_plot
-        datainfo={assigns.module.parameters.value.datainfo}
-        parameter="value"
-        module={assigns.module_name}
-        description={assigns.module.parameters.value.description}
-        plot_data={assigns.module.parameters.value.plot_data}
-      />
-    </div>
+    <%= if @plottable  do %>
+      <%= if {@module.parameters.value.plot_data} == [] do %>
+        <div class="  animate-pulse  flex items-center justify-center h-full text-center">
+          {@plot}
+        </div>
+      <% else %>
+        <div>
+          <h3 class="text-lg mt-4 font-bold text-gray-900 dark:text-white mb-2">
+            {@module_name} : [value, target]
+          </h3>
+          {@plot}
+        </div>
+      <% end %>
+    <% else %>
+      <.no_plot_available />
+    <% end %>
     """
-
   end
-
-
-
-
-
-  attr :datainfo, :map, required: true
-  attr :parameter, :string, required: true
-  attr :module, :string, required: true
-  attr :description, :string, required: true
-  attr :plot_data, :map, default: []
 
   def no_plot_available(assigns) do
     ~H"""

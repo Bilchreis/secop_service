@@ -63,7 +63,8 @@ defmodule SecopService.MixProject do
       {:bandit, "~> 1.5"},
       {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.22"},
       {:contex, "~> 0.5.0"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:ggity, git: "https://github.com/Bilchreis/ggity.git"}
     ]
   end
 
