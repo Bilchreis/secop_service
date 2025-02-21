@@ -30,7 +30,7 @@
 
               <%= for {prop_name, prop_value} <- @model.active_nodes[@model.current_node_key].description.properties do %>
               <div>                  
-                <div class= "mt-2 dark:bg-gray-800  hover:bg-zinc-700 text-gray-300 text-left  py-2 px-4 rounded">
+                <div class= "mt-2 dark:bg-gray-700  hover:bg-zinc-700 text-gray-300 text-left  py-2 px-4 rounded">
                   <span class=" font-bold  text-black dark:text-white "> {prop_name}:</span><br>
                   {prop_value}  
                 </div>
@@ -68,9 +68,10 @@
               module={module}
               state={@model.active_nodes[@model.current_node_key][:state]}
             />
-
-            <div class=" mb-4 pl-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
+            <div class="pb-4">
+            <div class="p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
               <.module_plot module={module} module_name={mod_name} />
+            </div>
             </div>
           </div>
         <% end %>

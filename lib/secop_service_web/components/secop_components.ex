@@ -1,11 +1,13 @@
 defmodule SECoPComponents do
   use Phoenix.Component
 
+  alias Phoenix.LiveView.JS
   alias Jason
 
   alias Explorer.DataFrame
   alias GGity.Plot
 
+  import SecopServiceWeb.CoreComponents, only: [icon: 1]
 
 
   attr :equipment_id, :string, required: true
@@ -95,7 +97,25 @@ defmodule SECoPComponents do
       @box_color,
       "bg-gray-50 dark:bg-gray-900 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-full mb-4"
     ]}>
-      <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">{@mod_name}</h3>
+
+
+
+      <.accordion id={@mod_name} class="bg-white dark:bg-gray-700 rounded-lg  ">
+        <:trigger class="p-4 pr-10 text-lg">
+        <h3 class="text-lg text-left font-bold text-gray-900 dark:text-white">{@mod_name} : <span class= " dark:text-gray-400 text-medium">{Enum.at(@module.properties.interface_classes, 0)}</span></h3>
+        </:trigger>
+        <:panel class="p-4">
+          <%= for {prop_name, prop_value} <- @module.properties do %>
+              <div>
+                <div class= "mt-2 dark:bg-gray-800  hover:bg-zinc-700 text-gray-300 text-left  py-2 px-4 rounded">
+                  <span class=" font-bold  text-black dark:text-white "> {prop_name}:</span><br>
+                  {prop_value}
+                </div>
+              </div>
+          <% end %>
+        </:panel>
+
+      </.accordion>
       <div class="grid grid-cols-3 gap-4 content-start">
         <%= for {parameter_name, parameter} <- @module.parameters do %>
           <.parameter parameter_name={parameter_name} parameter={parameter} />
@@ -464,4 +484,81 @@ defmodule SECoPComponents do
     </button>
     """
   end
+
+  attr :class, :any, doc: "Extend existing component styles"
+  attr :controlled, :boolean, default: false
+  attr :id, :string, required: true
+  attr :rest, :global
+
+  slot :trigger, validate_attrs: false
+  slot :panel, validate_attrs: false
+
+  @spec accordion(Socket.assigns()) :: Rendered.t()
+  def accordion(assigns) do
+    ~H"""
+    <div class={["accordion", assigns[:class]]} id={@id} {@rest}>
+      <%= for {{trigger, panel}, idx} <- @trigger |> Enum.zip(@panel) |> Enum.with_index() do %>
+        <h3>
+          <button
+            aria-controls={panel_id(@id, idx)}
+            aria-expanded={to_string(panel[:default_expanded] == true)}
+            class={[
+              "accordion-trigger relative w-full [&_.accordion-trigger-icon]:aria-expanded:rotate-180",
+              trigger[:class]
+            ]}
+            id={trigger_id(@id, idx)}
+            phx-click={handle_click(assigns, idx)}
+            type="button"
+            {assigns_to_attributes(trigger, [:class, :icon_name])}
+          >
+            {render_slot(trigger)}
+            <.icon
+              class="accordion-trigger-icon h-5 w-5 absolute right-4 transition-all ease-in-out duration-300 top-1/2 -translate-y-1/2"
+              name={trigger[:icon_name] || "hero-chevron-down"}
+            />
+          </button>
+        </h3>
+        <div
+          class="accordion-panel grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all transform ease-in duration-200"
+          data-expanded={panel[:default_expanded]}
+          id={panel_id(@id, idx)}
+          role="region"
+        >
+          <div class="overflow-hidden">
+            <div
+              class={["accordion-panel-content", panel[:class]]}
+              {assigns_to_attributes(panel, [:class, :default_expanded ])}
+            >
+              {render_slot(panel)}
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp trigger_id(id, idx), do: "#{id}_trigger#{idx}"
+  defp panel_id(id, idx), do: "#{id}_panel#{idx}"
+
+  defp handle_click(%{controlled: controlled, id: id}, idx) do
+    op =
+      {"aria-expanded", "true", "false"}
+      |> JS.toggle_attribute(to: "##{trigger_id(id, idx)}")
+      |> JS.toggle_attribute({"data-expanded", ""}, to: "##{panel_id(id, idx)}")
+
+    if controlled do
+      op
+      |> JS.set_attribute({"aria-expanded", "false"},
+        to: "##{id} .accordion-trigger:not(##{trigger_id(id, idx)})"
+      )
+      |> JS.remove_attribute("data-expanded",
+        to: "##{id} .accordion-panel:not(##{panel_id(id, idx)})"
+      )
+    else
+      op
+    end
+  end
+
+
 end
