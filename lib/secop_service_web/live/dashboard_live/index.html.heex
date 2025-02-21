@@ -17,37 +17,28 @@
       <% end %>
     </ul>
 
-    <div class="md:flex mt-4">
+    <div class="flex  mt-4">
       <div
         :if={@model.active_nodes[@model.current_node_key].description}
-        class="flex-column   text-gray-500 dark:text-gray-400 md:me-4 mb-4 md:mb-0 "
+        class="w-1/4 text-gray-500 dark:text-gray-400 me-4 mb-4 mb-0  "
       >
-        <ul class="space-y space-y-4 text-sm font-medium">
-          <li>
-            <div class=" p-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
-              <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                Node Properties
-              </h3>
-              <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                <tbody>
-                  <%= for {prop_name, prop_value} <- @model.active_nodes[@model.current_node_key].description.properties do %>
-                    <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                      <th
-                        scope="row"
-                        class="px-2 py-1 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                      >
-                        {prop_name}
-                      </th>
-                      <td class="px-3 py-1">
-                        {prop_value}
-                      </td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          </li>
-        </ul>
+
+        <div class=" p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white ">
+            Node Properties:
+          </h3>
+
+              <%= for {prop_name, prop_value} <- @model.active_nodes[@model.current_node_key].description.properties do %>
+              <div>                  
+                <div class= "mt-2 dark:bg-gray-800  hover:bg-zinc-700 text-gray-300 text-left  py-2 px-4 rounded">
+                  <span class=" font-bold  text-black dark:text-white "> {prop_name}:</span><br>
+                  {prop_value}  
+                </div>
+              </div>
+              <% end %>
+
+        </div>
+
 
         <div class="mt-4 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
           <span class="text-lg font-bold  text-black dark:text-white "> Modules</span>
@@ -68,7 +59,7 @@
 
       <div
         :if={@model.active_nodes[@model.current_node_key].description}
-        class=" text-medium  w-full "
+        class=" text-medium  w-2/3 "
       >
         <%= for {mod_name,module} <- @model.active_nodes[@model.current_node_key].description.modules do %>
           <div class="grid grid-cols-2 gap-4">
@@ -79,10 +70,7 @@
             />
 
             <div class=" mb-4 pl-6 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
-              <.module_plot
-                module={module}
-                module_name={mod_name}                
-              />
+              <.module_plot module={module} module_name={mod_name} />
             </div>
           </div>
         <% end %>
