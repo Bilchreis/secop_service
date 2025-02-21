@@ -1,14 +1,12 @@
 defmodule SECoPComponents do
   use Phoenix.Component
-  alias Kernel.ParallelCompiler
+
   alias Jason
 
   alias Explorer.DataFrame
   alias GGity.Plot
-  alias GGity.Element.Rect
-  # alias Contex.Dataset
-  # alias Contex.LinePlot
-  # alias Contex.Plot
+
+
 
   attr :equipment_id, :string, required: true
   attr :pubsub_topic, :string, required: true
@@ -60,7 +58,7 @@ defmodule SECoPComponents do
     assigns = assign(assigns, parse_param_value(assigns[:parameter]))
 
     ~H"""
-    <div class="flex justify-between items-center py-2  ">
+    <div class=" flex justify-between items-center py-2  ">
       {@parameter_name}:
     </div>
     <div class="flex justify-between items-center py-2  ">
@@ -203,8 +201,10 @@ defmodule SECoPComponents do
   attr :module, :map, required: true
 
   def readable_plot(assigns) do
+    datainfo = assigns.module.parameters.value.datainfo
+
     plottable =
-      case assigns.module.parameters.value.datainfo.type do
+      case datainfo.type do
         numeric when numeric in ["double", "int", "scaled"] -> true
         # TODO
         "bool" -> false
@@ -215,84 +215,60 @@ defmodule SECoPComponents do
         _ -> false
       end
 
+    unit = if Map.has_key?(datainfo, :unit) do
+        datainfo.unit
+      else
+        nil
+      end
+
     assigns = assign(assigns, :plottable, plottable)
 
+    {value, timestamp}   = assigns.module.parameters.value.plot_data
+
+
+    df = if value == [] do
+      nil
+    else
+      DataFrame.new(%{
+        timestamp:
+          timestamp,
+        value:
+          value,
+        variable:
+          Enum.map(value, fn _val -> "value" end)
+
+      })
+    end
+
+    assigns = assign(assigns, :dataframe, df)
+    |> assign(:unit, unit)
+    |> assign(:plottable, plottable)
+
     ~H"""
-    <%= if @plottable  do %>
-      <div class=" h-full pt-5 ">
-        <.parameter_plot
-          datainfo={assigns.module.parameters.value.datainfo}
-          parameter="value"
-          module={assigns.module_name}
-          description={assigns.module.parameters.value.description}
-          plot_data={assigns.module.parameters.value.plot_data}
-        />
-      </div>
-    <% else %>
-      <.no_plot_available />
-    <% end %>
+    <h3 class="text-lg mt-4 font-bold text-gray-900 dark:text-white mb-2">
+      {@module_name} : [value]
+    </h3>
+    <.line_plot
+        dataframe = {@dataframe}
+        plottable = {@plottable}
+        unit      = {@unit}
+    />
     """
   end
 
-  attr :module_name, :string, required: true
-  attr :module, :map, required: true
+  attr :unit, :string, default: nil
+  attr :dataframe, :map, required: true
+  attr :plottable, :boolean, required: true
+  def line_plot(assigns) do
+    dataframe = assigns.dataframe
 
-  def drivable_plot(assigns) do
-    plottable =
-      case assigns.module.parameters.value.datainfo.type do
-        numeric when numeric in ["double", "int", "scaled"] -> true
-        # TODO
-        "bool" -> false
-        # TODO
-        "enum" -> false
-        # TODO
-        "array" -> false
-        _ -> false
-      end
 
-    assigns = assign(assigns, :plottable, plottable)
 
-    value_data = assigns.module.parameters.value.plot_data
-    target_data = assigns.module.parameters.target.plot_data
-
-    plot =
-      if value_data != [] do
-        curr_time = System.os_time(:millisecond) * 0.001
-
-        value_plot_data =
-          Enum.map(value_data, fn {timestamp, value} -> {timestamp - curr_time, value} end)
-          |> Enum.reject(fn {timestamp, _value} -> timestamp < -900 end)
-
-        target_plot_data =
-          Enum.map(target_data, fn {timestamp, value} -> {timestamp - curr_time, value} end)
-          |> Enum.reject(fn {timestamp, _value} -> timestamp < -900 end)
-
-        df =
-          DataFrame.new(%{
-            timestamp:
-              Enum.map(value_plot_data, fn {ts, _val} -> ts end) ++
-                Enum.map(target_plot_data, fn {ts, _val} -> ts end),
-            value:
-              Enum.map(value_plot_data, fn {_ts, val} -> val end) ++
-                Enum.map(target_plot_data, fn {_ts, val} -> val end),
-            variable:
-              Enum.map(value_plot_data, fn {_ts, _val} -> "value" end) ++
-                Enum.map(target_plot_data, fn {_ts, _val} -> "target" end)
-          })
-
-        datainfo = assigns.module.parameters.value.datainfo
-
-        unit =
-          if Map.has_key?(datainfo, :unit) do
-            datainfo.unit
-          else
-            nil
-          end
-
-        raw =
-          Plot.new(df, %{x: :timestamp, y: :value, color: "variable"}, aspect_ratio: 2.5)
+    plot =  if dataframe do
+      raw =
+          Plot.new(dataframe, %{x: :timestamp, y: :value, color: "variable"}, aspect_ratio: 2.5)
           |> Plot.geom_line()
-          |> Plot.labs(x: "time in s", y: unit)
+          |> Plot.labs(x: "time in s", y: assigns.unit)
           |> Plot.theme(
             text: nil,
             axis_line: nil,
@@ -326,15 +302,12 @@ defmodule SECoPComponents do
 
     ~H"""
     <%= if @plottable  do %>
-      <%= if {@module.parameters.value.plot_data} == [] do %>
+      <%= if @dataframe == nil do %>
         <div class="  animate-pulse  flex items-center justify-center h-full text-center">
           {@plot}
         </div>
       <% else %>
         <div>
-          <h3 class="text-lg mt-4 font-bold text-gray-900 dark:text-white mb-2">
-            {@module_name} : [value, target]
-          </h3>
           {@plot}
         </div>
       <% end %>
@@ -342,6 +315,69 @@ defmodule SECoPComponents do
       <.no_plot_available />
     <% end %>
     """
+  end
+
+
+
+  attr :module_name, :string, required: true
+  attr :module, :map, required: true
+  def drivable_plot(assigns) do
+    datainfo = assigns.module.parameters.value.datainfo
+
+    plottable =
+      case datainfo.type do
+        numeric when numeric in ["double", "int", "scaled"] -> true
+        # TODO
+        "bool" -> false
+        # TODO
+        "enum" -> false
+        # TODO
+        "array" -> false
+        _ -> false
+      end
+
+
+
+    unit = if Map.has_key?(datainfo, :unit) do
+        datainfo.unit
+      else
+        nil
+      end
+
+    assigns = assign(assigns, :plottable, plottable)
+
+    {value_val, value_ts}   = assigns.module.parameters.value.plot_data
+    {target_val, target_ts} = assigns.module.parameters.target.plot_data
+
+    df = if value_val == [] do
+      nil
+    else
+      DataFrame.new(%{
+        timestamp:
+          value_ts ++ target_ts,
+        value:
+          value_val ++ target_val,
+        variable:
+          Enum.map(value_val, fn _val -> "value" end) ++
+          Enum.map(target_val, fn _val -> "target" end)
+      })
+    end
+
+    assigns = assign(assigns, :dataframe, df)
+    |> assign(:unit, unit)
+    |> assign(:plottable, plottable)
+
+    ~H"""
+    <h3 class="text-lg mt-4 font-bold text-gray-900 dark:text-white mb-2">
+      {@module_name} : [value, target]
+    </h3>
+    <.line_plot
+        dataframe = {@dataframe}
+        plottable = {@plottable}
+        unit      = {@unit}
+    />
+    """
+
   end
 
   def no_plot_available(assigns) do

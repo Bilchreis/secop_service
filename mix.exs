@@ -41,7 +41,7 @@ defmodule SecopService.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       # TODO bump on release to {:phoenix_live_view, "~> 1.0.0"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix_live_view, "~> 1.0.0-rc.1", override: true},
+      {:phoenix_live_view, "~> 1.0"},
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
@@ -61,10 +61,9 @@ defmodule SecopService.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.22"},
-      {:contex, "~> 0.5.0"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ggity, git: "https://github.com/Bilchreis/ggity.git"}
+      {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.23"},
+      {:ggity, git: "https://github.com/Bilchreis/ggity.git", branch: "fix-zeros"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 

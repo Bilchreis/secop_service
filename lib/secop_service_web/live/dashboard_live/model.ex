@@ -91,7 +91,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     model
   end
 
-  def update_plot(model, path, svg) do
+  def update_plot(model, path, plot_data) do
     {host, port, module, parameter} = path
 
     put_path = [
@@ -105,7 +105,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
       :plot_data
     ]
 
-    updated_model = put_in(model, put_path, svg)
+    updated_model = put_in(model, put_path, plot_data)
 
     updated_model
   end
@@ -130,8 +130,8 @@ defmodule SecopServiceWeb.DashboardLive.Model do
                                                                param_acc ->
             new_param_description =
               Map.put(parameter_description, :value, nil)
-              |> Map.put(:plot_data, [])
-              |> Map.put(:spark_data, [])
+              |> Map.put(:plot_data, {[],[]})
+
 
             new_param_description =
               update_param_descr(nil, parameter_name, new_param_description)

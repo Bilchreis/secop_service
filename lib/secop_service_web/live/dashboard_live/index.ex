@@ -25,7 +25,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "secop_conn_state")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "new_node")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "plot")
-    Phoenix.PubSub.subscribe(:secop_client_pubsub, "spark")
+
 
     socket = assign(socket, :model, model)
 
@@ -58,15 +58,12 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
-  # handle Sparkline updates
-  def handle_info({_host, _port, _module, _parameter, {:spark_data, _svg}}, socket) do
-    {:noreply, socket}
-  end
+
 
   # Handle Plot updates
-  def handle_info({host, port, module, parameter, {:plot_data, svg}}, socket) do
+  def handle_info({host, port, module, parameter, {:plot_data, plot_data}}, socket) do
     updated_model =
-      Model.update_plot(socket.assigns.model, {host, port, module, parameter}, svg)
+      Model.update_plot(socket.assigns.model, {host, port, module, parameter}, plot_data)
 
     {:noreply, assign(socket, :model, updated_model)}
   end
