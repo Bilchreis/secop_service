@@ -100,14 +100,19 @@ defmodule SECoPComponents do
 
 
 
-      <.accordion id={@mod_name} class="bg-white dark:bg-gray-700 rounded-lg  ">
+      <.accordion id={@mod_name} class="mb-2 bg-white dark:bg-gray-700 rounded-lg  ">
         <:trigger class="p-4 pr-10 text-lg">
         <h3 class="text-lg text-left font-bold text-gray-900 dark:text-white">{@mod_name} : <span class= " dark:text-gray-400 text-medium">{Enum.at(@module.properties.interface_classes, 0)}</span></h3>
+        <div>
+          <div class= "text-left dark:text-gray-400">
+            {@module.properties.description}
+          </div>
+        </div>
         </:trigger>
-        <:panel class="p-4">
-          <%= for {prop_name, prop_value} <- @module.properties do %>
+        <:panel class="p-4 ">
+          <%= for {prop_name, prop_value} <- @module.properties, prop_name != :description do %>
               <div>
-                <div class= "mt-2 dark:bg-gray-800  hover:bg-zinc-700 text-gray-300 text-left  py-2 px-4 rounded">
+                <div class= "mt-2 dark:bg-gray-800  text-gray-300 text-left  py-2 px-4 rounded">
                   <span class=" font-bold  text-black dark:text-white "> {prop_name}:</span><br>
                   {prop_value}
                 </div>
