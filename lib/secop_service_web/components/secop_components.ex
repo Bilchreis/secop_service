@@ -9,7 +9,6 @@ defmodule SECoPComponents do
 
   import SecopServiceWeb.CoreComponents, only: [icon: 1]
 
-
   attr :equipment_id, :string, required: true
   attr :pubsub_topic, :string, required: true
   attr :current, :boolean, default: false
@@ -97,29 +96,30 @@ defmodule SECoPComponents do
       @box_color,
       "bg-gray-50 dark:bg-gray-900 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-full mb-4"
     ]}>
-
-
-
       <.accordion id={@mod_name} class="mb-2 bg-white dark:bg-gray-700 rounded-lg  ">
         <:trigger class="p-4 pr-10 text-lg">
-        <h3 class="text-lg text-left font-bold text-gray-900 dark:text-white">{@mod_name} : <span class= " dark:text-gray-400 text-medium">{Enum.at(@module.properties.interface_classes, 0)}</span></h3>
-        <div>
-          <div class= "text-left dark:text-gray-400">
-            {@module.properties.description}
+          <h3 class="text-lg text-left font-bold text-gray-900 dark:text-white">
+            {@mod_name} :
+            <span class=" dark:text-gray-400 text-medium">
+              {Enum.at(@module.properties.interface_classes, 0)}
+            </span>
+          </h3>
+          <div>
+            <div class="text-left dark:text-gray-400">
+              {@module.properties.description}
+            </div>
           </div>
-        </div>
         </:trigger>
         <:panel class="p-4 ">
           <%= for {prop_name, prop_value} <- @module.properties, prop_name != :description do %>
-              <div>
-                <div class= "mt-2 dark:bg-gray-800  text-gray-300 text-left  py-2 px-4 rounded">
-                  <span class=" font-bold  text-black dark:text-white "> {prop_name}:</span><br>
-                  {prop_value}
-                </div>
+            <div>
+              <div class="mt-2 dark:bg-gray-800  text-gray-300 text-left  py-2 px-4 rounded">
+                <span class=" font-bold  text-black dark:text-white ">{prop_name}:</span> <br />
+                {prop_value}
               </div>
+            </div>
           <% end %>
         </:panel>
-
       </.accordion>
       <div class="grid grid-cols-3 gap-4 content-start">
         <%= for {parameter_name, parameter} <- @module.parameters do %>
@@ -214,12 +214,41 @@ defmodule SECoPComponents do
   attr :module, :map, required: true
 
   def module_plot(assigns) do
-    case get_highest_if_class(assigns.module) do
-      :readable -> readable_plot(assigns)
-      :drivable -> drivable_plot(assigns)
-      :communicator -> no_plot_available(assigns)
-      _ -> no_plot_available(assigns)
-    end
+    ~H"""
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">{@module_name} : </h3>
+    <div>
+
+      <.general_plot
+      plottable = {@module.plot.plottable}
+      svg = {@module.plot.svg}
+      unit = {@module.plot.unit}
+      plot_available = {@module.plot.plot_available}
+      />
+    </div>
+    """
+  end
+
+
+  attr :plottable, :boolean, required: true
+  attr :svg,  :any, required: true
+  attr :unit, :string, required: false
+  attr :plot_available, :boolean, default: false
+  def general_plot(assigns) do
+    ~H"""
+    <%= if @plottable do %>
+      <%= if @plot_available do %>
+        <div>
+            {@svg}
+        </div>
+      <% else %>
+        <div class="  animate-pulse  flex items-center justify-center h-full text-center">
+          Waiting for plottable Data
+        </div>
+      <% end %>
+    <% else %>
+      Data not Plottable
+    <% end %>
+    """
   end
 
   attr :module_name, :string, required: true
@@ -240,7 +269,8 @@ defmodule SECoPComponents do
         _ -> false
       end
 
-    unit = if Map.has_key?(datainfo, :unit) do
+    unit =
+      if Map.has_key?(datainfo, :unit) do
         datainfo.unit
       else
         nil
@@ -248,49 +278,42 @@ defmodule SECoPComponents do
 
     assigns = assign(assigns, :plottable, plottable)
 
-    {value, timestamp}   = assigns.module.parameters.value.plot_data
+    {value, timestamp} = assigns.module.parameters.value.plot_data
 
+    df =
+      if value == [] do
+        nil
+      else
+        DataFrame.new(%{
+          timestamp: timestamp,
+          value: value,
+          variable: Enum.map(value, fn _val -> "value" end)
+        })
+      end
 
-    df = if value == [] do
-      nil
-    else
-      DataFrame.new(%{
-        timestamp:
-          timestamp,
-        value:
-          value,
-        variable:
-          Enum.map(value, fn _val -> "value" end)
-
-      })
-    end
-
-    assigns = assign(assigns, :dataframe, df)
-    |> assign(:unit, unit)
-    |> assign(:plottable, plottable)
+    assigns =
+      assign(assigns, :dataframe, df)
+      |> assign(:unit, unit)
+      |> assign(:plottable, plottable)
 
     ~H"""
     <h3 class="text-lg mt-4 font-bold text-gray-900 dark:text-white mb-2">
       {@module_name} : [value]
     </h3>
-    <.line_plot
-        dataframe = {@dataframe}
-        plottable = {@plottable}
-        unit      = {@unit}
-    />
+    <.line_plot dataframe={@dataframe} plottable={@plottable} unit={@unit} />
     """
   end
 
   attr :unit, :string, default: nil
   attr :dataframe, :map, required: true
   attr :plottable, :boolean, required: true
+
   def line_plot(assigns) do
     dataframe = assigns.dataframe
 
-
-
-    plot =  if dataframe do
-      raw =
+    plot =
+      if dataframe do
+        raw =
           Plot.new(dataframe, %{x: :timestamp, y: :value, color: "variable"}, aspect_ratio: 2.5)
           |> Plot.geom_line()
           |> Plot.labs(x: "time in s", y: assigns.unit)
@@ -342,10 +365,9 @@ defmodule SECoPComponents do
     """
   end
 
-
-
   attr :module_name, :string, required: true
   attr :module, :map, required: true
+
   def drivable_plot(assigns) do
     datainfo = assigns.module.parameters.value.datainfo
 
@@ -361,9 +383,8 @@ defmodule SECoPComponents do
         _ -> false
       end
 
-
-
-    unit = if Map.has_key?(datainfo, :unit) do
+    unit =
+      if Map.has_key?(datainfo, :unit) do
         datainfo.unit
       else
         nil
@@ -371,38 +392,33 @@ defmodule SECoPComponents do
 
     assigns = assign(assigns, :plottable, plottable)
 
-    {value_val, value_ts}   = assigns.module.parameters.value.plot_data
+    {value_val, value_ts} = assigns.module.parameters.value.plot_data
     {target_val, target_ts} = assigns.module.parameters.target.plot_data
 
-    df = if value_val == [] do
-      nil
-    else
-      DataFrame.new(%{
-        timestamp:
-          value_ts ++ target_ts,
-        value:
-          value_val ++ target_val,
-        variable:
-          Enum.map(value_val, fn _val -> "value" end) ++
-          Enum.map(target_val, fn _val -> "target" end)
-      })
-    end
+    df =
+      if value_val == [] do
+        nil
+      else
+        DataFrame.new(%{
+          timestamp: value_ts ++ target_ts,
+          value: value_val ++ target_val,
+          variable:
+            Enum.map(value_val, fn _val -> "value" end) ++
+              Enum.map(target_val, fn _val -> "target" end)
+        })
+      end
 
-    assigns = assign(assigns, :dataframe, df)
-    |> assign(:unit, unit)
-    |> assign(:plottable, plottable)
+    assigns =
+      assign(assigns, :dataframe, df)
+      |> assign(:unit, unit)
+      |> assign(:plottable, plottable)
 
     ~H"""
     <h3 class="text-lg mt-4 font-bold text-gray-900 dark:text-white mb-2">
       {@module_name} : [value, target]
     </h3>
-    <.line_plot
-        dataframe = {@dataframe}
-        plottable = {@plottable}
-        unit      = {@unit}
-    />
+    <.line_plot dataframe={@dataframe} plottable={@plottable} unit={@unit} />
     """
-
   end
 
   def no_plot_available(assigns) do
@@ -564,6 +580,4 @@ defmodule SECoPComponents do
       op
     end
   end
-
-
 end
