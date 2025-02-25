@@ -1,4 +1,5 @@
 defmodule SecopServiceWeb.DashboardLive.Model do
+  alias SecopServiceWeb.DashboardLive.Plot
   alias SEC_Node_Supervisor
 
   def get_initial_model() do
@@ -91,12 +92,10 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     model
   end
 
-  def update_plot(model, path, plot_data) do
-    {host, port, module, parameter} = path
-
+  def update_plot(model, nodeid, module, parameter, plot_data) do
     put_path = [
       :active_nodes,
-      {host, port},
+      nodeid,
       :description,
       :modules,
       module,
@@ -105,9 +104,36 @@ defmodule SecopServiceWeb.DashboardLive.Model do
       :plot_data
     ]
 
-    updated_model = put_in(model, put_path, plot_data)
+    updated_model = if nodeid == model.current_node_key do
 
+      put_in(model, put_path, plot_data)
+      |> render_parameter_plot(nodeid, module, parameter)
+      |> render_module_plot(nodeid, module, parameter)
+    else
+      put_in(model, put_path, plot_data)
+
+    end
     updated_model
+  end
+
+  def render_parameter_plot(model, nodeid, module, parameter) do
+    new_parameter =
+      get_parameter(model, nodeid, module, parameter)
+      |> Plot.parameter_plot()
+
+    set_parameter(model, nodeid, module, parameter, new_parameter)
+  end
+
+  def render_module_plot(model, nodeid, module, parameter) when parameter in [:value, :target] do
+    new_module =
+      get_module(model, nodeid, module)
+      |> Plot.module_plot()
+
+    set_module(model, nodeid, module, new_module)
+  end
+
+  def render_module_plot(model, nodeid, module, parameter) do
+    model
   end
 
   def update_model_values(model, values_map) do
@@ -130,18 +156,21 @@ defmodule SecopServiceWeb.DashboardLive.Model do
                                                                param_acc ->
             new_param_description =
               Map.put(parameter_description, :value, nil)
-              |> Map.put(:plot_data, {[],[]})
-
+              |> Map.put(:plot_data, {[], []})
 
             new_param_description =
               update_param_descr(nil, parameter_name, new_param_description)
+              |> Plot.no_plot_available()
+
 
             updated_param_acc = Map.put(param_acc, parameter_name, new_param_description)
 
             updated_param_acc
           end)
+        module_description = Plot.no_plot_available(module_description)
+        |> Map.put(:parameters, parameters)
 
-        Map.put(acc, module_name, Map.put(module_description, :parameters, parameters))
+        Map.put(acc, module_name, module_description)
       end)
 
     updated_node = put_in(node[:description][:modules], modules)
@@ -254,5 +283,25 @@ defmodule SecopServiceWeb.DashboardLive.Model do
       400 <= stat_code and stat_code < 500 -> "bg-red-500"
       true -> "bg-white"
     end
+  end
+
+  defp get_module(model, nodeid, module) do
+    get_in(model, [:active_nodes, nodeid, :description, :modules, module])
+  end
+
+  defp set_module(model, nodeid, module_key, new_module) do
+    put_in(model, [:active_nodes, nodeid, :description, :modules, module_key], new_module)
+  end
+
+  defp get_parameter(model, nodeid, module, parameter) do
+    get_in(model, [:active_nodes, nodeid, :description, :modules, module, :parameters, parameter])
+  end
+
+  defp set_parameter(model, nodeid, module, parameter, new_parameter) do
+    put_in(
+      model,
+      [:active_nodes, nodeid, :description, :modules, module, :parameters, parameter],
+      new_parameter
+    )
   end
 end

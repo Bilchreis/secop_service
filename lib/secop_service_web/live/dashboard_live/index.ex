@@ -26,7 +26,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "new_node")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "plot")
 
-
     socket = assign(socket, :model, model)
 
     {:ok, socket}
@@ -58,12 +57,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
-
-
   # Handle Plot updates
   def handle_info({host, port, module, parameter, {:plot_data, plot_data}}, socket) do
     updated_model =
-      Model.update_plot(socket.assigns.model, {host, port, module, parameter}, plot_data)
+      Model.update_plot(socket.assigns.model, {host, port}, module, parameter, plot_data)
 
     {:noreply, assign(socket, :model, updated_model)}
   end
