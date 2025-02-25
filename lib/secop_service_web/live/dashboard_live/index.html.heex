@@ -20,7 +20,7 @@
     <div class="flex  mt-4">
       <div
         :if={@model.active_nodes[@model.current_node_key].description}
-        class="w-1/4 text-gray-500 dark:text-gray-400 me-4 mb-4 mb-0  "
+        class="text-gray-500 dark:text-gray-400 me-4 mb-4 mb-0  "
       >
         <div class=" p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
           <h3 class="text-lg font-bold text-gray-900 dark:text-white ">
@@ -56,7 +56,7 @@
 
       <div
         :if={@model.active_nodes[@model.current_node_key].description}
-        class=" text-medium  w-2/3 "
+        class=" text-medium  "
       >
         <%= for {mod_name,module} <- @model.active_nodes[@model.current_node_key].description.modules do %>
           <div class="grid grid-cols-2 gap-4">
