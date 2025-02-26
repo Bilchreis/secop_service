@@ -1,4 +1,4 @@
-<div class=" ">
+<div class="content-center ">
   <%= if Enum.empty?(@model.active_nodes) do %>
     <div>
       No Nodes detected yet
@@ -67,7 +67,10 @@
             />
             <div class="pb-4">
               <div class="p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
-                <.module_plot module={module} module_name={mod_name} />
+                <.module_plot
+                  module_name={mod_name}
+                  module={module}
+                />
               </div>
             </div>
           </div>
@@ -76,3 +79,4 @@
     </div>
   <% end %>
 </div>
+

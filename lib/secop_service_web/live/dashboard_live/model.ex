@@ -160,6 +160,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
             new_param_description =
               update_param_descr(nil, parameter_name, new_param_description)
+              |> Map.put(:chart_id, "plotly:#{node.host}:#{node.port}:#{module_name}:#{parameter_name}")
               |> Plot.no_plot_available()
 
 
@@ -167,7 +168,9 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
             updated_param_acc
           end)
-        module_description = Plot.no_plot_available(module_description)
+        module_description =
+          Map.put(module_description, :chart_id, "plotly:#{node.host}:#{node.port}:#{module_name}")
+        |> Plot.no_plot_available()
         |> Map.put(:parameters, parameters)
 
         Map.put(acc, module_name, module_description)

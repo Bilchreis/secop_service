@@ -105,4 +105,43 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     [ip, port] = String.split(pubsub_topic, ":")
     {String.to_charlist(ip), String.to_integer(port)}
   end
+
+  @impl true
+  def handle_event("request-plotly-data", %{"id" => chart_id}, %{assigns: assigns} = socket) do
+    # Use chart_id to determine which chart is requesting data
+
+
+    path = case String.split(chart_id, ":") do
+      ["plotly",host,port,module,parameter] -> [{String.to_charlist(host),String.to_integer(port)},:description,:modules,String.to_atom(module),:parameters,String.to_atom(parameter),:plot]
+      ["plotly",host,port,module] -> [{String.to_charlist(host),String.to_integer(port)},:description,:modules,String.to_atom(module),:plot]
+     end
+
+    plot = get_in(assigns.model.active_nodes,path)
+
+    {data, layout, config} = plot.plotly
+
+    {:noreply, push_event(socket, "plotly-data", %{
+      id: chart_id,
+      data: data,
+      layout: layout,
+      config: config
+    })}
+  end
+
+  # For real-time updates to a specific chart
+  def update_chart_data(socket, chart_id, new_data) do
+    data = [
+      %{
+        y: [new_data],
+        type: "scatter"
+      }
+    ]
+
+    push_event(socket, "plotly-update", %{
+      id: chart_id,  # Include the chart ID
+      data: data
+    })
+  end
+
+
 end
