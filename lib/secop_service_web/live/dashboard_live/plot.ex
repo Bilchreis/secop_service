@@ -87,15 +87,15 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
       {
         [
           %{
-            x: value_val,
-            y: value_ts,
+            x: value_ts,
+            y: value_val,
             type: "scatter",
             mode: "lines+markers",
             name: "value"
           },
           %{
-            x: target_val,
-            y: target_ts,
+            x: target_ts,
+            y: target_val,
             type: "scatter",
             mode: "lines+markers",
             name: "target"
@@ -137,8 +137,8 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
       {
         [
           %{
-            x: value_val,
-            y: value_ts,
+            x: value_ts,
+            y: value_val,
             type: "scatter",
             mode: "lines+markers",
             name: "value"
@@ -181,8 +181,8 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
       {
         [
           %{
-            x: value_val,
-            y: value_ts,
+            x: value_ts,
+            y: value_val,
             type: "scatter",
             mode: "lines+markers",
             name: "value"
