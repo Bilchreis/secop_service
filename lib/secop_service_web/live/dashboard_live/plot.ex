@@ -76,16 +76,7 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
     updated_module
   end
 
-  @spec drivable_plot(map()) :: %{
-          :plot => %{
-            chart_id: any(),
-            plot_available: boolean(),
-            plotly: {[...], map(), map()},
-            plottable: boolean(),
-            unit: any()
-          },
-          optional(any()) => any()
-        }
+
   def drivable_plot(module) do
     value_param = module.parameters.value
 

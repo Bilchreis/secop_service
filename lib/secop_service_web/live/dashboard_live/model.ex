@@ -307,4 +307,32 @@ defmodule SecopServiceWeb.DashboardLive.Model do
       new_parameter
     )
   end
+
+  defp get_plot_tuple(map) do
+    chart_id = map.chart_id
+
+    plot = Map.get(map,:plot)
+
+    plotly_data = if Map.has_key?(plot,:plotly) do
+      Map.get(plot,:plotly)
+      |> elem(0)
+    else
+      nil
+    end
+
+    {chart_id,plotly_data}
+  end
+
+  def get_module_plot_data(model, nodeid, module) do
+    get_module(model, nodeid, module) |>
+    get_plot_tuple()
+
+  end
+
+
+  def get_parameter_plot_data(model, nodeid, module, parameter) do
+    get_parameter(model, nodeid, module, parameter) |>
+    get_plot_tuple()
+  end
+
 end

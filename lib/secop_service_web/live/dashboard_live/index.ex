@@ -62,6 +62,8 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     updated_model =
       Model.update_plot(socket.assigns.model, {host, port}, module, parameter, plot_data)
 
+
+    socket = update_chart_data(socket,{host,port},module,parameter)
     {:noreply, assign(socket, :model, updated_model)}
   end
 
@@ -129,17 +131,17 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   # For real-time updates to a specific chart
-  def update_chart_data(socket, chart_id, new_data) do
-    data = [
-      %{
-        y: [new_data],
-        type: "scatter"
-      }
-    ]
+  def update_chart_data(socket,node_id, module, parameter) do
+
+    model = socket.assigns.model
+
+    {chart_id,plotly_data} = Model.get_module_plot_data(model,node_id,module)
+
+
 
     push_event(socket, "plotly-update", %{
       id: chart_id,  # Include the chart ID
-      data: data
+      data: plotly_data
     })
   end
 
