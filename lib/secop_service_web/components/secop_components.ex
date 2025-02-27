@@ -159,7 +159,7 @@ defmodule SECoPComponents do
     ~H"""
     <%= if @plottable do %>
       <%= if @plot_available do %>
-        <div>
+        <div class = "bg-gray-300 p-4 rounded-lg">
           <.plotly_chart id={@chart_id} />
         </div>
       <% else %>
@@ -224,7 +224,7 @@ defmodule SECoPComponents do
     ~H"""
     <button class={
       if @current do
-        "min-w-full bg-purple-500 hover:bg-purple-700 text-white text-left font-bold py-2 px-4 rounded"
+        " min-w-full bg-purple-500 hover:bg-purple-700 text-white text-left font-bold py-2 px-4 rounded"
       else
         "min-w-full bg-zinc-500  hover:bg-zinc-700 text-white text-left font-bold py-2 px-4 rounded"
       end
@@ -325,7 +325,7 @@ defmodule SECoPComponents do
   end
 
   attr :id, :string, required: true
-  attr :class, :any, default: "w-full h-64"
+  attr :class, :any, default: "w-full h-70"
 
   def plotly_chart(assigns) do
     ~H"""

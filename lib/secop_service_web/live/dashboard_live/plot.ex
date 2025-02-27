@@ -127,7 +127,9 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
         %{
           xaxis: %{ title: %{ text: "Time" }, type: "date" },
           yaxis: %{ title: %{ text: "#{plot_map.unit}" } },
-          margin: %{t: 30, b: 50, l: 50, r: 20}
+          margin: %{t: 30, b: 50, l: 50, r: 20},
+          paper_bgcolor: "rgba(0,0,0,0", #background color of the chart container space,
+          plot_bgcolor: "rgba(0,0,0,0)", ##background color of plot area
         },
         %{responsive: true}
       }
@@ -169,9 +171,11 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
           }
         ],
         %{
-          xaxis: %{title: "Time", type: "date"},
+          xaxis: %{ title: %{ text: "Time" }, type: "date" },
           yaxis: %{title: "#{plot_map.unit}"},
-          margin: %{t: 30, b: 40, l: 50, r: 20}
+          margin: %{t: 30, b: 40, l: 50, r: 20},
+          paper_bgcolor: "rgba(0,0,0,0", #background color of the chart container space,
+          plot_bgcolor: "rgba(0,0,0,0)", ##background color of plot area
         },
         %{responsive: true}
       }
@@ -210,7 +214,9 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
         %{
           xaxis: %{title: "Time", type: "date"},
           yaxis: %{title: "#{plot_map.unit}"},
-          margin: %{t: 30, b: 40, l: 50, r: 20}
+          margin: %{t: 30, b: 40, l: 50, r: 20},
+          paper_bgcolor: "rgba(0,0,0,0", #background color of the chart container space,
+          plot_bgcolor: "rgba(0,0,0,0)", ##background color of plot area
         },
         %{responsive: true}
       }
