@@ -54,6 +54,16 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
     Map.put(plot_map, :chart_id, chart_id)
   end
 
+  # Helper function to convert Unix timestamps to ISO format for Plotly
+  defp format_timestamps(timestamps) do
+
+    to_milliseconds(timestamps)
+  end
+
+  defp to_milliseconds(timestamps) do
+    Enum.map(timestamps, fn ts -> ts * 1000 end)
+  end
+
   def module_plot(module) do
     updated_module =
       case get_highest_if_class(module) do
@@ -66,6 +76,16 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
     updated_module
   end
 
+  @spec drivable_plot(map()) :: %{
+          :plot => %{
+            chart_id: any(),
+            plot_available: boolean(),
+            plotly: {[...], map(), map()},
+            plottable: boolean(),
+            unit: any()
+          },
+          optional(any()) => any()
+        }
   def drivable_plot(module) do
     value_param = module.parameters.value
 
@@ -80,6 +100,9 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
     {value_val, value_ts} = module.parameters.value.plot_data
     {target_val, target_ts} = module.parameters.target.plot_data
 
+    # Convert timestamps to ISO format
+    formatted_value_ts = format_timestamps(value_ts)
+    formatted_target_ts = format_timestamps(target_ts)
 
     plot_map = plot_available(plot_map, value_val)
 
@@ -87,24 +110,24 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
       {
         [
           %{
-            x: value_ts,
+            x: formatted_value_ts,
             y: value_val,
             type: "scatter",
-            mode: "lines+markers",
+            mode: "lines",
             name: "value"
           },
           %{
-            x: target_ts,
+            x: formatted_target_ts,
             y: target_val,
             type: "scatter",
-            mode: "lines+markers",
+            mode: "lines",
             name: "target"
           }
         ],
         %{
-          xaxis: %{title: "Time in s"},
-          yaxis: %{title: "#{plot_map.unit}"},
-          margin: %{t: 30, b: 40, l: 50, r: 20}
+          xaxis: %{ title: %{ text: "Time" }, type: "date" },
+          yaxis: %{ title: %{ text: "#{plot_map.unit}" } },
+          margin: %{t: 30, b: 50, l: 50, r: 20}
         },
         %{responsive: true}
       }
@@ -127,9 +150,10 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
       |> set_chart_id(module.chart_id)
 
 
-
-
     {value_val, value_ts} = module.parameters.value.plot_data
+
+    # Convert timestamps to ISO format
+    formatted_value_ts = format_timestamps(value_ts)
 
     plot_map = plot_available(plot_map, value_val)
 
@@ -137,26 +161,22 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
       {
         [
           %{
-            x: value_ts,
+            x: formatted_value_ts,
             y: value_val,
             type: "scatter",
-            mode: "lines+markers",
+            mode: "lines",
             name: "value"
           }
         ],
         %{
-          xaxis: %{title: "Time in s"},
+          xaxis: %{title: "Time", type: "date"},
           yaxis: %{title: "#{plot_map.unit}"},
           margin: %{t: 30, b: 40, l: 50, r: 20}
         },
         %{responsive: true}
       }
 
-
-
-
     plot_map = Map.put(plot_map, :plotly, plot_data)
-
 
     Map.put(module, :plot, plot_map)
   end
@@ -169,11 +189,10 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
       |> get_unit(parameter)
       |> set_chart_id(parameter.chart_id)
 
-
-
-
     {value_val, value_ts} = parameter.plot_data
 
+    # Convert timestamps to ISO format
+    formatted_value_ts = format_timestamps(value_ts)
 
     plot_map = plot_available(plot_map, value_val)
 
@@ -181,26 +200,22 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
       {
         [
           %{
-            x: value_ts,
+            x: formatted_value_ts,
             y: value_val,
             type: "scatter",
-            mode: "lines+markers",
+            mode: "lines",
             name: "value"
           }
         ],
         %{
-          xaxis: %{title: "Time in s"},
+          xaxis: %{title: "Time", type: "date"},
           yaxis: %{title: "#{plot_map.unit}"},
           margin: %{t: 30, b: 40, l: 50, r: 20}
         },
         %{responsive: true}
       }
 
-
-
-
     plot_map = Map.put(plot_map, :plotly, plot_data)
-
 
     Map.put(parameter, :plot, plot_map)
   end

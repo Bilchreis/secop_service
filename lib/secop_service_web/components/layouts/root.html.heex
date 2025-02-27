@@ -4,6 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+
+    <!-- Immediate dark mode implementation to prevent flash -->
+    <script>
+      // Immediately invoke to avoid FOUC
+      (function() {
+        if (localStorage.theme === 'dark' || 
+            (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
+
     <.live_title suffix=" · Phoenix Framework">
       {assigns[:page_title] || "SecopService"}
     </.live_title>
