@@ -42,10 +42,14 @@ Hooks.PlotlyChart = {
     
     this.handleEvent("plotly-update", ({ id, data, layout, config, traceIndices, dataIndices }) => {
       // Only update if this event is for this chart or if no ID is specified
+      
       if (!id || id === this.el.id) {
-        Plotly.update(this.el, data, layout || {}, traceIndices || 0, dataIndices || null);
+
+        Plotly.react(this.el, data, layout || {}, traceIndices || 0, dataIndices || null);
+
       }
     });
+
     
     this.handleEvent("plotly-add-traces", ({ id, traces, newIndices }) => {
       // Only update if this event is for this chart or if no ID is specified

@@ -2,6 +2,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   use SecopServiceWeb, :live_view
 
   alias SecopServiceWeb.DashboardLive.Model, as: Model
+  alias SecopServiceWeb.NodeControl
   alias SecopClient
   require Logger
 
@@ -47,13 +48,13 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
   def handle_info({:description_change, _pubsub_topic, _state}, socket) do
     # TODO
-
+    Loggerl.info("Description Change")
     {:noreply, socket}
   end
 
-  def handle_info({:conn_state, _pubsub_topic, _active}, socket) do
+  def handle_info({:conn_state, _pubsub_topic, active}, socket) do
     # TODO
-
+    Loggerl.info("conn_state Change #{inspect(active)}")
     {:noreply, socket}
   end
 
@@ -83,6 +84,14 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     updated_model = Model.add_node(socket.assigns.model, state)
 
     {:noreply, assign(socket, :model, updated_model)}
+  end
+
+  def handle_event("set_parameter", unsigned_params, socket) do
+    Logger.info("Setting parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}")
+
+    NodeControl.change(unsigned_params)
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -135,14 +144,26 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     model = socket.assigns.model
 
-    {chart_id,plotly_data} = Model.get_module_plot_data(model,node_id,module)
+    {chart_id,plotly} = Model.get_module_plot_data(model,node_id,module)
 
 
 
-    push_event(socket, "plotly-update", %{
-      id: chart_id,  # Include the chart ID
-      data: plotly_data
-    })
+
+    socket = if plotly do
+
+      {data, layout, config} = plotly
+
+      push_event(socket, "plotly-update", %{
+        id: chart_id,
+        data: data,
+        layout: layout,
+        config: config
+      })
+      else
+      socket
+    end
+    socket
+
   end
 
 

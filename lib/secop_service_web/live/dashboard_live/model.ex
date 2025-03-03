@@ -1,6 +1,7 @@
 defmodule SecopServiceWeb.DashboardLive.Model do
   alias SecopServiceWeb.DashboardLive.Plot
   alias SEC_Node_Supervisor
+  use Phoenix.Component
 
   def get_initial_model() do
     active_nodes = SEC_Node_Supervisor.get_active_nodes()
@@ -62,7 +63,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     model =
       case state.state do
         :initialized ->
-          state = update_node_values(state, nil)
+          state = init_node(state)
           active_nodes = Map.put(active_nodes, state.node_id, state)
 
           model =
@@ -162,6 +163,16 @@ defmodule SecopServiceWeb.DashboardLive.Model do
               update_param_descr(nil, parameter_name, new_param_description)
               |> Map.put(:chart_id, "plotly:#{node.host}:#{node.port}:#{module_name}:#{parameter_name}")
               |> Plot.parameter_plot()
+              |> Map.put(:set_form,
+                to_form(%{
+                  "host" => to_string(node.host),
+                  "port" => Integer.to_string(node.port),
+                  "parameter" => parameter_name,
+                  "module" => module_name,
+                  "value" => nil
+              }))
+
+
 
 
             updated_param_acc = Map.put(param_acc, parameter_name, new_param_description)
@@ -315,7 +326,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
     plotly_data = if Map.has_key?(plot,:plotly) do
       Map.get(plot,:plotly)
-      |> elem(0)
+
     else
       nil
     end

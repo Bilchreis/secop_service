@@ -1,11 +1,12 @@
 defmodule SECoPComponents do
   use Phoenix.Component
 
+  alias ElixirSense.Core.Introspection
   alias Phoenix.LiveView.JS
   alias Jason
 
 
-  import SecopServiceWeb.CoreComponents, only: [icon: 1]
+  import SecopServiceWeb.CoreComponents
 
   attr :equipment_id, :string, required: true
   attr :pubsub_topic, :string, required: true
@@ -53,17 +54,51 @@ defmodule SECoPComponents do
   attr :parameter, :string, required: true
   attr :parameter_name, :string, required: true
 
+
   def parameter(assigns) do
     assigns = assign(assigns, parse_param_value(assigns[:parameter]))
+    |> assign(:unit, Map.get(assigns.parameter.datainfo, :unit))
+
+
+
 
     ~H"""
-    <div class=" flex justify-between items-center py-2  ">
+    <div class=" flex justify-between items-center   ">
       {@parameter_name}:
     </div>
-    <div class="flex justify-between items-center py-2  ">
-      {@string_value}
+    <div class="flex justify-between items-center  ">
+      {@string_value} {@unit}
     </div>
-    <div class="flex justify-between items-center py-2  "></div>
+    <%=if @parameter.readonly do %>
+    <div class="flex justify-between items-center ">
+
+    </div>
+    <% else %>
+    <div class="flex justify-between items-center">
+      <.form for={@parameter.set_form} phx-submit="set_parameter" class="flex space-x-2">
+
+        <input type="hidden" name="port" value={Phoenix.HTML.Form.input_value(@parameter.set_form, :port)}  />
+        <input type="hidden" name="host" value={Phoenix.HTML.Form.input_value(@parameter.set_form, :host)}/>
+        <input type="hidden" name="module" value={Phoenix.HTML.Form.input_value(@parameter.set_form, :module)} />
+        <input type="hidden" name="parameter" value={@parameter_name} />
+        <.input
+          type="text"
+          field={@parameter.set_form[:value]}
+          placeholder="new value"
+
+          phx-debounce="500"
+        />
+        <button
+          type="submit"
+          class="mt-2 phx-submit-loading:opacity-75 rounded-lg dark:bg-gray-500 bg-gray-400 hover:bg-gray-600 dark:hover:bg-gray-700   px-3 text-sm font-bold leading-6 text-white active:text-white/80"
+
+        >
+          Set
+        </button>
+      </.form>
+    </div>
+
+    <% end %>
     """
   end
 
@@ -94,7 +129,7 @@ defmodule SECoPComponents do
       @box_color,
       "bg-gray-50 dark:bg-gray-900 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-full mb-4"
     ]}>
-      <.accordion id={@mod_name} class="mb-2 bg-white dark:bg-gray-700 rounded-lg  ">
+      <.accordion id={@mod_name} class="mb-2 bg-white dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg  ">
         <:trigger class="p-4 pr-10 text-lg">
           <h3 class="text-lg text-left font-bold text-gray-900 dark:text-white">
             {@mod_name} :
@@ -119,7 +154,7 @@ defmodule SECoPComponents do
           <% end %>
         </:panel>
       </.accordion>
-      <div class="grid grid-cols-3 gap-4 content-start">
+      <div class="grid grid-cols-3 gap-7 pt-6 content-start">
         <%= for {parameter_name, parameter} <- @module.parameters do %>
           <.parameter parameter_name={parameter_name} parameter={parameter} />
         <% end %>

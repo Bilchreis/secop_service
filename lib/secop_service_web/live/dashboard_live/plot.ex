@@ -122,7 +122,10 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
           paper_bgcolor: "rgba(0,0,0,0", #background color of the chart container space,
           plot_bgcolor: "rgba(0,0,0,0)", ##background color of plot area
         },
-        %{responsive: true}
+        %{
+          responsive: true,
+          displayModeBar: false
+        }
       }
 
     plot_map = Map.put(plot_map, :plotly, plot_data)
@@ -168,7 +171,10 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
           paper_bgcolor: "rgba(0,0,0,0", #background color of the chart container space,
           plot_bgcolor: "rgba(0,0,0,0)", ##background color of plot area
         },
-        %{responsive: true}
+        %{
+          responsive: true,
+          displayModeBar: false
+        }
       }
 
     plot_map = Map.put(plot_map, :plotly, plot_data)
@@ -209,7 +215,10 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
           paper_bgcolor: "rgba(0,0,0,0", #background color of the chart container space,
           plot_bgcolor: "rgba(0,0,0,0)", ##background color of plot area
         },
-        %{responsive: true}
+        %{
+          responsive: true,
+          displayModeBar: false
+        }
       }
 
     plot_map = Map.put(plot_map, :plotly, plot_data)
