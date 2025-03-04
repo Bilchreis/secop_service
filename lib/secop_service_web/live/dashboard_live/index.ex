@@ -46,19 +46,21 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_info({:description_change, _pubsub_topic, _state}, socket) do
     # TODO
-    Loggerl.info("Description Change")
+    Logger.info("Description Change")
     {:noreply, socket}
   end
 
   def handle_info({:conn_state, _pubsub_topic, active}, socket) do
     # TODO
-    Loggerl.info("conn_state Change #{inspect(active)}")
+    Logger.info("conn_state Change #{inspect(active)}")
     {:noreply, socket}
   end
 
   # Handle Plot updates
+  @impl true
   def handle_info({host, port, module, parameter, {:plot_data, plot_data}}, socket) do
     updated_model =
       Model.update_plot(socket.assigns.model, {host, port}, module, parameter, plot_data)
@@ -86,13 +88,26 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, assign(socket, :model, updated_model)}
   end
 
+  @impl true
   def handle_event("set_parameter", unsigned_params, socket) do
     Logger.info("Setting parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}")
 
-    NodeControl.change(unsigned_params)
+    NodeControl.change(unsigned_params,socket.assigns.model)
 
     {:noreply, socket}
   end
+
+  @impl true
+  def handle_event("validate_parameter", unsigned_params, socket) do
+    Logger.info("validating parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}")
+
+
+    model = NodeControl.validate(unsigned_params, socket.assigns.model)
+
+    {:noreply, assign(socket, :model, model)}
+  end
+
+
 
   @impl true
   def handle_event("node-select", %{"pubsubtopic" => new_pubsub_topic}, socket) do

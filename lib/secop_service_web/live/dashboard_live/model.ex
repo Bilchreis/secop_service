@@ -299,19 +299,19 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     end
   end
 
-  defp get_module(model, nodeid, module) do
+  def get_module(model, nodeid, module) do
     get_in(model, [:active_nodes, nodeid, :description, :modules, module])
   end
 
-  defp set_module(model, nodeid, module_key, new_module) do
+  def set_module(model, nodeid, module_key, new_module) do
     put_in(model, [:active_nodes, nodeid, :description, :modules, module_key], new_module)
   end
 
-  defp get_parameter(model, nodeid, module, parameter) do
+  def get_parameter(model, nodeid, module, parameter) do
     get_in(model, [:active_nodes, nodeid, :description, :modules, module, :parameters, parameter])
   end
 
-  defp set_parameter(model, nodeid, module, parameter, new_parameter) do
+  def set_parameter(model, nodeid, module, parameter, new_parameter) do
     put_in(
       model,
       [:active_nodes, nodeid, :description, :modules, module, :parameters, parameter],

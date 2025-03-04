@@ -1,7 +1,6 @@
 defmodule SECoPComponents do
   use Phoenix.Component
 
-  alias ElixirSense.Core.Introspection
   alias Phoenix.LiveView.JS
   alias Jason
 
@@ -75,7 +74,7 @@ defmodule SECoPComponents do
     </div>
     <% else %>
     <div class="flex justify-between items-center">
-      <.form for={@parameter.set_form} phx-submit="set_parameter" class="flex space-x-2">
+      <.form for={@parameter.set_form} phx-submit="set_parameter" phx-change="validate_parameter" class="flex space-x-2">
 
         <input type="hidden" name="port" value={Phoenix.HTML.Form.input_value(@parameter.set_form, :port)}  />
         <input type="hidden" name="host" value={Phoenix.HTML.Form.input_value(@parameter.set_form, :host)}/>
@@ -95,6 +94,8 @@ defmodule SECoPComponents do
         >
           Set
         </button>
+
+
       </.form>
     </div>
 
