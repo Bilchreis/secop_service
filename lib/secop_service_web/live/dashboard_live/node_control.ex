@@ -37,18 +37,28 @@ defmodule SecopServiceWeb.NodeControl do
     parameter_map = case Jason.decode(set_form["value"], keys: :atoms) do
       {:ok, value} ->
         case validate_against_datainfo(datainfo, value) do
-          {:ok, _} -> Map.put(parameter_map, :validation, "border-4 border-green-500")
+          {:ok, _} ->
+            # Add validation indicator AND update the form's value
+            set_form = %{parameter_map.set_form |
+              params: Map.put(parameter_map.set_form.params, "value", set_form["value"]),
+              source: Map.put(parameter_map.set_form.source, "value", set_form["value"]),
+              errors: []
+
+            }
+            parameter_map
+            |> Map.put(:validation, "border-4 border-green-500")
+            |> Map.put(:set_form, set_form)
           {:error, msg} ->
             set_form = parameter_map.set_form
 
-            set_form = %{set_form | errors: [msg]}
-            Map.put(parameter_map, :set_form, set_form)
+          # Field-specific error
+          set_form = %{parameter_map.set_form | errors: [value: {msg, []}]}
+          Map.put(parameter_map, :set_form, set_form)
         end
       {:error, _} ->
-        set_form = parameter_map.set_form
-
-        set_form = %{set_form | errors: ["Invalid JSON"]}
-        Map.put(parameter_map, :set_form, set_form)
+      # Field-specific JSON error
+      set_form = %{parameter_map.set_form | errors: [value: {"Invalid JSON format", []}]}
+      Map.put(parameter_map, :set_form, set_form)
 
     end
 

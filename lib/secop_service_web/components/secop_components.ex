@@ -62,18 +62,22 @@ defmodule SECoPComponents do
 
 
     ~H"""
-    <div class=" flex justify-between items-center   ">
+    <div class=" flex justify-between items-start   ">
+      <div class = "mt-4 block w-full rounded-lg text-white text-lg ">
       {@parameter_name}:
+      </div>
     </div>
-    <div class="flex justify-between items-center  ">
+    <div class="flex justify-between items-start  ">
+      <div class = "mt-4 block w-full rounded-lg text-white text-lg ">
       {@string_value} {@unit}
+      </div>
     </div>
     <%=if @parameter.readonly do %>
-    <div class="flex justify-between items-center ">
+    <div class="flex justify-between items-start ">
 
     </div>
     <% else %>
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-start">
       <.form for={@parameter.set_form} phx-submit="set_parameter" phx-change="validate_parameter" class="flex space-x-2">
 
         <input type="hidden" name="port" value={Phoenix.HTML.Form.input_value(@parameter.set_form, :port)}  />
@@ -81,15 +85,16 @@ defmodule SECoPComponents do
         <input type="hidden" name="module" value={Phoenix.HTML.Form.input_value(@parameter.set_form, :module)} />
         <input type="hidden" name="parameter" value={@parameter_name} />
         <.input
+          name = "value"
           type="text"
           field={@parameter.set_form[:value]}
           placeholder="new value"
-
           phx-debounce="500"
+          id = {"form:" <> @parameter.parameter_id }
         />
         <button
           type="submit"
-          class="mt-2 phx-submit-loading:opacity-75 rounded-lg dark:bg-gray-500 bg-gray-400 hover:bg-gray-600 dark:hover:bg-gray-700   px-3 text-sm font-bold leading-6 text-white active:text-white/80"
+          class="mt-2 max-h-11 phx-submit-loading:opacity-75 rounded-lg dark:bg-gray-500 bg-gray-400 hover:bg-gray-600 dark:hover:bg-gray-700   px-3 text-sm font-bold leading-6 text-white active:text-white/80"
 
         >
           Set

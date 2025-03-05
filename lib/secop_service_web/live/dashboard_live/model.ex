@@ -162,6 +162,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
             new_param_description =
               update_param_descr(nil, parameter_name, new_param_description)
               |> Map.put(:chart_id, "plotly:#{node.host}:#{node.port}:#{module_name}:#{parameter_name}")
+              |> Map.put(:parameter_id, "#{node.host}:#{node.port}:#{module_name}:#{parameter_name}")
               |> Plot.parameter_plot()
               |> Map.put(:set_form,
                 to_form(%{
