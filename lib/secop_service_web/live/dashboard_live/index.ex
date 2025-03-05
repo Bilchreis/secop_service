@@ -2,6 +2,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   use SecopServiceWeb, :live_view
 
   alias SecopServiceWeb.DashboardLive.Model, as: Model
+  alias SecopServiceWeb.NodeControl
   alias SecopClient
   require Logger
 
@@ -45,23 +46,27 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_info({:description_change, _pubsub_topic, _state}, socket) do
     # TODO
-
+    Logger.info("Description Change")
     {:noreply, socket}
   end
 
-  def handle_info({:conn_state, _pubsub_topic, _active}, socket) do
+  def handle_info({:conn_state, _pubsub_topic, active}, socket) do
     # TODO
-
+    Logger.info("conn_state Change #{inspect(active)}")
     {:noreply, socket}
   end
 
   # Handle Plot updates
+  @impl true
   def handle_info({host, port, module, parameter, {:plot_data, plot_data}}, socket) do
     updated_model =
       Model.update_plot(socket.assigns.model, {host, port}, module, parameter, plot_data)
 
+
+    socket = update_chart_data(socket,{host,port},module,parameter)
     {:noreply, assign(socket, :model, updated_model)}
   end
 
@@ -82,6 +87,27 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     {:noreply, assign(socket, :model, updated_model)}
   end
+
+  @impl true
+  def handle_event("set_parameter", unsigned_params, socket) do
+    Logger.info("Setting parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}")
+
+    NodeControl.change(unsigned_params,socket.assigns.model)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("validate_parameter", unsigned_params, socket) do
+    Logger.info("validating parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}")
+
+
+    model = NodeControl.validate(unsigned_params, socket.assigns.model)
+
+    {:noreply, assign(socket, :model, model)}
+  end
+
+
 
   @impl true
   def handle_event("node-select", %{"pubsubtopic" => new_pubsub_topic}, socket) do
@@ -105,4 +131,55 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     [ip, port] = String.split(pubsub_topic, ":")
     {String.to_charlist(ip), String.to_integer(port)}
   end
+
+  @impl true
+  def handle_event("request-plotly-data", %{"id" => chart_id}, %{assigns: assigns} = socket) do
+    # Use chart_id to determine which chart is requesting data
+
+
+    path = case String.split(chart_id, ":") do
+      ["plotly",host,port,module,parameter] -> [{String.to_charlist(host),String.to_integer(port)},:description,:modules,String.to_atom(module),:parameters,String.to_atom(parameter),:plot]
+      ["plotly",host,port,module] -> [{String.to_charlist(host),String.to_integer(port)},:description,:modules,String.to_atom(module),:plot]
+     end
+
+    plot = get_in(assigns.model.active_nodes,path)
+
+    {data, layout, config} = plot.plotly
+
+    {:noreply, push_event(socket, "plotly-data", %{
+      id: chart_id,
+      data: data,
+      layout: layout,
+      config: config
+    })}
+  end
+
+  # For real-time updates to a specific chart
+  def update_chart_data(socket,node_id, module, parameter) do
+
+    model = socket.assigns.model
+
+    {chart_id,plotly} = Model.get_module_plot_data(model,node_id,module)
+
+
+
+
+    socket = if plotly do
+
+      {data, layout, config} = plotly
+
+      push_event(socket, "plotly-update", %{
+        id: chart_id,
+        data: data,
+        layout: layout,
+        config: config
+      })
+      else
+      socket
+    end
+    socket
+
+  end
+
+
 end
