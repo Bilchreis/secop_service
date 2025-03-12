@@ -4,7 +4,6 @@ defmodule SECoPComponents do
   alias Phoenix.LiveView.JS
   alias Jason
 
-
   import SecopServiceWeb.CoreComponents
 
   attr :equipment_id, :string, required: true
@@ -53,57 +52,64 @@ defmodule SECoPComponents do
   attr :parameter, :string, required: true
   attr :parameter_name, :string, required: true
 
-
   def parameter(assigns) do
-    assigns = assign(assigns, parse_param_value(assigns[:parameter]))
-    |> assign(:unit, Map.get(assigns.parameter.datainfo, :unit))
-
-
-
+    assigns =
+      assign(assigns, parse_param_value(assigns[:parameter]))
+      |> assign(:unit, Map.get(assigns.parameter.datainfo, :unit))
 
     ~H"""
     <div class=" flex justify-between items-start   ">
-      <div class = "mt-4 block w-full rounded-lg text-white text-lg ">
-      {@parameter_name}:
+      <div class="mt-4 block w-full rounded-lg text-white text-lg ">
+        {@parameter_name}:
       </div>
     </div>
     <div class="flex justify-between items-start  ">
-      <div class = "mt-4 block w-full rounded-lg text-white text-lg ">
-      {@string_value} {@unit}
+      <div class="mt-4 block w-full rounded-lg text-white text-lg ">
+        {@string_value} {@unit}
       </div>
     </div>
-    <%=if @parameter.readonly do %>
-    <div class="flex justify-between items-start ">
-
-    </div>
+    <%= if @parameter.readonly do %>
+      <div class="flex justify-between items-start "></div>
     <% else %>
-    <div class="flex justify-between items-start">
-      <.form for={@parameter.set_form} phx-submit="set_parameter" phx-change="validate_parameter" class="flex space-x-2">
-
-        <input type="hidden" name="port" value={Phoenix.HTML.Form.input_value(@parameter.set_form, :port)}  />
-        <input type="hidden" name="host" value={Phoenix.HTML.Form.input_value(@parameter.set_form, :host)}/>
-        <input type="hidden" name="module" value={Phoenix.HTML.Form.input_value(@parameter.set_form, :module)} />
-        <input type="hidden" name="parameter" value={@parameter_name} />
-        <.input
-          name = "value"
-          type="text"
-          field={@parameter.set_form[:value]}
-          placeholder="new value"
-          phx-debounce="500"
-          id = {"form:" <> @parameter.parameter_id }
-        />
-        <button
-          type="submit"
-          class="mt-2 max-h-11 phx-submit-loading:opacity-75 rounded-lg dark:bg-gray-500 bg-gray-400 hover:bg-gray-600 dark:hover:bg-gray-700   px-3 text-sm font-bold leading-6 text-white active:text-white/80"
-
+      <div class="flex justify-between items-start">
+        <.form
+          for={@parameter.set_form}
+          phx-submit="set_parameter"
+          phx-change="validate_parameter"
+          class="flex space-x-2"
         >
-          Set
-        </button>
-
-
-      </.form>
-    </div>
-
+          <input
+            type="hidden"
+            name="port"
+            value={Phoenix.HTML.Form.input_value(@parameter.set_form, :port)}
+          />
+          <input
+            type="hidden"
+            name="host"
+            value={Phoenix.HTML.Form.input_value(@parameter.set_form, :host)}
+          />
+          <input
+            type="hidden"
+            name="module"
+            value={Phoenix.HTML.Form.input_value(@parameter.set_form, :module)}
+          />
+          <input type="hidden" name="parameter" value={@parameter_name} />
+          <.input
+            name="value"
+            type="text"
+            field={@parameter.set_form[:value]}
+            placeholder="new value"
+            phx-debounce="500"
+            id={"form:" <> @parameter.parameter_id }
+          />
+          <button
+            type="submit"
+            class="mt-2 max-h-11 phx-submit-loading:opacity-75 rounded-lg dark:bg-gray-500 bg-gray-400 hover:bg-gray-600 dark:hover:bg-gray-700   px-3 text-sm font-bold leading-6 text-white active:text-white/80"
+          >
+            Set
+          </button>
+        </.form>
+      </div>
     <% end %>
     """
   end
@@ -135,7 +141,10 @@ defmodule SECoPComponents do
       @box_color,
       "bg-gray-50 dark:bg-gray-900 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-full mb-4"
     ]}>
-      <.accordion id={@mod_name} class="mb-2 bg-white dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg  ">
+      <.accordion
+        id={@mod_name}
+        class="mb-2 bg-white dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg  "
+      >
         <:trigger class="p-4 pr-10 text-lg">
           <h3 class="text-lg text-left font-bold text-gray-900 dark:text-white">
             {@mod_name} :
@@ -171,63 +180,13 @@ defmodule SECoPComponents do
 
 
 
-
-
-  attr :module_name, :string, required: true
-  attr :module, :map, required: true
-
-  def module_plot(assigns) do
-
-
-    ~H"""
-    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">{@module_name} : </h3>
-    <div>
-
-      <.general_plot
-      plottable = {@module.plot.plottable}
-      chart_id = {@module.chart_id}
-      plot_available = {@module.plot.plot_available}
-      />
-    </div>
-    """
-  end
-
-
-  attr :plottable, :boolean, required: true
-  attr :chart_id,  :string, required: true
-  attr :plot_available, :boolean, default: false
-  def general_plot(assigns) do
-    ~H"""
-    <%= if @plottable do %>
-      <%= if @plot_available do %>
-        <div class = "bg-gray-300 p-4 rounded-lg">
-          <.plotly_chart id={@chart_id} />
-        </div>
-      <% else %>
-        <div class="  animate-pulse  flex items-center justify-center h-full text-center">
-          Waiting for plottable Data
-        </div>
-      <% end %>
-    <% else %>
-      Data not Plottable
-    <% end %>
-    """
-  end
-
-
-
-
-
-
   attr :parameter, :string, required: true
   attr :module, :string, required: true
   attr :parameter_map, :map, required: true
 
   def hist_widget(assigns) do
     ~H"""
-    <div class=" h-full pt-5 ">
-
-    </div>
+    <div class=" h-full pt-5 "></div>
     """
   end
 
@@ -363,17 +322,6 @@ defmodule SECoPComponents do
     else
       op
     end
-  end
-
-  attr :id, :string, required: true
-  attr :class, :any, default: "w-full h-70"
-
-  def plotly_chart(assigns) do
-    ~H"""
-    <div id={@id} phx-hook="PlotlyChart" class={@class} phx-update="ignore">
-      <!-- Plotly.js will render the chart here -->
-    </div>
-    """
   end
 
 end

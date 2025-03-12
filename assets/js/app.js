@@ -32,34 +32,58 @@ let Hooks = {}
 
 Hooks.PlotlyChart = {
   mounted() {
+
     // Send the chart ID when requesting data
-    this.handleEvent("plotly-data", ({ id, data, layout, config }) => {
+    this.handleEvent(`plotly-data-${this.el.id}`, ({ data, layout, config }) => {
       // Only update if this event is for this chart or if no ID is specified
-      if (!id || id === this.el.id) {
-        Plotly.newPlot(this.el, data, layout || {}, config || {});
-      }
+
+      Plotly.newPlot(this.el, data, layout || {}, config || {});
+
     });
     
-    this.handleEvent("plotly-update", ({ id, data, layout, config, traceIndices, dataIndices }) => {
+    this.handleEvent("plotly-update", ({  data, layout, config }) => {
       // Only update if this event is for this chart or if no ID is specified
       
-      if (!id || id === this.el.id) {
 
-        Plotly.react(this.el, data, layout || {}, traceIndices || 0, dataIndices || null);
+      Plotly.react(this.el, data, layout || {});
 
+      // Explicitly null out references to help garbage collection
+      data = null;
+      layout = null;
+      config = null;
+
+
+    });
+
+    // Add new handler for extending traces (real-time updates)
+    this.handleEvent(`extend-traces-${this.el.id}`, ({ x, y, traceIndices }) => {
+      try {
+        // Ensure we have an initialized plot before trying to extend it
+        if (this.el._fullData) {
+          // Use extendTraces to efficiently add new points
+          Plotly.extendTraces(this.el, {
+            x: x,  // Array of x arrays
+            y: y   // Array of y arrays
+          }, traceIndices || [0]);
+        } else {
+          // If plot isn't initialized, request full data
+          this.pushEventTo(this.el, "request-plotly-data", { id: this.el.id });
+        }
+      } catch (error) {
+        console.error("Error extending traces:", error);
       }
     });
 
     
-    this.handleEvent("plotly-add-traces", ({ id, traces, newIndices }) => {
+    this.handleEvent("plotly-add-traces", ({  traces, newIndices }) => {
       // Only update if this event is for this chart or if no ID is specified
-      if (!id || id === this.el.id) {
+
         Plotly.addTraces(this.el, traces, newIndices || null);
-      }
+
     });
     
     // Request initial data when the hook is mounted, include the chart ID
-    this.pushEvent("request-plotly-data", { id: this.el.id });
+    this.pushEventTo(this.el,"request-plotly-data", { id: this.el.id });
   },
   
   destroyed() {

@@ -25,7 +25,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "state_change")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "secop_conn_state")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "new_node")
-    Phoenix.PubSub.subscribe(:secop_client_pubsub, "plot")
 
     socket = assign(socket, :model, model)
 
@@ -59,16 +58,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
-  # Handle Plot updates
-  @impl true
-  def handle_info({host, port, module, parameter, {:plot_data, plot_data}}, socket) do
-    updated_model =
-      Model.update_plot(socket.assigns.model, {host, port}, module, parameter, plot_data)
 
-
-    socket = update_chart_data(socket,{host,port},module,parameter)
-    {:noreply, assign(socket, :model, updated_model)}
-  end
 
   def handle_info({:state_change, pubsub_topic, state}, socket) do
     Logger.info("new node status: #{pubsub_topic} #{state.state}")
@@ -88,26 +78,48 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, assign(socket, :model, updated_model)}
   end
 
+  defp remove_last_segment(topic) do
+    parts = String.split(topic, ":")
+    parts |> Enum.drop(-1) |> Enum.join(":")
+  end
+
+  def handle_info({:value_update, pubsub_topic, data_report}, socket) do
+
+    # Parameter-level plots
+    send_update(SecopServiceWeb.Components.PlotlyChart,
+     id: "plotly:" <> pubsub_topic,
+     value_update: data_report,
+     pubsub_topic: pubsub_topic)
+
+     # Module-level plots
+     send_update(SecopServiceWeb.Components.PlotlyChart,
+     id: "plotly:" <> remove_last_segment(pubsub_topic),
+     value_update: data_report,
+     pubsub_topic: pubsub_topic)
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_event("set_parameter", unsigned_params, socket) do
-    Logger.info("Setting parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}")
+    Logger.info(
+      "Setting parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}"
+    )
 
-    NodeControl.change(unsigned_params,socket.assigns.model)
+    NodeControl.change(unsigned_params, socket.assigns.model)
 
     {:noreply, socket}
   end
 
   @impl true
   def handle_event("validate_parameter", unsigned_params, socket) do
-    Logger.info("validating parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}")
-
+    Logger.info(
+      "validating parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}"
+    )
 
     model = NodeControl.validate(unsigned_params, socket.assigns.model)
 
     {:noreply, assign(socket, :model, model)}
   end
-
-
 
   @impl true
   def handle_event("node-select", %{"pubsubtopic" => new_pubsub_topic}, socket) do
@@ -132,54 +144,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {String.to_charlist(ip), String.to_integer(port)}
   end
 
-  @impl true
-  def handle_event("request-plotly-data", %{"id" => chart_id}, %{assigns: assigns} = socket) do
-    # Use chart_id to determine which chart is requesting data
 
-
-    path = case String.split(chart_id, ":") do
-      ["plotly",host,port,module,parameter] -> [{String.to_charlist(host),String.to_integer(port)},:description,:modules,String.to_atom(module),:parameters,String.to_atom(parameter),:plot]
-      ["plotly",host,port,module] -> [{String.to_charlist(host),String.to_integer(port)},:description,:modules,String.to_atom(module),:plot]
-     end
-
-    plot = get_in(assigns.model.active_nodes,path)
-
-    {data, layout, config} = plot.plotly
-
-    {:noreply, push_event(socket, "plotly-data", %{
-      id: chart_id,
-      data: data,
-      layout: layout,
-      config: config
-    })}
-  end
-
-  # For real-time updates to a specific chart
-  def update_chart_data(socket,node_id, module, parameter) do
-
-    model = socket.assigns.model
-
-    {chart_id,plotly} = Model.get_module_plot_data(model,node_id,module)
-
-
-
-
-    socket = if plotly do
-
-      {data, layout, config} = plotly
-
-      push_event(socket, "plotly-update", %{
-        id: chart_id,
-        data: data,
-        layout: layout,
-        config: config
-      })
-      else
-      socket
-    end
-    socket
-
-  end
 
 
 end
