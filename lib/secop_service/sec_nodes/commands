@@ -1,0 +1,24 @@
+defmodule SecopService.Sec_Nodes.Command do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "commands" do
+    field :name, :string
+    field :descriotion, :string
+    field :datainfo, :map
+    field :readonly, :boolean, default: false
+    field :properties, :map  # JSONB column for flexible properties
+
+
+    belongs_to :module, SecopService.Sec_Nodes.Module
+
+
+    timestamps()
+  end
+
+  def changeset(parameter, attrs) do
+    parameter
+    |> cast(attrs, [:name, :description, :datainfo, :readonly, :properties, :module_id])
+    |> validate_required([:name, :module_id])
+  end
+end

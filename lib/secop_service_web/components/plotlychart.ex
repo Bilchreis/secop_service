@@ -128,23 +128,26 @@ defmodule SecopServiceWeb.Components.PlotlyChart do
 
 
   def render(assigns) do
+
   ~H"""
-  <div>
-  <%= if @plot.plottable do %>
-    <%= if @plot.plot_available do %>
-      <div class="bg-gray-300 p-4 rounded-lg">
-        <div id={@id} class = "w-full h-70" phx-hook="PlotlyChart" phx-update="ignore">
-          <!-- Plotly will render here -->
+  <div class="h-full">
+    <%= if @plot.plottable do %>
+      <%= if @plot.plot_available do %>
+        <div class="bg-gray-300 p-4 rounded-lg h-full">
+          <div id={@id} class="w-full h-full" phx-hook="PlotlyChart" phx-update="ignore">
+            <!-- Plotly will render here -->
+          </div>
         </div>
-      </div>
+      <% else %>
+        <div class="animate-pulse flex items-center justify-center h-full text-center bg-gray-300 p-4 rounded-lg">
+          <p>Waiting for plottable Data</p>
+        </div>
+      <% end %>
     <% else %>
-      <div class="  animate-pulse  flex items-center justify-center h-full text-center">
-        Waiting for plottable Data
+      <div class="flex items-center justify-center h-80 text-center bg-gray-300 p-4 rounded-lg">
+        <p>Data not Plottable</p>
       </div>
     <% end %>
-  <% else %>
-    Data not Plottable
-  <% end %>
   </div>
   """
   end
