@@ -23,7 +23,7 @@ import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
 // Import Plotly.js
-import Plotly from 'plotly.js-dist'
+import Plotly from 'plotly.js-dist-min';
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
