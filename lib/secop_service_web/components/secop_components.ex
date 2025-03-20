@@ -178,8 +178,6 @@ defmodule SECoPComponents do
     """
   end
 
-
-
   attr :parameter, :string, required: true
   attr :module, :string, required: true
   attr :parameter_map, :map, required: true
@@ -323,7 +321,4 @@ defmodule SECoPComponents do
       op
     end
   end
-
-
-
 end

@@ -2,23 +2,42 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:uuid, Ecto.UUID, autogenerate: true}
+  @derive {Phoenix.Param, key: :uuid}
   schema "sec_nodes" do
     field :equipment_id, :string
     field :host, :string
     field :port, :integer
     field :description, :string
-    field :describe_message, :map    # JSONB full describe message
-    field :properties, :map  # JSONB column for flexible properties
-    field :uuid, Ecto.UUID, primary_key: true
+    # JSONB full describe message
+    field :describe_message, :map
+    # JSONB column for flexible properties
+    field :properties, :map
 
-    has_many :modules, SecopService.Sec_Nodes.Module
+    has_many :modules, SecopService.Sec_Nodes.Module, foreign_key: :sec_node_id
 
     timestamps()
   end
 
   def changeset(sec_node, attrs) do
     sec_node
-    |> cast(attrs, [:uuid, :equipment_id, :host, :port, :description, :decribe_message, :properties])
-    |> validate_required([:uuid, :equipment_id, :host, :port, :description, :describe_message, :properties])
+    |> cast(attrs, [
+      :uuid,
+      :equipment_id,
+      :host,
+      :port,
+      :description,
+      :describe_message,
+      :properties
+    ])
+    |> validate_required([
+      :uuid,
+      :equipment_id,
+      :host,
+      :port,
+      :description,
+      :describe_message,
+      :properties
+    ])
   end
 end

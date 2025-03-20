@@ -58,8 +58,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
-
-
   def handle_info({:state_change, pubsub_topic, state}, socket) do
     Logger.info("new node status: #{pubsub_topic} #{state.state}")
 
@@ -84,18 +82,20 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   def handle_info({:value_update, pubsub_topic, data_report}, socket) do
-
     # Parameter-level plots
     send_update(SecopServiceWeb.Components.PlotlyChart,
-     id: "plotly:" <> pubsub_topic,
-     value_update: data_report,
-     pubsub_topic: pubsub_topic)
+      id: "plotly:" <> pubsub_topic,
+      value_update: data_report,
+      pubsub_topic: pubsub_topic
+    )
 
-     # Module-level plots
-     send_update(SecopServiceWeb.Components.PlotlyChart,
-     id: "plotly:" <> remove_last_segment(pubsub_topic),
-     value_update: data_report,
-     pubsub_topic: pubsub_topic)
+    # Module-level plots
+    send_update(SecopServiceWeb.Components.PlotlyChart,
+      id: "plotly:" <> remove_last_segment(pubsub_topic),
+      value_update: data_report,
+      pubsub_topic: pubsub_topic
+    )
+
     {:noreply, socket}
   end
 
@@ -143,8 +143,4 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     [ip, port] = String.split(pubsub_topic, ":")
     {String.to_charlist(ip), String.to_integer(port)}
   end
-
-
-
-
 end

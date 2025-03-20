@@ -2,6 +2,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
   alias SecopServiceWeb.DashboardLive.Plot
   alias SEC_Node_Supervisor
   use Phoenix.Component
+  alias SecopService.Sec_Nodes
 
   def get_initial_model() do
     active_nodes = SEC_Node_Supervisor.get_active_nodes()
@@ -23,6 +24,8 @@ defmodule SecopServiceWeb.DashboardLive.Model do
               node = Map.put(node, :current_module_key, current_module_key)
               Map.put(acc, node_id, init_node(node))
             end)
+
+
 
           %{
             active_nodes: initial_active_nodes,
@@ -148,7 +151,6 @@ defmodule SecopServiceWeb.DashboardLive.Model do
             "plotly:#{node.host}:#{node.port}:#{module_name}"
           )
           |> Map.put(:parameters, parameters)
-
 
         Map.put(acc, module_name, module_description)
       end)

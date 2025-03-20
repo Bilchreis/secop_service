@@ -4,9 +4,11 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   alias SecopService.Sec_Nodes.Parameter
 
   schema "parameter_values" do
-    field :value, :map  # Stores simple values directly, complex values as structures
+    # Stores simple values directly, complex values as structures
+    field :value, :map
     field :timestamp, :utc_datetime_usec
-    field :qualifiers, :map  # For storing metadata like status codes
+    # For storing metadata like status codes
+    field :qualifiers, :map
 
     belongs_to :parameter, Parameter
 
@@ -22,35 +24,38 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
 
   # Create a value with proper type handling based on parameter type
   def create_with_parameter(raw_value, parameter, timestamp, qualifiers \\ %{}) do
-    value = case parameter.data_info["type"] do
-      # Simple types stored directly
-      type when type in ["double", "int", "bool"] ->
-        raw_value
+    value =
+      case parameter.data_info["type"] do
+        # Simple types stored directly
+        type when type in ["double", "int", "bool"] ->
+          raw_value
 
-      # Scaled values pre-calculate the actual value
-      "scaled" ->
-        raw_value * parameter.data_info["scale"]
+        # Scaled values pre-calculate the actual value
+        "scaled" ->
+          raw_value * parameter.data_info["scale"]
 
-      # Enum values store both the numeric value and its name for convenience
-      "enum" ->
-        # Find name for the numeric value
-        name = parameter.data_info["members"]
-               |> Enum.find(fn {_name, val} -> val == raw_value end)
-               |> elem(0)
-        %{numeric: raw_value, name: name}
+        # Enum values store both the numeric value and its name for convenience
+        "enum" ->
+          # Find name for the numeric value
+          name =
+            parameter.data_info["members"]
+            |> Enum.find(fn {_name, val} -> val == raw_value end)
+            |> elem(0)
 
-      # Complex types
-      type when type in ["array", "tuple", "struct", "matrix"] ->
-        # Store with type information to assist rendering
-        %{
-          type: type,
-          value: raw_value
-        }
+          %{numeric: raw_value, name: name}
 
-      # Fallback for any other type
-      _ ->
-        raw_value
-    end
+        # Complex types
+        type when type in ["array", "tuple", "struct", "matrix"] ->
+          # Store with type information to assist rendering
+          %{
+            type: type,
+            value: raw_value
+          }
+
+        # Fallback for any other type
+        _ ->
+          raw_value
+      end
 
     %__MODULE__{}
     |> changeset(%{

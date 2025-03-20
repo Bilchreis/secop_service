@@ -3,9 +3,11 @@ defmodule SecopService.Repo.Migrations.CreateParameterValues do
 
   def change do
     create table(:parameter_values) do
-      add :value, :map  # JSONB in PostgreSQL
+      # JSONB in PostgreSQL
+      add :value, :map
       add :timestamp, :utc_datetime_usec, null: false
-      add :qualifiers, :map  # JSONB in PostgreSQL
+      # JSONB in PostgreSQL
+      add :qualifiers, :map
       add :parameter_id, references(:parameters, on_delete: :delete_all), null: false
 
       timestamps()
@@ -20,6 +22,7 @@ defmodule SecopService.Repo.Migrations.CreateParameterValues do
     # For PostgreSQL, create a GIN index for efficient JSONB querying
     execute "CREATE INDEX parameter_values_value_idx ON parameter_values USING GIN (value jsonb_path_ops)",
             "DROP INDEX IF EXISTS parameter_values_value_idx"
+
     execute "CREATE INDEX parameter_values_qualifiers_idx ON parameter_values USING GIN (qualifiers jsonb_path_ops)",
             "DROP INDEX IF EXISTS parameter_values_qualifiers_idx"
   end

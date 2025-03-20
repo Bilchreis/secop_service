@@ -202,7 +202,6 @@ defmodule SecopServiceWeb.DashboardLive.Plot do
   end
 
   def parameter_plot(parameter) do
-
     {:ok, {value_val, value_ts}} = PlotPublisher.get_data(parameter.parameter_id)
 
     plot_map = %{}

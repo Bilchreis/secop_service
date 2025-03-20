@@ -8,13 +8,14 @@ defmodule SecopService.Repo.Migrations.CreateSecNodes do
       add :host, :string, null: false
       add :port, :integer, null: false
       add :description, :string
-      add :describe_message, :map  # JSONB in PostgreSQL
-      add :properties, :map  # JSONB in PostgreSQL
+      # JSONB in PostgreSQL
+      add :describe_message, :map
+      # JSONB in PostgreSQL
+      add :properties, :map
 
       timestamps()
     end
 
-    create unique_index(:sec_nodes, [:host, :port])
     create index(:sec_nodes, [:equipment_id])
   end
 end

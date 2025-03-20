@@ -1,7 +1,7 @@
 defmodule SecopService.Sec_Nodes do
   import Ecto.Query
   alias SecopService.Repo
-  alias SecopService.Sec_Nodes.{Parameter, ParameterValue}
+  alias SecopService.Sec_Nodes.{SEC_Node, Module, Parameter, Command, ParameterValue}
 
   # Parse and store a raw SECoP message
   def create_parameter_value_from_secop_message(parameter, secop_message) do
@@ -108,4 +108,268 @@ defmodule SecopService.Sec_Nodes do
         %{value: raw_value, uncertainty: uncertainty}
     end
   end
+
+
+
+  @doc """
+  Stores SEC nodes and their components from an active_nodes map.
+
+  Takes a map of active nodes (as returned by SEC_Node_Supervisor.get_active_nodes/0)
+  and persists them to the database.
+
+  Returns a map of {node_id => %{db_id: uuid}} for reference or errors for nodes
+  that could not be stored.
+  """
+  def store_active_nodes(active_nodes) do
+    # Process each node independently so errors with one don't affect others
+    results = Enum.map(active_nodes, fn {node_id, node_data} ->
+      case store_single_node(node_data) do
+        {:ok, result} -> {node_id, result}
+        {:error, reason} -> {node_id, {:error, reason}}
+      end
+    end)
+
+    # Convert results to a map
+    Enum.into(results, %{})
+  end
+
+  # Store a single node and its components
+  def store_single_node(node_data) do
+    Repo.transaction(fn ->
+      # Try to create the SEC node
+      case create_sec_node_from_data(node_data) do
+        {:ok, db_node} ->
+          # Create modules, parameters, and commands
+          modules_map = store_modules_for_node(db_node, node_data)
+          # Return the mapping
+          %{
+            db_id: db_node.uuid,
+            modules: modules_map
+          }
+
+        {:error, reason} ->
+          IO.inspect(reason,label: "reason")
+          # Rollback transaction and return the error
+          Repo.rollback(reason)
+      end
+    end)
+  end
+
+  # Create a SEC node from the active_nodes data
+  defp create_sec_node_from_data(node_data) do
+    # Extract basic node attributes
+    attrs = %{
+      uuid: node_data.uuid,
+      equipment_id: node_data.equipment_id, # Fixed typo from eqipment_id
+      host: to_string(node_data.host),
+      port: node_data.port,
+      description: node_data.description.properties.description,
+      properties: node_data.description.properties,
+      describe_message: node_data.raw_description
+    }
+
+    # Check if node with this UUID already exists
+    case get_sec_node_by_uuid(attrs.uuid) do
+      nil ->
+        # Node doesn't exist, create it
+        IO.puts("adding sec node")
+        create_sec_node(attrs)
+
+      _existing ->
+        # Node exists, return error
+        {:error, "SEC Node with UUID #{attrs.uuid} already exists"}
+    end
+  end
+
+  # Store modules for a node
+  defp store_modules_for_node(db_node, node_data) do
+    modules = get_in(node_data, [:description, :modules]) || %{}
+
+    Enum.reduce(modules, %{}, fn {module_name, module_data}, acc ->
+      # Create the module
+      case create_module_from_data(db_node, module_name, module_data) do
+        {:ok, db_module} ->
+          # Create parameters and commands for this module
+          params_map = store_parameters_for_module(db_module, module_data)
+          commands_map = store_commands_for_module(db_module, module_data)
+
+          # Return module mapping
+          Map.put(acc, module_name, %{
+            db_id: db_module.id,
+            parameters: params_map,
+            commands: commands_map
+          })
+
+        {:error, reason} ->
+          IO.inspect(reason, label: "#{module_name}")
+          # Skip this module if creation failed
+          acc
+      end
+    end)
+  end
+
+  # Create a module from module data
+  defp create_module_from_data(db_node, module_name, module_data) do
+    attrs = %{
+      name: to_string(module_name),
+      description: Map.get(module_data, :properties) |> Map.get(:description) || "",
+      interface_classes: Map.get(module_data, :properties) |> Map.get(:interface_classes) || [],
+      properties: Map.get(module_data, :properties) || %{},
+      sec_node_id: db_node.uuid
+    }
+
+    # Only create if it doesn't exist
+    case Repo.get_by(Module, sec_node_id: db_node.uuid, name: to_string(module_name)) do
+      nil -> create_module(attrs)
+      existing -> {:ok, existing}  # Module already exists, return it
+    end
+  end
+
+  # Store parameters for a module
+  defp store_parameters_for_module(db_module, module_data) do
+    parameters = Map.get(module_data, :parameters) || %{}
+
+    Enum.reduce(parameters, %{}, fn {param_name, param_data}, acc ->
+        # Create the parameter
+        case create_parameter_from_data(db_module, param_name, param_data) do
+          {:ok, db_param} ->
+            # Return parameter mapping
+            Map.put(acc, param_name, %{db_id: db_param.id})
+
+          {:error, reason} ->
+            IO.inspect(reason, label: "#{param_name}")
+            acc
+        end
+
+    end)
+  end
+
+  # Create a parameter from parameter data
+  defp create_parameter_from_data(db_module, param_name, param_data) do
+    attrs = %{
+      name: to_string(param_name),
+      description: Map.get(param_data, :description),
+      data_info: Map.get(param_data, :datainfo),
+      readonly: Map.get(param_data, :readonly, true),
+      properties: %{},
+      module_id: db_module.id
+    }
+
+    # Only create if it doesn't exist
+    case Repo.get_by(Parameter, module_id: db_module.id, name: to_string(param_name)) do
+      nil ->
+        create_parameter(attrs)
+      existing -> {:ok, existing}  # Parameter already exists, return it
+    end
+  end
+
+  # Store commands for a module
+  defp store_commands_for_module(db_module, module_data) do
+    commands = Map.get(module_data, :commands) || %{}
+
+    Enum.reduce(commands, %{}, fn {cmd_name, cmd_data}, acc ->
+      # Create the command
+      case create_command_from_data(db_module, cmd_name, cmd_data) do
+        {:ok, db_cmd} ->
+          # Return command mapping
+          Map.put(acc, cmd_name, %{db_id: db_cmd.id})
+
+        {:error, _} ->
+          # Skip this command if creation failed
+          acc
+      end
+    end)
+  end
+
+  # Create a command from command data
+  defp create_command_from_data(db_module, cmd_name, cmd_data) do
+    attrs = %{
+      name: to_string(cmd_name),
+      description: Map.get(cmd_data, :description),
+      data_info: Map.get(cmd_data, :datainfo),
+      properties: %{},
+      module_id: db_module.id,
+      argument: Map.get(cmd_data, :datainfo) |> Map.get(:argument),
+      result: Map.get(cmd_data, :datainfo) |> Map.get(:result)
+
+    }
+
+    # Only create if it doesn't exist
+    case Repo.get_by(Command, module_id: db_module.id, name: to_string(cmd_name)) do
+      nil -> create_command(attrs)
+      existing -> {:ok, existing}  # Command already exists, return it
+    end
+  end
+
+
+
+  # Basic CRUD functions with no updates
+
+
+    # Create a new SEC node
+  @doc """
+  Creates a new SEC node with the provided attributes.
+
+  ## Parameters
+
+    * `attrs` - Map containing node attributes:
+      * `:equipment_id` - Unique identifier for the equipment (required)
+      * `:uuid` - Unique identifier for the node (required)
+      * `:host` - Hostname or IP address (required)
+      * `:port` - Port number (required)
+      * `:description` - Optional description
+      * `:properties` - Map of additional properties
+      * `:describe_message` - Full SECoP describe message
+
+  ## Returns
+
+    * `{:ok, sec_node}` - Returns the created node on success
+    * `{:error, changeset}` - Returns the changeset with errors on failure
+    * `{:error, string}` - Returns error message if node already exists
+  """
+  def create_sec_node(attrs) do
+    %SEC_Node{}
+    |> SEC_Node.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_module(attrs) do
+    %Module{}
+    |> Module.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_parameter(attrs) do
+    %Parameter{}
+    |> Parameter.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_command(attrs) do
+    %Command{}
+    |> Command.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def get_sec_node_by_uuid(uuid) do
+    Repo.get_by(SEC_Node, uuid: uuid)
+  end
+
+  # Query functions
+
+  def list_sec_nodes(opts \\ []) do
+    SEC_Node
+    |> Repo.all()
+    |> maybe_preload(opts[:preload])
+  end
+
+  def get_module(id), do: Repo.get(Module, id)
+
+  def get_parameter(id), do: Repo.get(Parameter, id)
+
+  def get_command(id), do: Repo.get(Command, id)
+
+  # Preload helper
+  defp maybe_preload(result, nil), do: result
+  defp maybe_preload(result, preloads), do: Repo.preload(result, preloads)
 end
