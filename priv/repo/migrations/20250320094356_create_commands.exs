@@ -6,7 +6,7 @@ defmodule SecopService.Repo.Migrations.CreateCommands do
       add :name, :string, null: false
       add :description, :string
       # JSONB in PostgreSQL
-      add :data_info, :map
+      add :datainfo, :map
       add :module_id, references(:modules, on_delete: :delete_all), null: false
       # JSONB in PostgreSQL
       add :properties, :map

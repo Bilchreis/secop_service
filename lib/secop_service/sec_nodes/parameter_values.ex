@@ -25,20 +25,20 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   # Create a value with proper type handling based on parameter type
   def create_with_parameter(raw_value, parameter, timestamp, qualifiers \\ %{}) do
     value =
-      case parameter.data_info["type"] do
+      case parameter.datainfo["type"] do
         # Simple types stored directly
         type when type in ["double", "int", "bool"] ->
           raw_value
 
         # Scaled values pre-calculate the actual value
         "scaled" ->
-          raw_value * parameter.data_info["scale"]
+          raw_value * parameter.datainfo["scale"]
 
         # Enum values store both the numeric value and its name for convenience
         "enum" ->
           # Find name for the numeric value
           name =
-            parameter.data_info["members"]
+            parameter.datainfo["members"]
             |> Enum.find(fn {_name, val} -> val == raw_value end)
             |> elem(0)
 
@@ -70,7 +70,7 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
 
   # Get the raw value with appropriate type handling
   def get_raw_value(parameter_value, parameter) do
-    case parameter.data_info["type"] do
+    case parameter.datainfo["type"] do
       type when type in ["double", "int", "bool"] ->
         parameter_value.value
 
@@ -93,17 +93,17 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   # Get a display-friendly value with unit
   def get_display_value(parameter_value, parameter) do
     raw_value = get_raw_value(parameter_value, parameter)
-    unit = parameter.data_info["unit"] || ""
+    unit = parameter.datainfo["unit"] || ""
 
-    case parameter.data_info["type"] do
+    case parameter.datainfo["type"] do
       "double" ->
-        format_string = parameter.data_info["fmtstr"] || "%.6g"
+        format_string = parameter.datainfo["fmtstr"] || "%.6g"
         # Simple formatting with :io_lib.format
         formatted = :io_lib.format(String.to_charlist(format_string), [raw_value])
         "#{formatted} #{unit}"
 
       "scaled" ->
-        format_string = parameter.data_info["fmtstr"] || "%.6g"
+        format_string = parameter.datainfo["fmtstr"] || "%.6g"
         formatted = :io_lib.format(String.to_charlist(format_string), [raw_value])
         "#{formatted} #{unit}"
 

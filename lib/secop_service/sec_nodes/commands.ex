@@ -6,7 +6,7 @@ defmodule SecopService.Sec_Nodes.Command do
     field :name, :string
     field :description, :string
     # Complete SECoP data info structure
-    field :data_info, :map
+    field :datainfo, :map
     # JSONB column for flexible properties
     field :properties, :map
     # JSONB column for argument data type
@@ -21,42 +21,42 @@ defmodule SecopService.Sec_Nodes.Command do
 
   def changeset(command, attrs) do
     command
-    |> cast(attrs, [:name, :description, :data_info, :properties, :module_id, :argument, :result])
-    |> validate_required([:name, :data_info, :module_id])
-    |> validate_command_data_info()
+    |> cast(attrs, [:name, :description, :datainfo, :properties, :module_id, :argument, :result])
+    |> validate_required([:name, :datainfo, :module_id])
+    |> validate_command_datainfo()
     |> foreign_key_constraint(:module_id)
   end
 
-  # Validate that the data_info structure is valid according to SECoP command requirements
-  defp validate_command_data_info(changeset) do
-    case get_change(changeset, :data_info) do
+  # Validate that the datainfo structure is valid according to SECoP command requirements
+  defp validate_command_datainfo(changeset) do
+    case get_change(changeset, :datainfo) do
       nil ->
         changeset
 
-      data_info ->
+      datainfo ->
         cond do
-          not is_map(data_info) ->
-            add_error(changeset, :data_info, "must be a map")
+          not is_map(datainfo) ->
+            add_error(changeset, :datainfo, "must be a map")
 
-          Map.get(data_info, "type") != "command" ->
-            add_error(changeset, :data_info, "must have type 'command'")
+          Map.get(datainfo, :type) != "command" ->
+            add_error(changeset, :datainfo, "must have type 'command'")
 
           true ->
             # Validate argument and result if present
-            validate_command_components(changeset, data_info)
+            validate_command_components(changeset, datainfo)
         end
     end
   end
 
   # Validate argument and result structures if present
-  defp validate_command_components(changeset, data_info) do
+  defp validate_command_components(changeset, datainfo) do
     changeset
-    |> validate_command_argument(data_info)
-    |> validate_command_result(data_info)
+    |> validate_command_argument(datainfo)
+    |> validate_command_result(datainfo)
   end
 
-  defp validate_command_argument(changeset, data_info) do
-    case Map.get(data_info, "argument") do
+  defp validate_command_argument(changeset, datainfo) do
+    case Map.get(datainfo, "argument") do
       # Argument is optional
       nil ->
         changeset
@@ -66,16 +66,16 @@ defmodule SecopService.Sec_Nodes.Command do
         if Map.has_key?(argument, "type") do
           changeset
         else
-          add_error(changeset, :data_info, "argument must contain a 'type' field")
+          add_error(changeset, :datainfo, "argument must contain a 'type' field")
         end
 
       _ ->
-        add_error(changeset, :data_info, "argument must be a map or null")
+        add_error(changeset, :datainfo, "argument must be a map or null")
     end
   end
 
-  defp validate_command_result(changeset, data_info) do
-    case Map.get(data_info, "result") do
+  defp validate_command_result(changeset, datainfo) do
+    case Map.get(datainfo, "result") do
       # Result is optional
       nil ->
         changeset
@@ -85,11 +85,11 @@ defmodule SecopService.Sec_Nodes.Command do
         if Map.has_key?(result, "type") do
           changeset
         else
-          add_error(changeset, :data_info, "result must contain a 'type' field")
+          add_error(changeset, :datainfo, "result must contain a 'type' field")
         end
 
       _ ->
-        add_error(changeset, :data_info, "result must be a map or null")
+        add_error(changeset, :datainfo, "result must be a map or null")
     end
   end
 
@@ -99,28 +99,28 @@ defmodule SecopService.Sec_Nodes.Command do
   Returns true if the command has an argument.
   """
   def has_argument?(command) do
-    command.data_info["argument"] != nil
+    command.datainfo["argument"] != nil
   end
 
   @doc """
   Returns the argument data type map if present, nil otherwise.
   """
   def get_argument_type(command) do
-    command.data_info["argument"]
+    command.datainfo["argument"]
   end
 
   @doc """
   Returns true if the command returns a result.
   """
   def has_result?(command) do
-    command.data_info["result"] != nil
+    command.datainfo["result"] != nil
   end
 
   @doc """
   Returns the result data type map if present, nil otherwise.
   """
   def get_result_type(command) do
-    command.data_info["result"]
+    command.datainfo["result"]
   end
 
   @doc """

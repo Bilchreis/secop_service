@@ -5,7 +5,7 @@ defmodule SecopService.Repo.Migrations.CreateParameters do
     create table(:parameters) do
       add :name, :string, null: false
       # JSONB in PostgreSQL
-      add :data_info, :map
+      add :datainfo, :map
       add :readonly, :boolean, default: false
       add :description, :string
       add :module_id, references(:modules, on_delete: :delete_all), null: false

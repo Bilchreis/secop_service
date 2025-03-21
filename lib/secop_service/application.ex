@@ -14,6 +14,7 @@ defmodule SecopService.Application do
       {Phoenix.PubSub, name: SecopService.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: SecopService.Finch},
+      SecopService.NodeManager,
       # Start a worker by calling: SecopService.Worker.start_link(arg)
       # {SecopService.Worker, arg},
       # Start to serve requests, typically the last entry

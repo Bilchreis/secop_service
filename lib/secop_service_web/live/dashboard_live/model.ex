@@ -76,7 +76,8 @@ defmodule SecopServiceWeb.DashboardLive.Model do
             end
 
           current_node = get_current_node(model)
-
+          ## This prevents double subscription to the same topic
+          Phoenix.PubSub.unsubscribe(:secop_client_pubsub, current_node.pubsub_topic)
           Phoenix.PubSub.subscribe(:secop_client_pubsub, current_node.pubsub_topic)
           Map.put(model, :active_nodes, active_nodes)
 

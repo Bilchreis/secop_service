@@ -2,6 +2,7 @@ defmodule SecopService.Sec_Nodes do
   import Ecto.Query
   alias SecopService.Repo
   alias SecopService.Sec_Nodes.{SEC_Node, Module, Parameter, Command, ParameterValue}
+  require Logger
 
   # Parse and store a raw SECoP message
   def create_parameter_value_from_secop_message(parameter, secop_message) do
@@ -148,7 +149,7 @@ defmodule SecopService.Sec_Nodes do
           }
 
         {:error, reason} ->
-          IO.inspect(reason,label: "reason")
+
           # Rollback transaction and return the error
           Repo.rollback(reason)
       end
@@ -172,11 +173,12 @@ defmodule SecopService.Sec_Nodes do
     case get_sec_node_by_uuid(attrs.uuid) do
       nil ->
         # Node doesn't exist, create it
-        IO.puts("adding sec node")
+        Logger.info("Creating SEC Node with UUID #{attrs.uuid}")
         create_sec_node(attrs)
 
       _existing ->
         # Node exists, return error
+        Logger.warning("SEC Node with UUID #{attrs.uuid} already exists")
         {:error, "SEC Node with UUID #{attrs.uuid} already exists"}
     end
   end
@@ -201,7 +203,7 @@ defmodule SecopService.Sec_Nodes do
           })
 
         {:error, reason} ->
-          IO.inspect(reason, label: "#{module_name}")
+          Logger.error("Error storing module: #{inspect(reason)}")
           # Skip this module if creation failed
           acc
       end
@@ -237,7 +239,7 @@ defmodule SecopService.Sec_Nodes do
             Map.put(acc, param_name, %{db_id: db_param.id})
 
           {:error, reason} ->
-            IO.inspect(reason, label: "#{param_name}")
+            Logger.error("Error storing parameter: #{inspect(reason)}")
             acc
         end
 
@@ -249,7 +251,7 @@ defmodule SecopService.Sec_Nodes do
     attrs = %{
       name: to_string(param_name),
       description: Map.get(param_data, :description),
-      data_info: Map.get(param_data, :datainfo),
+      datainfo: Map.get(param_data, :datainfo),
       readonly: Map.get(param_data, :readonly, true),
       properties: %{},
       module_id: db_module.id
@@ -274,7 +276,8 @@ defmodule SecopService.Sec_Nodes do
           # Return command mapping
           Map.put(acc, cmd_name, %{db_id: db_cmd.id})
 
-        {:error, _} ->
+        {:error, reason} ->
+          Logger.error("Error storing command: #{inspect(reason)}")
           # Skip this command if creation failed
           acc
       end
@@ -286,7 +289,7 @@ defmodule SecopService.Sec_Nodes do
     attrs = %{
       name: to_string(cmd_name),
       description: Map.get(cmd_data, :description),
-      data_info: Map.get(cmd_data, :datainfo),
+      datainfo: Map.get(cmd_data, :datainfo),
       properties: %{},
       module_id: db_module.id,
       argument: Map.get(cmd_data, :datainfo) |> Map.get(:argument),
@@ -372,4 +375,26 @@ defmodule SecopService.Sec_Nodes do
   # Preload helper
   defp maybe_preload(result, nil), do: result
   defp maybe_preload(result, preloads), do: Repo.preload(result, preloads)
+
+  @doc """
+  Checks if a SEC node with the given UUID exists in the database.
+
+  ## Parameters
+
+    * `uuid` - The UUID to check
+
+  ## Returns
+
+    * `true` - A node with this UUID exists
+    * `false` - No node with this UUID exists
+  """
+  def node_exists?(uuid) when is_binary(uuid) do
+    query = from n in SEC_Node, where: n.uuid == ^uuid, select: 1, limit: 1
+    Repo.exists?(query)
+  end
+
+  # Handle nil case
+  def node_exists?(nil), do: false
+
+
 end
