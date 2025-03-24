@@ -7,7 +7,7 @@ defmodule SecopService.NodeManager do
   alias SEC_Node_Supervisor
 
   @pubsub_name :secop_client_pubsub
-  @check_interval 60_000 # Check for node changes every minute
+  @check_interval 10 * 60 * 1000 # Check for node changes every minute
 
   # Client API
 
@@ -119,8 +119,7 @@ defmodule SecopService.NodeManager do
 
     # Update state
     merged_nodes =
-      Map.merge(saved_nodes, result, fn _key, new_node, old_node ->
-      new_node end)
+      Map.merge(saved_nodes, result, fn _key, new_node, old_node -> new_node end)
       |> keep_common_keys(active_nodes)
 
 
