@@ -2,6 +2,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
   alias SecopServiceWeb.DashboardLive.Plot
   alias SEC_Node_Supervisor
   use Phoenix.Component
+  alias SecopService.Sec_Nodes
 
   def get_initial_model() do
     active_nodes = SEC_Node_Supervisor.get_active_nodes()
@@ -23,6 +24,8 @@ defmodule SecopServiceWeb.DashboardLive.Model do
               node = Map.put(node, :current_module_key, current_module_key)
               Map.put(acc, node_id, init_node(node))
             end)
+
+
 
           %{
             active_nodes: initial_active_nodes,
@@ -73,7 +76,8 @@ defmodule SecopServiceWeb.DashboardLive.Model do
             end
 
           current_node = get_current_node(model)
-
+          ## This prevents double subscription to the same topic
+          Phoenix.PubSub.unsubscribe(:secop_client_pubsub, current_node.pubsub_topic)
           Phoenix.PubSub.subscribe(:secop_client_pubsub, current_node.pubsub_topic)
           Map.put(model, :active_nodes, active_nodes)
 
@@ -90,50 +94,6 @@ defmodule SecopServiceWeb.DashboardLive.Model do
           model
       end
 
-    model
-  end
-
-  def update_plot(model, nodeid, module, parameter, plot_data) do
-    put_path = [
-      :active_nodes,
-      nodeid,
-      :description,
-      :modules,
-      module,
-      :parameters,
-      parameter,
-      :plot_data
-    ]
-
-    updated_model = if nodeid == model.current_node_key do
-
-      put_in(model, put_path, plot_data)
-      |> render_parameter_plot(nodeid, module, parameter)
-      |> render_module_plot(nodeid, module, parameter)
-    else
-      put_in(model, put_path, plot_data)
-
-    end
-    updated_model
-  end
-
-  def render_parameter_plot(model, nodeid, module, parameter) do
-    new_parameter =
-      get_parameter(model, nodeid, module, parameter)
-      |> Plot.parameter_plot()
-
-    set_parameter(model, nodeid, module, parameter, new_parameter)
-  end
-
-  def render_module_plot(model, nodeid, module, parameter) when parameter in [:value, :target] do
-    new_module =
-      get_module(model, nodeid, module)
-      |> Plot.module_plot()
-
-    set_module(model, nodeid, module, new_module)
-  end
-
-  def render_module_plot(model, nodeid, module, parameter) do
     model
   end
 
@@ -161,29 +121,37 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
             new_param_description =
               update_param_descr(nil, parameter_name, new_param_description)
-              |> Map.put(:chart_id, "plotly:#{node.host}:#{node.port}:#{module_name}:#{parameter_name}")
-              |> Map.put(:parameter_id, "#{node.host}:#{node.port}:#{module_name}:#{parameter_name}")
-              |> Plot.parameter_plot()
-              |> Map.put(:set_form,
+              |> Map.put(
+                :chart_id,
+                "plotly:#{node.host}:#{node.port}:#{module_name}:#{parameter_name}"
+              )
+              |> Map.put(
+                :parameter_id,
+                "#{node.host}:#{node.port}:#{module_name}:#{parameter_name}"
+              )
+              |> Map.put(
+                :set_form,
                 to_form(%{
                   "host" => to_string(node.host),
                   "port" => Integer.to_string(node.port),
                   "parameter" => parameter_name,
                   "module" => module_name,
                   "value" => nil
-              }))
-
-
-
+                })
+              )
 
             updated_param_acc = Map.put(param_acc, parameter_name, new_param_description)
 
             updated_param_acc
           end)
+
         module_description =
-          Map.put(module_description, :chart_id, "plotly:#{node.host}:#{node.port}:#{module_name}")
-        |> Map.put(:parameters, parameters)
-        |> Plot.module_plot()
+          Map.put(
+            module_description,
+            :chart_id,
+            "plotly:#{node.host}:#{node.port}:#{module_name}"
+          )
+          |> Map.put(:parameters, parameters)
 
         Map.put(acc, module_name, module_description)
       end)
@@ -323,28 +291,25 @@ defmodule SecopServiceWeb.DashboardLive.Model do
   defp get_plot_tuple(map) do
     chart_id = map.chart_id
 
-    plot = Map.get(map,:plot)
+    plot = Map.get(map, :plot)
 
-    plotly_data = if Map.has_key?(plot,:plotly) do
-      Map.get(plot,:plotly)
+    plotly_data =
+      if Map.has_key?(plot, :plotly) do
+        Map.get(plot, :plotly)
+      else
+        nil
+      end
 
-    else
-      nil
-    end
-
-    {chart_id,plotly_data}
+    {chart_id, plotly_data}
   end
 
   def get_module_plot_data(model, nodeid, module) do
-    get_module(model, nodeid, module) |>
-    get_plot_tuple()
-
+    get_module(model, nodeid, module)
+    |> get_plot_tuple()
   end
-
 
   def get_parameter_plot_data(model, nodeid, module, parameter) do
-    get_parameter(model, nodeid, module, parameter) |>
-    get_plot_tuple()
+    get_parameter(model, nodeid, module, parameter)
+    |> get_plot_tuple()
   end
-
 end

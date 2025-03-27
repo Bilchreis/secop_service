@@ -65,11 +65,19 @@
               module={module}
               state={@model.active_nodes[@model.current_node_key][:state]}
             />
-            <div class="pb-4 h-full">
-              <div class=" p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
-                <.module_plot
-                  module_name={mod_name}
-                  module={module}
+            <div class="pb-4 h-85 ">
+              <div class=" p-5  bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
+                <.live_component
+                  module={SecopServiceWeb.Components.PlotlyChart}
+                  id={module.chart_id}
+                  secop_obj={module}
+                  path={
+                    {
+                      @model.active_nodes[@model.current_node_key].host,
+                      @model.active_nodes[@model.current_node_key].port,
+                      mod_name
+                    }
+                  }
                 />
               </div>
             </div>
@@ -79,4 +87,3 @@
     </div>
   <% end %>
 </div>
-
