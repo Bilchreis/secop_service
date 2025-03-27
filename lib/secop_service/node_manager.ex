@@ -5,6 +5,7 @@ defmodule SecopService.NodeManager do
   alias SecopService.Repo
   alias Phoenix.PubSub
   alias SEC_Node_Supervisor
+  alias SecopService.NodeDBWriterSupervisor
 
   @pubsub_name :secop_client_pubsub
   @check_interval 10 * 60 * 1000 # Check for node changes every minute
@@ -62,12 +63,40 @@ defmodule SecopService.NodeManager do
     handle_cast(:sync_nodes, state)
   end
 
-  @impl true
-  def handle_info({:description_change, _pubsub_topic, _state}, state) do
-    # TODO
-    Logger.info("Description Change")
+  def handle_info({:description_change, _pubsub_topic, node_state}, state) do
+    # Handle node description changes
+    Logger.info("Description Change for node: #{node_state.equipment_id}")
+
+    # Find the old UUID if present
+    old_uuid = find_old_uuid(state.nodes, node_state.node_id)
+
+    # If we have an old UUID and it's different, stop the old writer
+    state = if old_uuid && old_uuid != node_state.uuid do
+      Logger.info("Node UUID changed from #{old_uuid} to #{node_state.uuid}, updating writer")
+      NodeDBWriterSupervisor.stop_writer(old_uuid)
+
+      # Store the new node configuration
+      {:ok, node} = Sec_Nodes.store_single_node(node_state)
+
+      updated_nodes = Map.put(state.nodes, node_state.node_id, node)
+      # Start a new writer
+      NodeDBWriterSupervisor.start_writer(node_state)
+      %{state | nodes: updated_nodes}
+    else
+      state
+    end
+
     {:noreply, state}
   end
+
+  # Helper to find a node's old UUID
+  defp find_old_uuid(nodes, node_id) do
+    Map.get(nodes, node_id)
+    |> case do
+      nil -> nil
+      node -> node.uuid
+    end
+end
 
   def handle_info({:conn_state, _pubsub_topic, active}, state) do
     # TODO
@@ -106,8 +135,8 @@ defmodule SecopService.NodeManager do
         false ->
           # New node
           Logger.info("New node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}")
-
-          Map.put(acc, node_id, Sec_Nodes.store_single_node(node_state))
+          {:ok, node} = Sec_Nodes.store_single_node(node_state)
+          Map.put(acc, node_id, node)
         true ->
           # Update existing node
           Logger.info("Node already in db: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}")
@@ -115,12 +144,31 @@ defmodule SecopService.NodeManager do
       end
     end)
 
-    saved_nodes = state.nodes
+    # Start writers for active nodes that don't have one
+    Enum.each(active_nodes, fn {_node_id, node_state} ->
+      unless NodeDBWriterSupervisor.writer_exists?(node_state.uuid) do
+        NodeDBWriterSupervisor.start_writer(node_state)
+      end
+    end)
 
-    # Update state
+    # Stop writers for nodes that are no longer active
+    active_uuids = active_nodes |> Enum.map(fn {_, node} -> node.uuid end) |> MapSet.new()
+    current_writer_uuids = NodeDBWriterSupervisor.list_writer_uuids() |> MapSet.new()
+
+    # Writers to stop: those that exist but aren't in active nodes
+    MapSet.difference(current_writer_uuids, active_uuids)
+    |> Enum.each(fn uuid ->
+      NodeDBWriterSupervisor.stop_writer(uuid)
+    end)
+
+    old_nodes = state.nodes
+
+    # Update statenode
     merged_nodes =
-      Map.merge(saved_nodes, result, fn _key, new_node, old_node -> new_node end)
+      Map.merge(old_nodes, result, fn _key, new_node, old_node -> new_node end)
       |> keep_common_keys(active_nodes)
+
+
 
 
     %{state | nodes: merged_nodes}
