@@ -15,6 +15,9 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
       # Default sort direction
       |> assign(:sort_order, :desc)
 
+      |> assign(:show_json_modal, false)
+      |> assign(:json_content, "")
+
     {:ok, socket}
   end
 
@@ -40,6 +43,22 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
 
     {:noreply, socket}
   end
+
+  def handle_event("open_json_modal", %{"uuid" => uuid}, socket) do
+    # Find the node with the matching UUID
+    node = Enum.find(socket.assigns.sec_nodes, fn n -> n.uuid == uuid end)
+
+    # Format the JSON nicely
+    formatted_json = Jason.encode!(node.describe_message, pretty: true)
+
+
+    {:noreply, assign(socket, show_json_modal: true, json_content: formatted_json)}
+  end
+
+  def handle_event("close_json_modal", _params, socket) do
+    {:noreply, assign(socket, show_json_modal: false)}
+  end
+
 
   defp toggle_sort_order(:asc), do: :desc
   defp toggle_sort_order(:desc), do: :asc

@@ -96,9 +96,17 @@
                 |> Calendar.strftime("%d.%m.%Y %H:%M")}
               </td>
               <td class="px-4 py-2">
-                <button class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded">
-                  View Details
-                </button>
+                <div class="flex flex-col space-y-2 w-full">
+                  <button class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded w-full text-center">
+                    View Modules
+                  </button>
+                  <button 
+                    class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded w-full text-center"
+                    phx-click="open_json_modal"
+                    phx-value-uuid={node.uuid}>
+                    View JSON Description
+                  </button>
+                </div>
               </td>
             </tr>
           <% end %>
@@ -106,4 +114,23 @@
       </table>
     </div>
   </div>
+
+  <%= if @show_json_modal do %>
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" phx-click="close_json_modal">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-3xl max-h-[80vh] overflow-auto" phx-click-away="close_json_modal" onclick="event.stopPropagation();">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold dark:text-white">JSON Description</h2>
+          <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" phx-click="close_json_modal">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-auto font-mono text-sm">
+          <pre class="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto dark:text-gray-200"><%= @json_content %></pre>
+        </div>
+      </div>
+    </div>
+  <% end %>
 </div>
