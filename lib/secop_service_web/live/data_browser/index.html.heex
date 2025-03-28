@@ -1,0 +1,109 @@
+<div class="container mx-auto">
+  <div class="rounded-lg bg-gray-50 dark:bg-gray-800 shadow-md p-4">
+    <h1 class="text-xl font-bold mb-4 dark:text-white text-left">Stored SEC Nodes by UUID:</h1>
+
+    <div class="overflow-x-auto flex justify-center">
+      <table class="min-w-full bg-white dark:bg-gray-900 rounded-lg overflow-hidden shadow">
+        <thead class="bg-gray-100 dark:bg-gray-700 text-lg">
+          <tr>
+            <th class="px-4 py-2 dark:text-gray-200 w-48">
+              <div
+                class="flex items-center cursor-pointer"
+                phx-click="sort"
+                phx-value-field="uuid"
+              >
+                <span>UUID</span>
+                <span class="ml-1 w-4 inline-block">
+                  <%= if @sort_by == :uuid do %>
+                    <%= if @sort_order == :asc do %>
+                      ▲
+                    <% else %>
+                      ▼
+                    <% end %>
+                  <% end %>
+                </span>
+              </div>
+            </th>
+            <th class="px-4 py-2 dark:text-gray-200 w-36">
+              <div
+                class="flex items-center cursor-pointer"
+                phx-click="sort"
+                phx-value-field="equipment_id"
+              >
+                <span>Equipment ID</span>
+                <span class="ml-1 w-4 inline-block">
+                  <%= if @sort_by == :equipment_id do %>
+                    <%= if @sort_order == :asc do %>
+                      ▲
+                    <% else %>
+                      ▼
+                    <% end %>
+                  <% end %>
+                </span>
+              </div>
+            </th>
+            <th class="px-4 py-2 dark:text-gray-200 w-40">
+              <div
+                class="flex items-center cursor-pointer"
+                phx-click="sort"
+                phx-value-field="host"
+              >
+                <span>URI</span>
+                <span class="ml-1 w-4 inline-block">
+                  <%= if @sort_by == :host do %>
+                    <%= if @sort_order == :asc do %>
+                      ▲
+                    <% else %>
+                      ▼
+                    <% end %>
+                  <% end %>
+                </span>
+              </div>
+            </th>
+            <th class="px-4 py-2 dark:text-gray-200 w-60">Description</th>
+            <th class="px-4 py-2 dark:text-gray-200 w-36">
+              <div
+                class="flex items-center cursor-pointer"
+                phx-click="sort"
+                phx-value-field="inserted_at"
+              >
+                <span>Created At</span>
+                <span class="ml-1 w-4 inline-block">
+                  <%= if @sort_by == :inserted_at do %>
+                    <%= if @sort_order == :asc do %>
+                      ▲
+                    <% else %>
+                      ▼
+                    <% end %>
+                  <% end %>
+                </span>
+              </div>
+            </th>
+            <th class="px-4 py-2 dark:text-gray-200 w-32">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="text-base">
+          <%= for node <- @sec_nodes do %>
+            <tr class="border-t dark:border-gray-700">
+              <td class="px-4 py-2 dark:text-gray-200">{node.uuid}</td>
+              <td class="px-4 py-2 dark:text-gray-200">{node.equipment_id}</td>
+              <td class="px-4 py-2 dark:text-gray-200">{node.host}:{node.port}</td>
+              <td class="px-4 py-2 dark:text-gray-200">{node.description}</td>
+              <td class="px-4 py-2 dark:text-gray-200">
+                {node.inserted_at
+                |> DateTime.from_naive!("Etc/UTC")
+                |> DateTime.shift_zone!("Europe/Berlin")
+                |> Calendar.strftime("%d.%m.%Y %H:%M")}
+              </td>
+              <td class="px-4 py-2">
+                <button class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded">
+                  View Details
+                </button>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

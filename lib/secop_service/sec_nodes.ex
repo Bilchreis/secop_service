@@ -1,5 +1,5 @@
 defmodule SecopService.Sec_Nodes do
-  import Ecto.Query
+  import Ecto.Query, warn: false
   alias SecopService.Repo
   alias SecopService.Sec_Nodes.{SEC_Node, Module, Parameter, Command, ParameterValue}
   require Logger
@@ -9,23 +9,24 @@ defmodule SecopService.Sec_Nodes do
     case parse_secop_message(secop_message) do
       {:ok, raw_value, qualifiers} ->
         # Use timestamp from qualifiers if available, with microsecond precision
-        timestamp = case Map.get(qualifiers, "t") do
-          nil ->
-            DateTime.utc_now()
+        timestamp =
+          case Map.get(qualifiers, "t") do
+            nil ->
+              DateTime.utc_now()
 
-          t when is_float(t) ->
-            # Convert float timestamp to DateTime with microsecond precision
-            # Extract seconds and microseconds parts
-            seconds = trunc(t)
-            microseconds = trunc((t - seconds) * 1_000_000)
+            t when is_float(t) ->
+              # Convert float timestamp to DateTime with microsecond precision
+              # Extract seconds and microseconds parts
+              seconds = trunc(t)
+              microseconds = trunc((t - seconds) * 1_000_000)
 
-            # Format with microsecond precision
-            {:ok, datetime} = DateTime.from_unix(seconds, :second)
-            %{datetime | microsecond: {microseconds, 6}}
+              # Format with microsecond precision
+              {:ok, datetime} = DateTime.from_unix(seconds, :second)
+              %{datetime | microsecond: {microseconds, 6}}
 
-          t when is_integer(t) ->
-            DateTime.from_unix!(t, :second)
-        end
+            t when is_integer(t) ->
+              DateTime.from_unix!(t, :second)
+          end
 
         create_parameter_value(parameter, raw_value, timestamp, qualifiers)
 
@@ -105,12 +106,11 @@ defmodule SecopService.Sec_Nodes do
     case Map.get(parameter_value.qualifiers, "e") do
       nil ->
         %{value: raw_value}
+
       uncertainty ->
         %{value: raw_value, uncertainty: uncertainty}
     end
   end
-
-
 
   @doc """
   Stores SEC nodes and their components from an active_nodes map.
@@ -123,12 +123,13 @@ defmodule SecopService.Sec_Nodes do
   """
   def store_active_nodes(active_nodes) do
     # Process each node independently so errors with one don't affect others
-    results = Enum.map(active_nodes, fn {node_id, node_data} ->
-      case store_single_node(node_data) do
-        {:ok, result} -> {node_id, result}
-        {:error, reason} -> {node_id, {:error, reason}}
-      end
-    end)
+    results =
+      Enum.map(active_nodes, fn {node_id, node_data} ->
+        case store_single_node(node_data) do
+          {:ok, result} -> {node_id, result}
+          {:error, reason} -> {node_id, {:error, reason}}
+        end
+      end)
 
     # Convert results to a map
     Enum.into(results, %{})
@@ -149,7 +150,6 @@ defmodule SecopService.Sec_Nodes do
           }
 
         {:error, reason} ->
-
           # Rollback transaction and return the error
           Repo.rollback(reason)
       end
@@ -161,7 +161,8 @@ defmodule SecopService.Sec_Nodes do
     # Extract basic node attributes
     attrs = %{
       uuid: node_data.uuid,
-      equipment_id: node_data.equipment_id, # Fixed typo from eqipment_id
+      # Fixed typo from eqipment_id
+      equipment_id: node_data.equipment_id,
       host: to_string(node_data.host),
       port: node_data.port,
       description: node_data.description.properties.description,
@@ -223,7 +224,8 @@ defmodule SecopService.Sec_Nodes do
     # Only create if it doesn't exist
     case Repo.get_by(Module, sec_node_id: db_node.uuid, name: to_string(module_name)) do
       nil -> create_module(attrs)
-      existing -> {:ok, existing}  # Module already exists, return it
+      # Module already exists, return it
+      existing -> {:ok, existing}
     end
   end
 
@@ -232,17 +234,16 @@ defmodule SecopService.Sec_Nodes do
     parameters = Map.get(module_data, :parameters) || %{}
 
     Enum.reduce(parameters, %{}, fn {param_name, param_data}, acc ->
-        # Create the parameter
-        case create_parameter_from_data(db_module, param_name, param_data) do
-          {:ok, db_param} ->
-            # Return parameter mapping
-            Map.put(acc, param_name, %{db_id: db_param.id})
+      # Create the parameter
+      case create_parameter_from_data(db_module, param_name, param_data) do
+        {:ok, db_param} ->
+          # Return parameter mapping
+          Map.put(acc, param_name, %{db_id: db_param.id})
 
-          {:error, reason} ->
-            Logger.error("Error storing parameter: #{inspect(reason)}")
-            acc
-        end
-
+        {:error, reason} ->
+          Logger.error("Error storing parameter: #{inspect(reason)}")
+          acc
+      end
     end)
   end
 
@@ -261,7 +262,10 @@ defmodule SecopService.Sec_Nodes do
     case Repo.get_by(Parameter, module_id: db_module.id, name: to_string(param_name)) do
       nil ->
         create_parameter(attrs)
-      existing -> {:ok, existing}  # Parameter already exists, return it
+
+      # Parameter already exists, return it
+      existing ->
+        {:ok, existing}
     end
   end
 
@@ -294,22 +298,19 @@ defmodule SecopService.Sec_Nodes do
       module_id: db_module.id,
       argument: Map.get(cmd_data, :datainfo) |> Map.get(:argument),
       result: Map.get(cmd_data, :datainfo) |> Map.get(:result)
-
     }
 
     # Only create if it doesn't exist
     case Repo.get_by(Command, module_id: db_module.id, name: to_string(cmd_name)) do
       nil -> create_command(attrs)
-      existing -> {:ok, existing}  # Command already exists, return it
+      # Command already exists, return it
+      existing -> {:ok, existing}
     end
   end
 
-
-
   # Basic CRUD functions with no updates
 
-
-    # Create a new SEC node
+  # Create a new SEC node
   @doc """
   Creates a new SEC node with the provided attributes.
 
@@ -395,6 +396,4 @@ defmodule SecopService.Sec_Nodes do
 
   # Handle nil case
   def node_exists?(nil), do: false
-
-
 end

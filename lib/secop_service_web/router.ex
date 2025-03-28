@@ -22,6 +22,7 @@ defmodule SecopServiceWeb.Router do
 
     get "/", PageController, :home
     live "dashboard", DashboardLive.Index
+    live "browse", DataBrowserLive.Index, :index
   end
 
   # Other scopes may use custom stacks.

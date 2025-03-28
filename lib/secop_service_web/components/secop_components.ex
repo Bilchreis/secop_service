@@ -139,7 +139,7 @@ defmodule SECoPComponents do
     ~H"""
     <div class={[
       @box_color,
-      "bg-gray-50 dark:bg-gray-900 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-full mb-4"
+      "bg-gray-50  p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-full mb-4"
     ]}>
       <.accordion
         id={@mod_name}
