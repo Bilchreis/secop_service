@@ -52,7 +52,7 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
     formatted_json = Jason.encode!(node.describe_message, pretty: true)
 
 
-    {:noreply, assign(socket, show_json_modal: true, json_content: formatted_json)}
+    {:noreply, assign(socket, show_json_modal: true, json_content: formatted_json, json_title: "JSON Description: #{node.equipment_id} #{node.host}:#{}")}
   end
 
   def handle_event("close_json_modal", _params, socket) do
@@ -78,5 +78,13 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "SEC Nodes")
+  end
+
+    # In your LiveView module (index.ex)
+  defp format_description(text) do
+    text
+    |> String.split("\n")
+    |> Enum.map(&Phoenix.HTML.html_escape/1)
+    |> Enum.intersperse(Phoenix.HTML.raw("<br>"))
   end
 end

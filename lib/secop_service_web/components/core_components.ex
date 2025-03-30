@@ -35,7 +35,9 @@ defmodule SecopServiceWeb.CoreComponents do
         This is another modal.
       </.modal>
 
+
   """
+  attr :title, :string, default: nil
   attr :id, :string, required: true
   attr :show, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
@@ -50,7 +52,7 @@ defmodule SecopServiceWeb.CoreComponents do
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
       class="relative z-50 hidden"
     >
-      <div id={"#{@id}-bg"} class="bg-zinc-50/90 fixed inset-0 transition-opacity" aria-hidden="true" />
+      <div id={"#{@id}-bg"} class="bg-zinc-50/90 dark:bg-zinc-900/90 fixed inset-0 transition-opacity" aria-hidden="true" />
       <div
         class="fixed inset-0 overflow-y-auto"
         aria-labelledby={"#{@id}-title"}
@@ -66,18 +68,21 @@ defmodule SecopServiceWeb.CoreComponents do
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden rounded-2xl bg-white p-14 shadow-lg ring-1 transition"
+              class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden rounded-2xl bg-white dark:bg-gray-700 p-14 shadow-lg ring-1 transition"
             >
-              <div class="absolute top-6 right-5">
-                <button
-                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                  type="button"
-                  class="-m-3 flex-none p-3 opacity-20 hover:opacity-40"
-                  aria-label={gettext("close")}
-                >
-                  <.icon name="hero-x-mark-solid" class="h-5 w-5" />
-                </button>
-              </div>
+            <div class="flex items-center justify-between absolute top-2 left-14 right-4">
+              <h2 class="text-lg font-semibold text-zinc-900 dark:text-white">
+                {@title}
+              </h2>
+              <button
+                phx-click={JS.exec("data-cancel", to: "##{@id}")}
+                type="button"
+                class="flex-none p-3 opacity-20 hover:opacity-40"
+                aria-label={gettext("close")}
+              >
+                <.icon name="hero-x-mark-solid" class="h-5 w-5 text-zinc-900 dark:text-white" />
+              </button>
+            </div>
               <div id={"#{@id}-content"}>
                 {render_slot(@inner_block)}
               </div>
