@@ -62,7 +62,7 @@ defmodule SecopServiceWeb.CoreComponents do
         tabindex="0"
       >
         <div class="flex min-h-full items-center justify-center">
-          <div class="w-full max-w-3xl p-4 sm:p-6 lg:py-8">
+          <div class="w-full max-w-5xl p-4 sm:p-6 lg:py-8">
             <.focus_wrap
               id={"#{@id}-container"}
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
@@ -678,4 +678,69 @@ defmodule SecopServiceWeb.CoreComponents do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  attr :meta, Flop.Meta, required: true
+  attr :path, :any, default: nil
+  attr :on_paginate, JS, default: nil
+  attr :target, :string, default: nil
+
+  def pagination(assigns) do
+    ~H"""
+    <Flop.Phoenix.pagination
+      meta={@meta}
+      path={@path}
+      page_links= {10}
+      on_paginate={@on_paginate}
+      target={@target}
+      opts={pagination_opts()}
+    />
+    """
+  end
+
+
+
+  def pagination_opts do
+    [
+      wrapper_attrs: [
+        class: "fixed bottom-0 left-0 right-0 flex flex-wrap items-center justify-center gap-y-5 gap-x-2 p-4 " <>
+               "bg-white dark:bg-gray-700 shadow-md text-gray-700 dark:text-gray-200 z-50"
+      ],
+      # “Prev” and “Next” have order 1
+      previous_link_attrs: [
+        class: "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+      ],
+      next_link_attrs: [
+        class: "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+      ],
+      # Page links become order 2 and occupy a full row (basis-full)
+      pagination_list_attrs: [
+        class: "order-1 flex gap-2 basis-full justify-center"
+      ],
+      previous_link_content: Phoenix.HTML.raw("Prev"),
+      next_link_content: Phoenix.HTML.raw("Next"),
+      current_link_attrs: [
+        class: "p-2 border rounded bg-purple-500 text-white"
+      ],
+      pagination_link_attrs: [
+        class: "p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+      ]
+    ]
+  end
+
+  def table_opts do
+    [
+      table_attrs: [
+        class: "w-full border-collapse border border-slate-300 dark:border-slate-600 " <>
+               "text-gray-700 dark:text-gray-200"
+      ],
+      thead_th_attrs: [
+        class: "p-2 bg-gray-50 dark:bg-gray-800 border border-slate-300 dark:border-slate-600"
+      ],
+      tbody_td_attrs: [
+        class: "p-2 border border-slate-300 dark:border-slate-600"
+      ]
+    ]
+  end
+
+
 end

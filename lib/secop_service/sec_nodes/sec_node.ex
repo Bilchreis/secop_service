@@ -2,6 +2,13 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
   use Ecto.Schema
   import Ecto.Changeset
 
+
+  @derive {
+    Flop.Schema,
+    filterable: [:uuid, :equipment_id, :host, :port],
+    sortable:   [:uuid, :equipment_id, :host, :port, :inserted_at],
+  }
+
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}
   @derive {Phoenix.Param, key: :uuid}
   schema "sec_nodes" do

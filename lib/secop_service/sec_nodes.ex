@@ -360,12 +360,17 @@ defmodule SecopService.Sec_Nodes do
   end
 
   # Query functions
-
-  def list_sec_nodes(opts \\ []) do
-    SEC_Node
-    |> Repo.all()
-    |> maybe_preload(opts[:preload])
+  def list_sec_nodes(params \\ %{}) do
+    Flop.validate_and_run(
+      SEC_Node,
+      params,
+      for: SEC_Node,
+      default_limit: 10,   # Defaults to 25 if not provided
+      max_limit: 30)       # Prevents going above 100
   end
+
+
+
 
   def get_module(id), do: Repo.get(Module, id)
 
@@ -373,9 +378,7 @@ defmodule SecopService.Sec_Nodes do
 
   def get_command(id), do: Repo.get(Command, id)
 
-  # Preload helper
-  defp maybe_preload(result, nil), do: result
-  defp maybe_preload(result, preloads), do: Repo.preload(result, preloads)
+
 
   @doc """
   Checks if a SEC node with the given UUID exists in the database.

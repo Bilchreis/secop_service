@@ -63,7 +63,9 @@ defmodule SecopService.MixProject do
       {:bandit, "~> 1.5"},
       {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.32"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:tzdata, "~> 1.1"}
+      {:tzdata, "~> 1.1"},
+      {:flop, "~> 0.26.1"},
+      {:flop_phoenix, "~> 0.24.1"}
     ]
   end
 

@@ -11,6 +11,10 @@ config :secop_service,
   ecto_repos: [SecopService.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# Add Flop configuration
+config :flop, repo: SecopService.Repo
+
+
 # Configures the endpoint
 config :secop_service, SecopServiceWeb.Endpoint,
   url: [host: "localhost"],
