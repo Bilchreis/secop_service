@@ -52,7 +52,11 @@ defmodule SecopServiceWeb.CoreComponents do
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
       class="relative z-50 hidden"
     >
-      <div id={"#{@id}-bg"} class="bg-zinc-50/90 dark:bg-zinc-900/90 fixed inset-0 transition-opacity" aria-hidden="true" />
+      <div
+        id={"#{@id}-bg"}
+        class="bg-zinc-50/90 dark:bg-zinc-900/90 fixed inset-0 transition-opacity"
+        aria-hidden="true"
+      />
       <div
         class="fixed inset-0 overflow-y-auto"
         aria-labelledby={"#{@id}-title"}
@@ -70,19 +74,19 @@ defmodule SecopServiceWeb.CoreComponents do
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
               class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden rounded-2xl bg-white dark:bg-gray-700 p-14 shadow-lg ring-1 transition"
             >
-            <div class="flex items-center justify-between absolute top-2 left-14 right-4">
-              <h2 class="text-lg font-semibold text-zinc-900 dark:text-white">
-                {@title}
-              </h2>
-              <button
-                phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                type="button"
-                class="flex-none p-3 opacity-20 hover:opacity-40"
-                aria-label={gettext("close")}
-              >
-                <.icon name="hero-x-mark-solid" class="h-5 w-5 text-zinc-900 dark:text-white" />
-              </button>
-            </div>
+              <div class="flex items-center justify-between absolute top-2 left-14 right-4">
+                <h2 class="text-lg font-semibold text-zinc-900 dark:text-white">
+                  {@title}
+                </h2>
+                <button
+                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
+                  type="button"
+                  class="flex-none p-3 opacity-20 hover:opacity-40"
+                  aria-label={gettext("close")}
+                >
+                  <.icon name="hero-x-mark-solid" class="h-5 w-5 text-zinc-900 dark:text-white" />
+                </button>
+              </div>
               <div id={"#{@id}-content"}>
                 {render_slot(@inner_block)}
               </div>
@@ -689,7 +693,7 @@ defmodule SecopServiceWeb.CoreComponents do
     <Flop.Phoenix.pagination
       meta={@meta}
       path={@path}
-      page_links= {10}
+      page_links={10}
       on_paginate={@on_paginate}
       target={@target}
       opts={pagination_opts()}
@@ -697,20 +701,21 @@ defmodule SecopServiceWeb.CoreComponents do
     """
   end
 
-
-
   def pagination_opts do
     [
       wrapper_attrs: [
-        class: "fixed bottom-0 left-0 right-0 flex flex-wrap items-center justify-center gap-y-5 gap-x-2 p-4 " <>
-               "bg-white dark:bg-gray-700 shadow-md text-gray-700 dark:text-gray-200 z-50"
+        class:
+          "fixed bottom-0 left-0 right-0 flex flex-wrap items-center justify-center gap-y-5 gap-x-2 p-4 " <>
+            "bg-white dark:bg-gray-700 shadow-md text-gray-700 dark:text-gray-200 z-50"
       ],
       # “Prev” and “Next” have order 1
       previous_link_attrs: [
-        class: "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+        class:
+          "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
       ],
       next_link_attrs: [
-        class: "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+        class:
+          "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
       ],
       # Page links become order 2 and occupy a full row (basis-full)
       pagination_list_attrs: [
@@ -722,7 +727,8 @@ defmodule SecopServiceWeb.CoreComponents do
         class: "p-2 border rounded bg-purple-500 text-white"
       ],
       pagination_link_attrs: [
-        class: "p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+        class:
+          "p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
       ]
     ]
   end
@@ -730,8 +736,9 @@ defmodule SecopServiceWeb.CoreComponents do
   def table_opts do
     [
       table_attrs: [
-        class: "w-full border-collapse border border-slate-300 dark:border-slate-600 " <>
-               "text-gray-700 dark:text-gray-200"
+        class:
+          "w-full border-collapse border border-slate-300 dark:border-slate-600 " <>
+            "text-gray-700 dark:text-gray-200"
       ],
       thead_th_attrs: [
         class: "p-2 bg-gray-50 dark:bg-gray-800 border border-slate-300 dark:border-slate-600"
@@ -741,6 +748,4 @@ defmodule SecopServiceWeb.CoreComponents do
       ]
     ]
   end
-
-
 end

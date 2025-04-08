@@ -1,13 +1,23 @@
 defmodule SecopService.Sec_Nodes.Module do
   use Ecto.Schema
   import Ecto.Changeset
+  alias SecopService.Util
 
   schema "modules" do
     field :name, :string
+
+    # mandatory properties
     field :description, :string
     field :interface_classes, {:array, :string}
+
+    # optional properties
+    field :visibility, :string
+    field :group, :string
+    field :meaning, :map
+    field :implementor, :string
+
     # JSONB column for flexible properties
-    field :properties, :map
+    field :custom_properties, :map
 
     belongs_to :sec_node, SecopService.Sec_Nodes.SEC_Node,
       foreign_key: :sec_node_id,
@@ -22,7 +32,21 @@ defmodule SecopService.Sec_Nodes.Module do
 
   def changeset(module, attrs) do
     module
-    |> cast(attrs, [:name, :description, :interface_classes, :properties, :sec_node_id])
-    |> validate_required([:name, :sec_node_id])
+    |> cast(attrs, [
+      :name,
+      :description,
+      :interface_classes,
+      :custom_properties,
+      :sec_node_id,
+      :visibility,
+      :group,
+      :meaning,
+      :implementor
+    ])
+    |> validate_required([:name, :sec_node_id, :description, :interface_classes])
+  end
+
+  def display_name(module) do
+    Util.display_name(module.name)
   end
 end

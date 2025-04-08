@@ -14,7 +14,6 @@ config :secop_service,
 # Add Flop configuration
 config :flop, repo: SecopService.Repo
 
-
 # Configures the endpoint
 config :secop_service, SecopServiceWeb.Endpoint,
   url: [host: "localhost"],

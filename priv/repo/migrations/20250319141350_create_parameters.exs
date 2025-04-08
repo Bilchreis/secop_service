@@ -10,7 +10,13 @@ defmodule SecopService.Repo.Migrations.CreateParameters do
       add :description, :string
       add :module_id, references(:modules, on_delete: :delete_all), null: false
       # JSONB in PostgreSQL
-      add :properties, :map
+      add :custom_properties, :map
+
+      # Optional properties:
+      add :group, :string
+      add :visibility, :string
+      add :meaning, :map
+      add :checkable, :boolean
 
       timestamps()
     end

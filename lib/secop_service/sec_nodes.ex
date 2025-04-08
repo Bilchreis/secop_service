@@ -158,6 +158,18 @@ defmodule SecopService.Sec_Nodes do
 
   # Create a SEC node from the active_nodes data
   defp create_sec_node_from_data(node_data) do
+    properties = node_data.description.properties
+
+    # Extract custom properties (keys starting with underscore)
+    custom_properties =
+      Enum.reduce(properties, %{}, fn {key, value}, acc ->
+        if String.starts_with?(to_string(key), "_") do
+          Map.put(acc, key, value)
+        else
+          acc
+        end
+      end)
+
     # Extract basic node attributes
     attrs = %{
       uuid: node_data.uuid,
@@ -165,8 +177,11 @@ defmodule SecopService.Sec_Nodes do
       equipment_id: node_data.equipment_id,
       host: to_string(node_data.host),
       port: node_data.port,
-      description: node_data.description.properties.description,
-      properties: node_data.description.properties,
+      description: properties.description,
+      firmware: Map.get(properties, :firmware),
+      implementor: Map.get(properties, :implementor),
+      timeout: Map.get(properties, :timeout),
+      custom_properties: custom_properties,
       describe_message: node_data.raw_description
     }
 
@@ -213,12 +228,30 @@ defmodule SecopService.Sec_Nodes do
 
   # Create a module from module data
   defp create_module_from_data(db_node, module_name, module_data) do
+    properties = Map.get(module_data, :properties)
+
+    # Extract custom properties (keys starting with underscore)
+    custom_properties =
+      Enum.reduce(properties, %{}, fn {key, value}, acc ->
+        if String.starts_with?(to_string(key), "_") do
+          Map.put(acc, key, value)
+        else
+          acc
+        end
+      end)
+
     attrs = %{
       name: to_string(module_name),
-      description: Map.get(module_data, :properties) |> Map.get(:description) || "",
-      interface_classes: Map.get(module_data, :properties) |> Map.get(:interface_classes) || [],
-      properties: Map.get(module_data, :properties) || %{},
-      sec_node_id: db_node.uuid
+      description: Map.get(properties, :description) || "",
+      interface_classes: Map.get(properties, :interface_classes) || [],
+      custom_properties: custom_properties || %{},
+      sec_node_id: db_node.uuid,
+
+      ## optional properties
+      visibility: Map.get(properties, :visibility) |> to_string(),
+      group: Map.get(properties, :group),
+      meaning: Map.get(properties, :meaning),
+      implementor: Map.get(properties, :implementor)
     }
 
     # Only create if it doesn't exist
@@ -249,12 +282,30 @@ defmodule SecopService.Sec_Nodes do
 
   # Create a parameter from parameter data
   defp create_parameter_from_data(db_module, param_name, param_data) do
+    properties = param_data
+
+    # Extract custom properties (keys starting with underscore)
+    custom_properties =
+      Enum.reduce(properties, %{}, fn {key, value}, acc ->
+        if String.starts_with?(to_string(key), "_") do
+          Map.put(acc, key, value)
+        else
+          acc
+        end
+      end)
+
     attrs = %{
       name: to_string(param_name),
-      description: Map.get(param_data, :description),
-      datainfo: Map.get(param_data, :datainfo),
-      readonly: Map.get(param_data, :readonly, true),
-      properties: %{},
+      description: Map.get(properties, :description),
+      datainfo: Map.get(properties, :datainfo),
+      readonly: Map.get(properties, :readonly),
+      custom_properties: custom_properties,
+
+      # optional properties
+      group: Map.get(properties, :group),
+      visibility: Map.get(properties, :visibility) |> to_string(),
+      meaning: Map.get(properties, :meaning),
+      checkable: Map.get(properties, :checkable),
       module_id: db_module.id
     }
 
@@ -290,14 +341,32 @@ defmodule SecopService.Sec_Nodes do
 
   # Create a command from command data
   defp create_command_from_data(db_module, cmd_name, cmd_data) do
+    properties = cmd_data
+
+    # Extract custom properties (keys starting with underscore)
+    custom_properties =
+      Enum.reduce(properties, %{}, fn {key, value}, acc ->
+        if String.starts_with?(to_string(key), "_") do
+          Map.put(acc, key, value)
+        else
+          acc
+        end
+      end)
+
     attrs = %{
       name: to_string(cmd_name),
-      description: Map.get(cmd_data, :description),
-      datainfo: Map.get(cmd_data, :datainfo),
-      properties: %{},
+      description: Map.get(properties, :description),
+      datainfo: Map.get(properties, :datainfo),
+      custom_properties: custom_properties,
       module_id: db_module.id,
-      argument: Map.get(cmd_data, :datainfo) |> Map.get(:argument),
-      result: Map.get(cmd_data, :datainfo) |> Map.get(:result)
+      argument: Map.get(properties, :datainfo) |> Map.get(:argument),
+      result: Map.get(properties, :datainfo) |> Map.get(:result),
+
+      # optional properties
+      group: Map.get(properties, :group),
+      visibility: Map.get(properties, :visibility) |> to_string(),
+      meaning: Map.get(properties, :meaning),
+      checkable: Map.get(properties, :checkable)
     }
 
     # Only create if it doesn't exist
@@ -356,7 +425,9 @@ defmodule SecopService.Sec_Nodes do
   end
 
   def get_sec_node_by_uuid(uuid) do
-    Repo.get_by(SEC_Node, uuid: uuid)
+    SEC_Node
+    |> Repo.get_by(uuid: uuid)
+    |> Repo.preload(modules: [:parameters])
   end
 
   # Query functions
@@ -365,20 +436,18 @@ defmodule SecopService.Sec_Nodes do
       SEC_Node,
       params,
       for: SEC_Node,
-      default_limit: 10,   # Defaults to 25 if not provided
-      max_limit: 30)       # Prevents going above 100
+      # Defaults to 25 if not provided
+      default_limit: 10,
+      # Prevents going above 100
+      max_limit: 30
+    )
   end
-
-
-
 
   def get_module(id), do: Repo.get(Module, id)
 
   def get_parameter(id), do: Repo.get(Parameter, id)
 
   def get_command(id), do: Repo.get(Command, id)
-
-
 
   @doc """
   Checks if a SEC node with the given UUID exists in the database.

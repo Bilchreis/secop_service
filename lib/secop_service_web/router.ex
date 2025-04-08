@@ -21,8 +21,10 @@ defmodule SecopServiceWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
-    live "dashboard", DashboardLive.Index
-    live "browse", DataBrowserLive.Index, :index
+    live "/dashboard", DashboardLive.Index
+    live "/browse", DataBrowserLive.Index, :index
+    live "/browse/node/:uuid", NodeBrowserLive.Index, :index
+    live "/browse/node/:uuid/parameter/:id", ParameterBrowserLive.Index, :index
   end
 
   # Other scopes may use custom stacks.
