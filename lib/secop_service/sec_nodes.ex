@@ -427,7 +427,7 @@ defmodule SecopService.Sec_Nodes do
   def get_sec_node_by_uuid(uuid) do
     SEC_Node
     |> Repo.get_by(uuid: uuid)
-    |> Repo.preload(modules: [:parameters])
+    |> Repo.preload(modules: [:parameters, :commands])
   end
 
   # Query functions
