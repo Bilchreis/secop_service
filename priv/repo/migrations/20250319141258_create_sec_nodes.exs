@@ -7,11 +7,14 @@ defmodule SecopService.Repo.Migrations.CreateSecNodes do
       add :equipment_id, :string, null: false
       add :host, :string, null: false
       add :port, :integer, null: false
-      add :description, :string
+      add :description, :text
+      add :firmware, :string
+      add :implementor, :string
+      add :timeout, :integer
       # JSONB in PostgreSQL
       add :describe_message, :map
       # JSONB in PostgreSQL
-      add :properties, :map
+      add :custom_properties, :map
 
       timestamps()
     end

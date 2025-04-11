@@ -69,7 +69,7 @@ defmodule SecopServiceWeb.Components.PlotlyChart do
     {:ok, socket}
   end
 
-  def update(%{value_update: value_update, pubsub_topic: pubsub_topic} = assigns, socket) do
+  def update(%{value_update: value_update, pubsub_topic: pubsub_topic} = _assigns, socket) do
     parameter = Enum.at(String.split(pubsub_topic, ":"), -1)
 
     [value, qualifiers] = value_update
@@ -106,7 +106,7 @@ defmodule SecopServiceWeb.Components.PlotlyChart do
   end
 
   @impl true
-  def handle_event("request-plotly-data", %{"id" => chart_id}, %{assigns: assigns} = socket) do
+  def handle_event("request-plotly-data", %{"id" => _chart_id}, %{assigns: assigns} = socket) do
     {:noreply,
      push_event(socket, "plotly-data-#{socket.assigns.id}", %{
        data: assigns.plot.data,

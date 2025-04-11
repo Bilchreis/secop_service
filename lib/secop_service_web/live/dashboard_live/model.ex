@@ -25,8 +25,6 @@ defmodule SecopServiceWeb.DashboardLive.Model do
               Map.put(acc, node_id, init_node(node))
             end)
 
-
-
           %{
             active_nodes: initial_active_nodes,
             current_node_key: current_node_key,

@@ -52,7 +52,7 @@ defmodule SECoPComponents do
   attr :parameter, :string, required: true
   attr :parameter_name, :string, required: true
 
-  def parameter(assigns) do
+  def dash_parameter(assigns) do
     assigns =
       assign(assigns, parse_param_value(assigns[:parameter]))
       |> assign(:unit, Map.get(assigns.parameter.datainfo, :unit))
@@ -139,7 +139,7 @@ defmodule SECoPComponents do
     ~H"""
     <div class={[
       @box_color,
-      "bg-gray-50 dark:bg-gray-900 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-full mb-4"
+      "bg-gray-50  p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-full mb-4"
     ]}>
       <.accordion
         id={@mod_name}
@@ -171,7 +171,7 @@ defmodule SECoPComponents do
       </.accordion>
       <div class="grid grid-cols-3 gap-7 pt-6 content-start">
         <%= for {parameter_name, parameter} <- @module.parameters do %>
-          <.parameter parameter_name={parameter_name} parameter={parameter} />
+          <.dash_parameter parameter_name={parameter_name} parameter={parameter} />
         <% end %>
       </div>
     </div>

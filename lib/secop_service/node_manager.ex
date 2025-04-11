@@ -8,7 +8,8 @@ defmodule SecopService.NodeManager do
   alias SecopService.NodeDBWriterSupervisor
 
   @pubsub_name :secop_client_pubsub
-  @check_interval 10 * 60 * 1000 # Check for node changes every minute
+  # Check for node changes every minute
+  @check_interval 10 * 60 * 1000
 
   # Client API
 
@@ -52,10 +53,8 @@ defmodule SecopService.NodeManager do
     # Schedule next sync
     schedule_sync()
 
-
     {:noreply, updated_state}
   end
-
 
   @impl true
   def handle_info(:sync_nodes, state) do
@@ -71,20 +70,21 @@ defmodule SecopService.NodeManager do
     old_uuid = find_old_uuid(state.nodes, node_state.node_id)
 
     # If we have an old UUID and it's different, stop the old writer
-    state = if old_uuid && old_uuid != node_state.uuid do
-      Logger.info("Node UUID changed from #{old_uuid} to #{node_state.uuid}, updating writer")
-      NodeDBWriterSupervisor.stop_writer(old_uuid)
+    state =
+      if old_uuid && old_uuid != node_state.uuid do
+        Logger.info("Node UUID changed from #{old_uuid} to #{node_state.uuid}, updating writer")
+        NodeDBWriterSupervisor.stop_writer(old_uuid)
 
-      # Store the new node configuration
-      {:ok, node} = Sec_Nodes.store_single_node(node_state)
+        # Store the new node configuration
+        {:ok, node} = Sec_Nodes.store_single_node(node_state)
 
-      updated_nodes = Map.put(state.nodes, node_state.node_id, node)
-      # Start a new writer
-      NodeDBWriterSupervisor.start_writer(node_state)
-      %{state | nodes: updated_nodes}
-    else
-      state
-    end
+        updated_nodes = Map.put(state.nodes, node_state.node_id, node)
+        # Start a new writer
+        NodeDBWriterSupervisor.start_writer(node_state)
+        %{state | nodes: updated_nodes}
+      else
+        state
+      end
 
     {:noreply, state}
   end
@@ -96,7 +96,7 @@ defmodule SecopService.NodeManager do
       nil -> nil
       node -> node.uuid
     end
-end
+  end
 
   def handle_info({:conn_state, _pubsub_topic, active}, state) do
     # TODO
@@ -104,9 +104,8 @@ end
     {:noreply, state}
   end
 
-  def handle_info({:state_change, pubsub_topic, node_state}, state) do
+  def handle_info({:state_change, pubsub_topic, _node_state}, state) do
     Logger.info("new node status: #{pubsub_topic} #{state.state}")
-
 
     {:noreply, state}
   end
@@ -118,9 +117,6 @@ end
     {:noreply, state}
   end
 
-
-
-
   # Private functions
 
   defp schedule_sync do
@@ -130,19 +126,27 @@ end
   defp sync_nodes_with_db(active_nodes, state) do
     # Store nodes in database
 
-    result = Enum.reduce(active_nodes, %{}, fn {node_id, node_state}, acc ->
-      case Sec_Nodes.node_exists?(node_state.uuid) do
-        false ->
-          # New node
-          Logger.info("New node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}")
-          {:ok, node} = Sec_Nodes.store_single_node(node_state)
-          Map.put(acc, node_id, node)
-        true ->
-          # Update existing node
-          Logger.info("Node already in db: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}")
-          acc
-      end
-    end)
+    result =
+      Enum.reduce(active_nodes, %{}, fn {node_id, node_state}, acc ->
+        case Sec_Nodes.node_exists?(node_state.uuid) do
+          false ->
+            # New node
+            Logger.info(
+              "New node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
+            )
+
+            {:ok, node} = Sec_Nodes.store_single_node(node_state)
+            Map.put(acc, node_id, node)
+
+          true ->
+            # Update existing node
+            Logger.info(
+              "Node already in db: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
+            )
+
+            acc
+        end
+      end)
 
     # Start writers for active nodes that don't have one
     Enum.each(active_nodes, fn {_node_id, node_state} ->
@@ -168,18 +172,10 @@ end
       Map.merge(old_nodes, result, fn _key, new_node, old_node -> new_node end)
       |> keep_common_keys(active_nodes)
 
-
-
-
     %{state | nodes: merged_nodes}
-
   end
 
   defp keep_common_keys(map1, map2) do
     Map.filter(map1, fn {key, _value} -> Map.has_key?(map2, key) end)
   end
-
-
-
-
 end

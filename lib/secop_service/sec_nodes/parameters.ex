@@ -4,12 +4,21 @@ defmodule SecopService.Sec_Nodes.Parameter do
 
   schema "parameters" do
     field :name, :string
+
+    # Mandatory properties:
     field :description, :string
     # Complete SECoP data info structure
     field :datainfo, :map
     field :readonly, :boolean, default: true
-    # JSONB column for flexible properties
-    field :properties, :map
+
+    # Optional properties:
+    field :group, :string
+    field :visibility, :string
+    field :meaning, :map
+    field :checkable, :boolean
+
+    # JSONB column for custom properties
+    field :custom_properties, :map
 
     belongs_to :module, SecopService.Sec_Nodes.Module
     has_many :parameter_values, SecopService.Sec_Nodes.ParameterValue
@@ -19,7 +28,18 @@ defmodule SecopService.Sec_Nodes.Parameter do
 
   def changeset(parameter, attrs) do
     parameter
-    |> cast(attrs, [:name, :datainfo, :description, :readonly, :properties, :module_id])
+    |> cast(attrs, [
+      :name,
+      :datainfo,
+      :description,
+      :readonly,
+      :custom_properties,
+      :module_id,
+      :group,
+      :visibility,
+      :meaning,
+      :checkable
+    ])
     |> validate_required([:name, :description, :datainfo, :module_id])
     |> validate_datainfo()
     |> foreign_key_constraint(:module_id)

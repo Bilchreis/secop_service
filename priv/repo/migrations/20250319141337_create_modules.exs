@@ -4,10 +4,17 @@ defmodule SecopService.Repo.Migrations.CreateModules do
   def change do
     create table(:modules) do
       add :name, :string, null: false
+
       add :description, :string
       add :interface_classes, {:array, :string}
+
+      add :visibility, :string
+      add :group, :string
+      add :meaning, :map
+      add :implementor, :string
+
       # JSONB in PostgreSQL
-      add :properties, :map
+      add :custom_properties, :map
 
       add :sec_node_id,
           references(:sec_nodes, column: :uuid, type: :uuid, on_delete: :delete_all),

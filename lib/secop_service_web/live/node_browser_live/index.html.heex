@@ -1,0 +1,11 @@
+<div class="container mx-auto">
+  <%= if @node do %>
+    <div>
+      <.sec_node_view node={@node} />
+    </div>
+  <% else %>
+    <div>
+      Node not found
+    </div>
+  <% end %>
+</div>

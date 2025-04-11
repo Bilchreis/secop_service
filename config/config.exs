@@ -11,6 +11,9 @@ config :secop_service,
   ecto_repos: [SecopService.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# Add Flop configuration
+config :flop, repo: SecopService.Repo
+
 # Configures the endpoint
 config :secop_service, SecopServiceWeb.Endpoint,
   url: [host: "localhost"],
@@ -60,6 +63,8 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

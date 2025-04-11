@@ -1,9 +1,9 @@
 defmodule SecopService.NodeDBWriter do
   use GenServer
   require Logger
-  alias SecopService.Sec_Nodes
+
   alias SecopService.Repo
-  alias Phoenix.PubSub
+
 
   @pubsub_name :secop_client_pubsub
   # Batch parameter values for 5 seconds

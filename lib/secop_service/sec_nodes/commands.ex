@@ -7,12 +7,20 @@ defmodule SecopService.Sec_Nodes.Command do
     field :description, :string
     # Complete SECoP data info structure
     field :datainfo, :map
-    # JSONB column for flexible properties
-    field :properties, :map
+
     # JSONB column for argument data type
     field :argument, :map
     # JSONB column for result data type
     field :result, :map
+
+    # Optional properties:
+    field :group, :string
+    field :visibility, :string
+    field :meaning, :map
+    field :checkable, :boolean
+
+    # JSONB column for custom properties
+    field :custom_properties, :map
 
     belongs_to :module, SecopService.Sec_Nodes.Module
 
@@ -21,7 +29,19 @@ defmodule SecopService.Sec_Nodes.Command do
 
   def changeset(command, attrs) do
     command
-    |> cast(attrs, [:name, :description, :datainfo, :properties, :module_id, :argument, :result])
+    |> cast(attrs, [
+      :name,
+      :description,
+      :datainfo,
+      :custom_properties,
+      :module_id,
+      :argument,
+      :result,
+      :group,
+      :visibility,
+      :meaning,
+      :checkable
+    ])
     |> validate_required([:name, :datainfo, :module_id])
     |> validate_command_datainfo()
     |> foreign_key_constraint(:module_id)

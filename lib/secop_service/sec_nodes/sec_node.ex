@@ -1,6 +1,17 @@
 defmodule SecopService.Sec_Nodes.SEC_Node do
   use Ecto.Schema
   import Ecto.Changeset
+  alias SecopService.Util
+
+  @derive {
+    Flop.Schema,
+    filterable: [:uuid, :equipment_id, :host, :port],
+    sortable: [:uuid, :equipment_id, :host, :port, :inserted_at],
+    default_order: %{
+      order_by: [:inserted_at, :equipment_id],
+      order_directions: [:desc, :asc]
+    }
+  }
 
   @primary_key {:uuid, Ecto.UUID, autogenerate: true}
   @derive {Phoenix.Param, key: :uuid}
@@ -9,10 +20,14 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
     field :host, :string
     field :port, :integer
     field :description, :string
+    field :firmware, :string
+    field :implementor, :string
+    field :timeout, :integer
+
     # JSONB full describe message
     field :describe_message, :map
     # JSONB column for flexible properties
-    field :properties, :map
+    field :custom_properties, :map
 
     has_many :modules, SecopService.Sec_Nodes.Module, foreign_key: :sec_node_id
 
@@ -28,7 +43,10 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
       :port,
       :description,
       :describe_message,
-      :properties
+      :custom_properties,
+      :firmware,
+      :implementor,
+      :timeout
     ])
     |> validate_required([
       :uuid,
@@ -37,7 +55,18 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
       :port,
       :description,
       :describe_message,
-      :properties
+      :custom_properties
     ])
+  end
+
+  def display_description(sec_node) do
+    sec_node.description
+    |> String.split("\n")
+    |> Enum.map(&Phoenix.HTML.html_escape/1)
+    |> Enum.intersperse(Phoenix.HTML.raw("<br>"))
+  end
+
+  def display_equipment_id(sec_node) do
+    Util.display_name(sec_node.equipment_id)
   end
 end
