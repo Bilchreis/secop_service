@@ -104,7 +104,7 @@ defmodule SecopService.NodeManager do
     {:noreply, state}
   end
 
-  def handle_info({:state_change, pubsub_topic, node_state}, state) do
+  def handle_info({:state_change, pubsub_topic, _node_state}, state) do
     Logger.info("new node status: #{pubsub_topic} #{state.state}")
 
     {:noreply, state}
