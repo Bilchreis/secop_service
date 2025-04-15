@@ -5,7 +5,7 @@ defmodule SecopService.Repo.Migrations.CreateModules do
     create table(:modules) do
       add :name, :string, null: false
 
-      add :description, :string
+      add :description, :text
       add :interface_classes, {:array, :string}
 
       add :visibility, :string

@@ -107,9 +107,9 @@ defmodule SecopServiceWeb.BrowseComponents do
               <.module module={module} module_descr={@node.describe_message["modules"][module.name]} />
             <% end %>
           <% else %>
-            <div class="mb-6 border-l-4 border-purple-500 pl-4">
-              <h3 class="text-xl font-semibold mb-2 text-purple-700 dark:text-purple-400">
-                {group_name}
+            <div class="mb-6 border-l-4 border-t-4 border-stone-400 dark:border-stone-400 pl-4 rounded-lg">
+              <h3 class="text-xl font-semibold m-2 text-stone-500 dark:text-stone-400">
+                {Util.display_name(group_name)}
               </h3>
 
               <%= for module <- modules do %>
@@ -204,7 +204,7 @@ defmodule SecopServiceWeb.BrowseComponents do
 
 
     ~H"""
-    <div class="space-y-4">
+    <div class="">
       <!-- Badge View -->
       <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden mt-2 inline-flex">
         <div class="p-4 flex flex-wrap gap-2">
@@ -229,7 +229,7 @@ defmodule SecopServiceWeb.BrowseComponents do
     grouped_parameters = Enum.group_by(assigns.module.parameters, &(&1.group || nil))
     grouped_commands = Enum.group_by(assigns.module.commands, &(&1.group || nil))
 
-    base_class = get_base_interface_class(assigns.module)
+    base_class = Util.get_highest_if_class(assigns.module.interface_classes)
     styles = get_class_styles(base_class)
 
     assigns = assigns
@@ -347,40 +347,39 @@ defmodule SecopServiceWeb.BrowseComponents do
     """
   end
 
-  # Helper function to get the base interface class (last one in the list)
-  defp get_base_interface_class(module) do
-    case module.interface_classes do
-      [] -> nil
-      classes -> List.last(classes)
-    end
-  end
-
   # Helper function to get class-specific styles
   defp get_class_styles(interface_class) do
     case interface_class do
-      "Communicator" -> %{
+      :communicator -> %{
         border: "border-blue-500 dark:border-blue-600/40",
         bg: "bg-gradient-to-r from-blue-200 to-blue-300 dark:from-blue-900/30 dark:to-blue-900/40",
         header_bg: "bg-blue-300 dark:bg-blue-800/50",
-        icon: "hero-signal"
+        icon: "hero-chat-bubble-left-right"
       }
-      "Readable" -> %{
+      :readable -> %{
         border: "border-green-500 dark:border-green-600/40",
         bg: "bg-gradient-to-r from-green-200 to-green-300 dark:from-green-900/30 dark:to-green-900/40",
         header_bg: "bg-green-300 dark:bg-green-800/50",
         icon: "hero-eye"
       }
-      "Writable" -> %{
+      :writable -> %{
         border: "border-amber-500 dark:border-amber-600/40",
         bg: "bg-gradient-to-r from-amber-200 to-amber-300 dark:from-amber-900/30 dark:to-amber-900/40",
         header_bg: "bg-amber-300 dark:bg-amber-800/50",
         icon: "hero-pencil-square"
       }
-      "Drivable" -> %{
+      :drivable -> %{
         border: "border-purple-500 dark:border-purple-600/40",
         bg: "bg-gradient-to-r from-purple-200 to-purple-300 dark:from-purple-900/30 dark:to-purple-900/40",
         header_bg: "bg-purple-300 dark:bg-purple-800/50",
-        icon: "hero-arrow-path"
+        icon: "hero-cog"
+      }
+
+      :measurable -> %{
+        border: "border-blue-500 dark:border-blue-600/40",
+        bg: "bg-gradient-to-r from-blue-200 to-blue-300 dark:from-blue-900/30 dark:to-blue-900/40",
+        header_bg: "bg-blue-300 dark:bg-blue-800/50",
+        icon: "hero-clock"
       }
       _ -> %{
         border: "border-gray-500 dark:border-gray-600/40",
@@ -401,10 +400,10 @@ defmodule SecopServiceWeb.BrowseComponents do
       |> assign(:parameter_pretty, parameter_pretty)
 
     ~H"""
-    <div class="mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
+    <div class=" grid grid-cols-2 mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
 
         <!-- Parameter Name -->
-        <div>
+        <div class = "mr-4">
           <span class="text-xl font-bold text-gray-800 dark:text-white">
               <%= if @parameter.readonly do %>
                 <span class="text-amber-600 dark:text-amber-400">🔒</span>
@@ -415,13 +414,9 @@ defmodule SecopServiceWeb.BrowseComponents do
             </span>
           <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300">
             <!-- Description -->
-            <.property prop_key="Description" class = "rounded-lg bg-gray-2 bg-gray-200 dark:bg-gray-600 mb-2 p-2" key_class="text-gray-700 dark:text-gray-300 text-sm font-bold">
+            <.property prop_key="Description" class = "" key_class="text-gray-700 dark:text-gray-300 text-sm font-bold">
               {@parameter.description}
             </.property>
-
-            <%= if @parameter.name == "status" do %>
-              <.status_tuple status_tuple={@parameter.datainfo} />
-            <% end %>
 
             <!-- Readonly -->
             <.property prop_key="Readonly" key_class="text-gray-600 dark:text-gray-400 font-semibold">
@@ -465,11 +460,16 @@ defmodule SecopServiceWeb.BrowseComponents do
                 {inspect(property_value)}
               </.property>
             <% end %>
+
+            <%= if @parameter.name == "status" do %>
+              <.status_tuple status_tuple={@parameter.datainfo} />
+            <% end %>
+
           </ul>
         </div>
 
         <!-- Datainfo -->
-        <div>
+        <div class = "">
           <.accordion
             id={@parameter.name <> to_string(@parameter.id)}
             class="mt-3 bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-lg  "

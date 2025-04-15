@@ -4,6 +4,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   alias SecopServiceWeb.DashboardLive.Model, as: Model
   alias SecopServiceWeb.NodeControl
   alias SecopClient
+  alias SEC_Node_Supervisor
   require Logger
 
   import SECoPComponents
@@ -26,7 +27,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "secop_conn_state")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "new_node")
 
-    socket = assign(socket, :model, model)
+    socket =
+      socket
+      |> assign(:model, model)
+      |> assign(:show_connect_modal, false)
 
     {:ok, socket}
   end
@@ -119,6 +123,32 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     model = NodeControl.validate(unsigned_params, socket.assigns.model)
 
     {:noreply, assign(socket, :model, model)}
+  end
+
+  @impl true
+  def handle_event("open_connect_modal", _params, socket) do
+    {:noreply,
+     assign(socket,
+       show_connect_modal: true
+     )}
+  end
+
+  @impl true
+  def handle_event("close_connect_modal", _params, socket) do
+    {:noreply, assign(socket, show_connect_modal: false)}
+  end
+
+  def handle_event("connect-node", params, socket) do
+
+    opts = %{
+      host: params["host"] |> String.to_charlist(),
+      port: params["port"] |> String.to_integer(),
+      reconnect_backoff: 5000
+    }
+
+    SEC_Node_Supervisor.start_child(opts)
+    {:noreply, socket}
+
   end
 
   @impl true

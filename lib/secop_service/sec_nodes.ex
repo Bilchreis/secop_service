@@ -326,6 +326,7 @@ defmodule SecopService.Sec_Nodes do
 
     Enum.reduce(commands, %{}, fn {cmd_name, cmd_data}, acc ->
       # Create the command
+
       case create_command_from_data(db_module, cmd_name, cmd_data) do
         {:ok, db_cmd} ->
           # Return command mapping

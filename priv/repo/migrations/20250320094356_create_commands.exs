@@ -4,7 +4,7 @@ defmodule SecopService.Repo.Migrations.CreateCommands do
   def change do
     create table(:commands) do
       add :name, :string, null: false
-      add :description, :string
+      add :description, :text
       # JSONB in PostgreSQL
       add :datainfo, :map
       add :module_id, references(:modules, on_delete: :delete_all), null: false
