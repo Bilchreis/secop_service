@@ -239,9 +239,10 @@ defmodule SecopServiceWeb.BrowseComponents do
       |> assign(:styles, styles)
 
     ~H"""
+    <div class ="flex  items-start">
     <.accordion
       id={@module.name <> to_string(@module.id)}
-      class={"mt-3 p-4 #{@styles.bg} rounded-lg shadow-md hover:shadow-lg border-l-4 #{@styles.border}"}
+      class={"flex-1 h-auto mt-3 p-4 #{@styles.bg} rounded-lg shadow-md hover:shadow-lg border-l-4 #{@styles.border}"}
       >
       <:trigger class="text-left">
         <!-- Module Name with Interface Class Icon -->
@@ -255,6 +256,7 @@ defmodule SecopServiceWeb.BrowseComponents do
               </span>
             <% end %>
           </span>
+
         </div>
 
         <!-- Module Properties -->
@@ -344,6 +346,15 @@ defmodule SecopServiceWeb.BrowseComponents do
         <% end %>
       </:panel>
     </.accordion>
+
+    <.live_component
+                  module={SecopServiceWeb.Components.PlotlyChartDB}
+                  id = {"module-plot-" <> to_string(@module.id)}
+                  secop_obj={@module}
+                  class = "flex-1 p-4 "
+            />
+
+    </div>
     """
   end
 
@@ -406,7 +417,7 @@ defmodule SecopServiceWeb.BrowseComponents do
         <div class = "mr-4">
           <span class="text-xl font-bold text-gray-800 dark:text-white">
               <%= if @parameter.readonly do %>
-                <span class="text-amber-600 dark:text-amber-400">🔒</span>
+                <span class="text-amber-600 dark:text-amber-400">📖</span>
               <% else %>
                 <span class="text-green-600 dark:text-green-400">✏️</span>
               <% end %>

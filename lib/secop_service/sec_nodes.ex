@@ -74,6 +74,31 @@ defmodule SecopService.Sec_Nodes do
     |> Repo.all()
   end
 
+
+  def get_values(parameter_id) do
+    ParameterValue
+    |> where(parameter_id: ^parameter_id)
+    |> order_by(desc: :timestamp)
+    |> Repo.all()
+  end
+
+
+  def extract_value_timestamp_lists(parameter_values) do
+    values = Enum.map(parameter_values, fn param_value ->
+      # Extract the actual value from the nested structure
+      param_value.value["value"]
+    end)
+
+    timestamps = Enum.map(parameter_values, fn param_value ->
+      # Extract the timestamp - using DateTime values
+      DateTime.to_unix(param_value.timestamp, :millisecond) / 1000
+      # Or if you prefer to use the timestamp from qualifiers:
+      # param_value.qualifiers["t"]
+    end)
+
+    {values, timestamps}
+  end
+
   def get_values_in_timerange(parameter_id, start_time, end_time) do
     ParameterValue
     |> where(parameter_id: ^parameter_id)
