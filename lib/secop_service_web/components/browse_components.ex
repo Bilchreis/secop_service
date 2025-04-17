@@ -21,7 +21,7 @@ defmodule SecopServiceWeb.BrowseComponents do
     assigns = assign(assigns, :grouped_modules, grouped_modules)
 
     ~H"""
-    <div class="bg-gray-200 dark:bg-gray-800 dark:text-gray-300 p-4 rounded-lg shadow-md">
+    <div class="bg-gray-200 dark:bg-gray-800 dark:text-gray-300 shadow-xl shadow-purple-600/30  p-4 rounded-lg shadow-md">
       <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -242,7 +242,7 @@ defmodule SecopServiceWeb.BrowseComponents do
     <div class ="flex  items-start">
     <.accordion
       id={@module.name <> to_string(@module.id)}
-      class={"flex-1 h-auto mt-3 p-4 #{@styles.bg} rounded-lg shadow-md hover:shadow-lg border-l-4 #{@styles.border}"}
+      class={"w-3/4  flex-1 h-auto mt-3 p-4 #{@styles.bg} rounded-lg shadow-md hover:shadow-lg border-l-4 #{@styles.border}"}
       >
       <:trigger class="text-left">
         <!-- Module Name with Interface Class Icon -->
@@ -348,15 +348,20 @@ defmodule SecopServiceWeb.BrowseComponents do
     </.accordion>
 
     <.live_component
-                  module={SecopServiceWeb.Components.PlotlyChartDB}
+                  module={SecopServiceWeb.Components.HistoryDB}
                   id = {"module-plot-" <> to_string(@module.id)}
                   secop_obj={@module}
-                  class = "flex-1 p-4 "
+                  class = "w-3/5 p-4 "
             />
 
     </div>
     """
   end
+
+
+
+
+
 
   # Helper function to get class-specific styles
   defp get_class_styles(interface_class) do
@@ -411,102 +416,93 @@ defmodule SecopServiceWeb.BrowseComponents do
       |> assign(:parameter_pretty, parameter_pretty)
 
     ~H"""
-    <div class=" grid grid-cols-2 mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
-
-        <!-- Parameter Name -->
-        <div class = "mr-4">
-          <span class="text-xl font-bold text-gray-800 dark:text-white">
-              <%= if @parameter.readonly do %>
-                <span class="text-amber-600 dark:text-amber-400">📖</span>
-              <% else %>
-                <span class="text-green-600 dark:text-green-400">✏️</span>
-              <% end %>
-              {Util.display_name(@parameter.name)}:
-            </span>
-          <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300">
-            <!-- Description -->
-            <.property prop_key="Description" class = "" key_class="text-gray-700 dark:text-gray-300 text-sm font-bold">
-              {@parameter.description}
-            </.property>
-
-            <!-- Readonly -->
-            <.property prop_key="Readonly" key_class="text-gray-600 dark:text-gray-400 font-semibold">
-              {@parameter.readonly}
-            </.property>
-
-            <!-- Optional Properties -->
-            <%= if @parameter.group do %>
-              <.property prop_key="Group" key_class="text-gray-600 dark:text-gray-400 font-semibold">
-                {@parameter.group}
-              </.property>
-            <% end %>
-
-            <%= if @parameter.visibility do %>
-              <.property prop_key="Visibility" key_class="text-gray-600 dark:text-gray-400 font-semibold">
-                {@parameter.visibility}
-              </.property>
-            <% end %>
-
-            <%= if @parameter.meaning do %>
-              <.property prop_key="Meaning" key_class="text-gray-600 dark:text-gray-400 font-semibold">
-                {inspect(@parameter.meaning)}
-              </.property>
-            <% end %>
-
-            <%= if @parameter.checkable do %>
-              <.property prop_key="Checkable" key_class="text-gray-600 dark:text-gray-400 font-semibold">
-                {@parameter.checkable}
-              </.property>
-            <% end %>
-
-            <%= if @parameter.datainfo["type"] == "enum" do %>
-              <.property prop_key="Enum Members" key_class="text-gray-600 dark:text-gray-400 font-semibold">
-                <.enum enum= {@parameter.datainfo} />
-              </.property>
-            <% end %>
-
-            <!-- Custom Properties -->
-            <%= for {property_name, property_value} <- @parameter.custom_properties do %>
-              <.property prop_key={String.replace_prefix(property_name, "_", "")} key_class="text-gray-600 dark:text-gray-400 font-semibold">
-                {inspect(property_value)}
-              </.property>
-            <% end %>
-
-            <%= if @parameter.name == "status" do %>
-              <.status_tuple status_tuple={@parameter.datainfo} />
-            <% end %>
-
-          </ul>
-        </div>
-
-        <!-- Datainfo -->
-        <div class = "">
-          <.accordion
-            id={@parameter.name <> to_string(@parameter.id)}
-            class="mt-3 bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-lg  "
-          >
-            <:trigger  class="p-2  text-left text-sm">
-                <div class = "flex flex-row">
-                  <div class= "p-1">
-                    <.icon name="hero-information-circle" class=" h-5 w-5 flex-none" />
-                  </div>
-                  <div class= "p-1" >
-                    <span  >JSON Description: </span>
-                  </div>
-                </div>
-            </:trigger>
-            <:panel class="p-4 ">
-              <pre class="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-xs p-2 rounded-lg ">
-                {@parameter_pretty}
-              </pre>
-            </:panel>
-          </.accordion>
 
 
+    <!-- Parameter Name -->
+    <div class = "mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
+      <span class="text-xl font-bold text-gray-800 dark:text-white">
+          <%= if @parameter.readonly do %>
+            <span class="text-amber-600 dark:text-amber-400">📖</span>
+          <% else %>
+            <span class="text-green-600 dark:text-green-400">✏️</span>
+          <% end %>
+          {Util.display_name(@parameter.name)}:
+        </span>
+      <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300">
+        <!-- Description -->
+        <.property prop_key="Description" class = "" key_class="text-gray-700 dark:text-gray-300 text-sm font-bold">
+          {@parameter.description}
+        </.property>
 
-        </div>
+        <!-- Readonly -->
+        <.property prop_key="Readonly" key_class="text-gray-600 dark:text-gray-400 font-semibold">
+          {@parameter.readonly}
+        </.property>
 
+        <!-- Optional Properties -->
+        <%= if @parameter.group do %>
+          <.property prop_key="Group" key_class="text-gray-600 dark:text-gray-400 font-semibold">
+            {@parameter.group}
+          </.property>
+        <% end %>
+
+        <%= if @parameter.visibility do %>
+          <.property prop_key="Visibility" key_class="text-gray-600 dark:text-gray-400 font-semibold">
+            {@parameter.visibility}
+          </.property>
+        <% end %>
+
+        <%= if @parameter.meaning do %>
+          <.property prop_key="Meaning" key_class="text-gray-600 dark:text-gray-400 font-semibold">
+            {inspect(@parameter.meaning)}
+          </.property>
+        <% end %>
+
+        <%= if @parameter.checkable do %>
+          <.property prop_key="Checkable" key_class="text-gray-600 dark:text-gray-400 font-semibold">
+            {@parameter.checkable}
+          </.property>
+        <% end %>
+
+        <%= if @parameter.datainfo["type"] == "enum" do %>
+          <.property prop_key="Enum Members" key_class="text-gray-600 dark:text-gray-400 font-semibold">
+            <.enum enum= {@parameter.datainfo} />
+          </.property>
+        <% end %>
+
+        <!-- Custom Properties -->
+        <%= for {property_name, property_value} <- @parameter.custom_properties do %>
+          <.property prop_key={String.replace_prefix(property_name, "_", "")} key_class="text-gray-600 dark:text-gray-400 font-semibold">
+            {inspect(property_value)}
+          </.property>
+        <% end %>
+
+        <%= if @parameter.name == "status" do %>
+          <.status_tuple status_tuple={@parameter.datainfo} />
+        <% end %>
+
+      </ul>
+
+      <.accordion
+        id={@parameter.name <> to_string(@parameter.id)}
+        class="mt-3 bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-lg  "
+      >
+        <:trigger  class="p-2  text-left text-sm">
+            <div class = "flex flex-row">
+                <.icon name="hero-information-circle" class=" h-5 w-5 flex-none mr-1" />
+                <span  >JSON Description: </span>
+            </div>
+        </:trigger>
+        <:panel class="p-4 ">
+          <pre class="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-xs p-2 rounded-lg ">
+            {@parameter_pretty}
+          </pre>
+        </:panel>
+      </.accordion>
     </div>
+
+
+
     """
   end
 

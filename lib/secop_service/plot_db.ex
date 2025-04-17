@@ -1,6 +1,5 @@
 defmodule SecopService.PlotDB do
   alias SecopService.Sec_Nodes.SEC_Node
-  alias SecopService.Repo
   alias SecopService.Sec_Nodes.{Module, Parameter, Command, ParameterValue}
   alias SecopService.Util
   alias SecopService.Sec_Nodes
@@ -24,9 +23,11 @@ defmodule SecopService.PlotDB do
   end
 
   defp get_unit(plot_map, parameter) do
+    IO.inspect(parameter, label: "Parameter")
+
     unit =
-      if Map.has_key?(parameter.datainfo, :unit) do
-        parameter.datainfo.unit
+      if Map.has_key?(parameter.datainfo, "unit") do
+        parameter.datainfo["unit"]
       else
         nil
       end
@@ -91,6 +92,8 @@ defmodule SecopService.PlotDB do
     plot_map =
       is_plottable(plot_map, value_param)
       |> get_unit(value_param)
+
+    IO.inspect(plot_map, label: "Plot Map")
 
 
     {value_val , value_ts} = Sec_Nodes.get_values(value_param.id) |> Sec_Nodes.extract_value_timestamp_lists()
@@ -197,6 +200,8 @@ defmodule SecopService.PlotDB do
       is_plottable(plot_map, parameter)
       |> get_unit(parameter)
       |> set_chart_id(parameter.chart_id)
+
+
 
     # Convert timestamps to ISO format
     formatted_value_ts = format_timestamps(value_ts)
