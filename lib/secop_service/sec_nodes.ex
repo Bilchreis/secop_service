@@ -469,6 +469,20 @@ defmodule SecopService.Sec_Nodes do
     )
   end
 
+  def list_parameter_values(parameter_id, params \\ %{}) do
+    query = from(pv in ParameterValue, where: pv.parameter_id == ^parameter_id)
+
+    Flop.validate_and_run(
+      query,
+      params,
+      for: ParameterValue,
+      default_limit: 15,
+      max_limit: 100,
+      default_order: %{order_by: [:timestamp], order_directions: [:desc]}
+    )
+  end
+
+
   def get_module(id), do: Repo.get(Module, id)
 
   def get_parameter(id), do: Repo.get(Parameter, id)

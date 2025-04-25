@@ -1,29 +1,25 @@
 defmodule SecopService.PlotDB do
-  alias SecopService.Sec_Nodes.SEC_Node
-  alias SecopService.Sec_Nodes.{Module, Parameter, Command, ParameterValue}
+
   alias SecopService.Util
   alias SecopService.Sec_Nodes
 
-
-
-  defp is_plottable(plot_map, parameter) do
-    plottable =
-      case parameter.datainfo["type"] do
-        numeric when numeric in ["double", "int", "scaled"] -> true
-        # TODO
-        "bool" -> false
-        # TODO
-        "enum" -> false
-        # TODO
-        "array" -> false
-        _ -> false
-      end
-
-    Map.put(plot_map, :plottable, plottable)
+  defp plottable?(parameter) do
+    case parameter.datainfo["type"] do
+      numeric when numeric in ["double", "int", "scaled"] -> true
+      # TODO
+      "bool" -> false
+      # TODO
+      "enum" -> false
+      # TODO
+      "array" -> false
+      _ -> false
+    end
   end
 
+
+
   defp get_unit(plot_map, parameter) do
-    IO.inspect(parameter, label: "Parameter")
+
 
     unit =
       if Map.has_key?(parameter.datainfo, "unit") do
@@ -50,14 +46,6 @@ defmodule SecopService.PlotDB do
     Map.put(plot_map, :chart_id, chart_id)
   end
 
-  # Helper function to convert Unix timestamps to ISO format for Plotly
-  defp format_timestamps(timestamps) do
-    to_milliseconds(timestamps)
-  end
-
-  defp to_milliseconds(timestamps) do
-    Enum.map(timestamps, fn ts -> ts * 1000 end)
-  end
 
   def module_plot(module) do
     plotmap = case Util.get_highest_if_class(module.interface_classes) do
@@ -83,211 +71,182 @@ defmodule SecopService.PlotDB do
 
 
 
-  def drivable_plot(module) do
+  def drivable_plot(module) do#
+    plot_map = %{}
+
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
     target_param = Enum.find(module.parameters, fn param -> param.name == "target" end)
 
-    plot_map = %{}
+    if plottable?(value_param) do
 
-    plot_map =
-      is_plottable(plot_map, value_param)
-      |> get_unit(value_param)
-
-    IO.inspect(plot_map, label: "Plot Map")
+      plot_map =
+        Map.put(plot_map, :plottable, true)
+        |> get_unit(value_param)
 
 
-    {value_val , value_ts} = Sec_Nodes.get_values(value_param.id) |> Sec_Nodes.extract_value_timestamp_lists()
-    {target_val, target_ts} = Sec_Nodes.get_values(target_param.id) |> Sec_Nodes.extract_value_timestamp_lists()
 
-    plot_map = plot_available(plot_map, value_val)
+      {value_val , value_ts} = Sec_Nodes.get_values(value_param.id) |> Sec_Nodes.extract_value_timestamp_lists()
+      {target_val, target_ts} = Sec_Nodes.get_values(target_param.id) |> Sec_Nodes.extract_value_timestamp_lists()
 
-    data = [
-      %{
-        x: value_ts,
-        y: value_val,
-        type: "scatter",
-        mode: "lines",
-        name: "value"
-      },
-      %{
-        x: target_ts,
-        y: target_val,
-        type: "scatter",
-        mode: "lines",
-        name: "target"
-      }
-    ]
+      plot_map = plot_available(plot_map, value_val)
 
-    layout = %{
-      xaxis: %{title: %{text: "Time"}, type: "date"},
-      yaxis: %{title: %{text: "#{plot_map.unit}"}},
-      margin: %{t: 30, b: 50, l: 50, r: 20},
-      # background color of the chart container space,
-      paper_bgcolor: "rgba(0,0,0,0",
-      ## background color of plot area
-      plot_bgcolor: "rgba(0,0,0,0)"
-    }
+      data = [
+        %{
+          x: value_ts,
+          y: value_val,
+          type: "scatter",
+          mode: "lines",
+          name: "value"
+        },
+        %{
+          x: target_ts,
+          y: target_val,
+          type: "scatter",
+          mode: "lines",
+          name: "target"
+        }
+      ]
 
-    config =
-      %{
-        responsive: true,
-        displayModeBar: false
+      layout = %{
+        xaxis: %{title: %{text: "Time"}, type: "date"},
+        yaxis: %{title: %{text: "#{plot_map.unit}"}},
+        margin: %{t: 30, b: 50, l: 50, r: 20},
+        # background color of the chart container space,
+        paper_bgcolor: "rgba(0,0,0,0",
+        ## background color of plot area
+        plot_bgcolor: "rgba(0,0,0,0)"
       }
 
-    Map.put(plot_map, :data, data)
-    |> Map.put(:layout, layout)
-    |> Map.put(:config, config)
+      config =
+        %{
+          responsive: true,
+          displayModeBar: false
+        }
+
+      Map.put(plot_map, :data, data)
+      |> Map.put(:layout, layout)
+      |> Map.put(:config, config)
+
+
+    else
+      not_plottable()
+    end
 
 
   end
 
 
   def readable_plot(module) do
+    plot_map = %{}
+
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
 
-    plot_map = %{}
 
-    plot_map =
-      is_plottable(plot_map, value_param)
-      |> get_unit(value_param)
-
-
-    {value_val , value_ts} = Sec_Nodes.get_values(value_param.id) |> Sec_Nodes.extract_value_timestamp_lists()
+    plot_map = if plottable?(value_param) do
+      plot_map =
+        Map.put(plot_map, :plottable, true)
+        |> get_unit(value_param)
 
 
-    plot_map = plot_available(plot_map, value_val)
+      {value_val , value_ts} = Sec_Nodes.get_values(value_param.id) |> Sec_Nodes.extract_value_timestamp_lists()
 
-    data = [
-      %{
-        x: value_ts,
-        y: value_val,
-        type: "scatter",
-        mode: "lines",
-        name: "value"
-      }
-    ]
 
-    layout = %{
-      xaxis: %{title: %{text: "Time"}, type: "date"},
-      yaxis: %{title: %{text: "#{plot_map.unit}"}},
-      margin: %{t: 30, b: 50, l: 50, r: 20},
-      # background color of the chart container space,
-      paper_bgcolor: "rgba(0,0,0,0",
-      ## background color of plot area
-      plot_bgcolor: "rgba(0,0,0,0)"
-    }
+      plot_map = plot_available(plot_map, value_val)
 
-    config =
-      %{
-        responsive: true,
-        displayModeBar: false
+      data = [
+        %{
+          x: value_ts,
+          y: value_val,
+          type: "scatter",
+          mode: "lines",
+          name: "value"
+        }
+      ]
+
+      layout = %{
+        xaxis: %{title: %{text: "Time"}, type: "date"},
+        yaxis: %{title: %{text: "#{plot_map.unit}"}},
+        margin: %{t: 30, b: 50, l: 50, r: 20},
+        # background color of the chart container space,
+        paper_bgcolor: "rgba(0,0,0,0",
+        ## background color of plot area
+        plot_bgcolor: "rgba(0,0,0,0)"
       }
 
-    Map.put(plot_map, :data, data)
-    |> Map.put(:layout, layout)
-    |> Map.put(:config, config)
+      config =
+        %{
+          responsive: true,
+          displayModeBar: false
+        }
 
+      Map.put(plot_map, :data, data)
+      |> Map.put(:layout, layout)
+      |> Map.put(:config, config)
+    else
+      not_plottable()
+    end
+
+
+    plot_map
   end
 
   def parameter_plot(parameter) do
-    {:ok, {value_val, value_ts}} = PlotPublisher.get_data(parameter.parameter_id)
-
     plot_map = %{}
 
-    plot_map = Map.put(plot_map, :topics, [parameter.parameter_topic])
 
-    plot_map =
-      is_plottable(plot_map, parameter)
-      |> get_unit(parameter)
-      |> set_chart_id(parameter.chart_id)
+    plot_map = if plottable?(parameter) do
+
+      {value_val , value_ts} = Sec_Nodes.get_values(parameter.id) |> Sec_Nodes.extract_value_timestamp_lists()
 
 
 
-    # Convert timestamps to ISO format
-    formatted_value_ts = format_timestamps(value_ts)
 
-    plot_map = plot_available(plot_map, value_val)
+      plot_map =
+        Map.put(plot_map, :plottable, true)
+        |> get_unit(parameter)
+        |> set_chart_id(parameter.chart_id)
 
-    data = [
-      %{
-        x: formatted_value_ts,
-        y: value_val,
-        type: "scatter",
-        mode: "lines",
-        name: "value"
-      }
-    ]
+      plot_map = plot_available(plot_map, value_val)
 
-    layout = %{
-      xaxis: %{title: %{text: "Time"}, type: "date"},
-      yaxis: %{title: %{text: "#{plot_map.unit}"}},
-      margin: %{t: 30, b: 50, l: 50, r: 20},
-      # background color of the chart container space,
-      paper_bgcolor: "rgba(0,0,0,0",
-      ## background color of plot area
-      plot_bgcolor: "rgba(0,0,0,0)"
-    }
+      data = [
+        %{
+          x: value_ts,
+          y: value_val,
+          type: "scatter",
+          mode: "lines",
+          name: "value"
+        }
+      ]
 
-    config =
-      %{
-        responsive: true,
-        displayModeBar: false
+      layout = %{
+        xaxis: %{title: %{text: "Time"}, type: "date"},
+        yaxis: %{title: %{text: "#{plot_map.unit}"}},
+        margin: %{t: 30, b: 50, l: 50, r: 20},
+        # background color of the chart container space,
+        paper_bgcolor: "rgba(0,0,0,0",
+        ## background color of plot area
+        plot_bgcolor: "rgba(0,0,0,0)"
       }
 
-    Map.put(plot_map, :data, data)
-    |> Map.put(:layout, layout)
-    |> Map.put(:config, config)
+      config =
+        %{
+          responsive: true,
+          displayModeBar: false
+        }
+
+      Map.put(plot_map, :data, data)
+      |> Map.put(:layout, layout)
+      |> Map.put(:config, config)
+    else
+      not_plottable()
+    end
+
+    plot_map
   end
 
 
 
-  def parameter_plot(parameter) do
-    {:ok, {value_val, value_ts}} = PlotPublisher.get_data(parameter.parameter_id)
 
-    plot_map = %{}
-
-    plot_map = Map.put(plot_map, :topics, [parameter.parameter_topic])
-
-    plot_map =
-      is_plottable(plot_map, parameter)
-      |> get_unit(parameter)
-      |> set_chart_id(parameter.chart_id)
-
-    # Convert timestamps to ISO format
-    formatted_value_ts = format_timestamps(value_ts)
-
-    plot_map = plot_available(plot_map, value_val)
-
-    data = [
-      %{
-        x: formatted_value_ts,
-        y: value_val,
-        type: "scatter",
-        mode: "lines",
-        name: "value"
-      }
-    ]
-
-    layout = %{
-      xaxis: %{title: %{text: "Time"}, type: "date"},
-      yaxis: %{title: %{text: "#{plot_map.unit}"}},
-      margin: %{t: 30, b: 50, l: 50, r: 20},
-      # background color of the chart container space,
-      paper_bgcolor: "rgba(0,0,0,0",
-      ## background color of plot area
-      plot_bgcolor: "rgba(0,0,0,0)"
-    }
-
-    config =
-      %{
-        responsive: true,
-        displayModeBar: false
-      }
-
-    Map.put(plot_map, :data, data)
-    |> Map.put(:layout, layout)
-    |> Map.put(:config, config)
-  end
 
   def no_plot_available() do
     %{plottable: true, plot_available: false}

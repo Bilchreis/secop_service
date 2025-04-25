@@ -4,6 +4,16 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   alias SecopService.Sec_Nodes.Parameter
   require Logger
 
+  @derive {
+    Flop.Schema,
+    filterable: [:timestamp, :parameter_id],
+    sortable: [:timestamp, :parameter_id],
+    default_order: %{
+      order_by: [:timestamp],
+      order_directions: [:desc]
+    }
+  }
+
   schema "parameter_values" do
     # Stores simple values directly, complex values as structures
     field :value, :map
@@ -115,10 +125,10 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   def get_raw_value(parameter_value, parameter) do
     case parameter_value.value do
       # Handle different map structures
-      %{value: v} ->
+      %{"value" =>  v} ->
         v
 
-      %{numeric: n} ->
+      %{"numeric" => n} ->
         n
 
       nil ->
@@ -139,6 +149,7 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   # Get a display-friendly value with unit
   def get_display_value(parameter_value, parameter) do
     raw_value = get_raw_value(parameter_value, parameter)
+
     unit = parameter.datainfo["unit"] || ""
 
     case parameter.datainfo["type"] do
@@ -159,6 +170,7 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
           %{name: name} -> name
           _ -> "#{raw_value}"
         end
+
 
       _ ->
         if unit == "" do
