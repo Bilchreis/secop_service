@@ -2,7 +2,18 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   use Ecto.Schema
   import Ecto.Changeset
   alias SecopService.Sec_Nodes.Parameter
+  alias ExPrintf
   require Logger
+
+  @derive {
+    Flop.Schema,
+    filterable: [:timestamp, :parameter_id],
+    sortable: [:timestamp, :parameter_id],
+    default_order: %{
+      order_by: [:timestamp],
+      order_directions: [:desc]
+    }
+  }
 
   schema "parameter_values" do
     # Stores simple values directly, complex values as structures
@@ -115,10 +126,10 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   def get_raw_value(parameter_value, parameter) do
     case parameter_value.value do
       # Handle different map structures
-      %{value: v} ->
+      %{"value" =>  v} ->
         v
 
-      %{numeric: n} ->
+      %{"numeric" => n} ->
         n
 
       nil ->
@@ -139,18 +150,19 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   # Get a display-friendly value with unit
   def get_display_value(parameter_value, parameter) do
     raw_value = get_raw_value(parameter_value, parameter)
+
     unit = parameter.datainfo["unit"] || ""
 
     case parameter.datainfo["type"] do
       "double" ->
         format_string = parameter.datainfo["fmtstr"] || "%.6g"
         # Simple formatting with :io_lib.format
-        formatted = :io_lib.format(String.to_charlist(format_string), [raw_value])
+        formatted = ExPrintf.sprintf(format_string, [raw_value])
         "#{formatted} #{unit}"
 
       "scaled" ->
         format_string = parameter.datainfo["fmtstr"] || "%.6g"
-        formatted = :io_lib.format(String.to_charlist(format_string), [raw_value])
+        formatted = ExPrintf.sprintf(format_string, [raw_value])
         "#{formatted} #{unit}"
 
       "enum" ->
@@ -159,6 +171,7 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
           %{name: name} -> name
           _ -> "#{raw_value}"
         end
+
 
       _ ->
         if unit == "" do

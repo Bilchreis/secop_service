@@ -1,4 +1,3 @@
-# In your LiveView components directory
 defmodule SecopServiceWeb.Components.PlotlyChart do
   use Phoenix.LiveComponent
   require Logger

@@ -37,7 +37,17 @@ Hooks.PlotlyChart = {
     this.handleEvent(`plotly-data-${this.el.id}`, ({ data, layout, config }) => {
       // Only update if this event is for this chart or if no ID is specified
 
-      Plotly.newPlot(this.el, data, layout || {}, config || {});
+      // Get the loading element ID from data attribute
+      const loadingId = this.el.dataset.loadingId;
+      const loadingElement = document.getElementById(loadingId);
+      
+      // After Plotly is initialized and chart is rendered
+      Plotly.newPlot(this.el, data, layout, config).then(() => {
+        // Hide the loading overlay when Plotly is ready
+        if (loadingElement) {
+          loadingElement.style.display = 'none';
+        }
+      });
 
     });
     
