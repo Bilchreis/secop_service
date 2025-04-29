@@ -2,6 +2,7 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   use Ecto.Schema
   import Ecto.Changeset
   alias SecopService.Sec_Nodes.Parameter
+  alias ExPrintf
   require Logger
 
   @derive {
@@ -156,12 +157,12 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
       "double" ->
         format_string = parameter.datainfo["fmtstr"] || "%.6g"
         # Simple formatting with :io_lib.format
-        formatted = :io_lib.format(String.to_charlist(format_string), [raw_value])
+        formatted = ExPrintf.sprintf(format_string, [raw_value])
         "#{formatted} #{unit}"
 
       "scaled" ->
         format_string = parameter.datainfo["fmtstr"] || "%.6g"
-        formatted = :io_lib.format(String.to_charlist(format_string), [raw_value])
+        formatted = ExPrintf.sprintf(format_string, [raw_value])
         "#{formatted} #{unit}"
 
       "enum" ->

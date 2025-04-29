@@ -68,6 +68,65 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   end
 
   @impl true
+  def handle_event("paginate", %{"page" => page}, socket) do
+    current_meta = socket.assigns.meta
+    old_params = current_meta.params
+
+    page = Integer.parse(page) |> elem(0)
+
+    # Update the meta with new sort params
+    params = Map.put(old_params, :page, page)
+
+    # Fetch data with new sort parameters
+    {:ok, {parameter_values, updated_meta}} =
+      socket.assigns.parameter.id
+      |> Sec_Nodes.list_parameter_values(params)
+
+    {:noreply, assign(socket, param_values: parameter_values, meta: updated_meta)}
+
+  end
+
+  @impl true
+  def handle_event("sort", %{"order" => order}, socket) do
+    current_meta = socket.assigns.meta
+    old_params = current_meta.params
+
+    # Convert to atoms for Flop
+    field_atom = String.to_existing_atom(order)
+
+    direction_atom = case current_meta.flop.order_by do
+      [^field_atom | _] ->
+        # If the field is already sorted, toggle the direction
+        if current_meta.flop.order_directions == [:asc], do: :desc, else: :asc
+      _ ->
+        # If a different field is sorted, set the new field and default to ascending
+        :asc
+    end
+
+    # Update the meta with new sort params
+    params = Map.put(old_params, :order_by, [field_atom]) |> Map.put(:order_directions, [direction_atom])
+
+    # Fetch data with new sort parameters
+    {:ok, {parameter_values, updated_meta}} =
+      socket.assigns.parameter.id
+      |> Sec_Nodes.list_parameter_values(params)
+
+    {:noreply, assign(socket, param_values: parameter_values, meta: updated_meta)}
+
+  end
+
+  @impl true
+  def handle_event("set-display-mode", %{"mode" => mode}, socket) do
+    display_mode = String.to_existing_atom(mode)
+    {:noreply, assign(socket, :display_mode, display_mode)}
+  end
+
+
+
+
+
+
+  @impl true
   def render(assigns) do
 
 
@@ -109,7 +168,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                   items={@param_values}
                   meta={@meta}
                   on_sort={
-                    JS.dispatch("my_app:scroll_to", to: "#pet-table") |> JS.push("sort")
+                    JS.push("sort", target: @myself)
                     }
                   opts={table_opts()}>
                   <:col :let={parameter_value} label="Time" field={:timestamp}>
@@ -122,21 +181,41 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                     <span class="font-mono">{ParameterValue.get_display_value(parameter_value,@parameter)}</span>
                   </:col>
                 </Flop.Phoenix.table>
+
+                <Flop.Phoenix.pagination
+                  meta={@meta}
+                  on_paginate={JS.push("paginate", target: @myself)}
+                  page_links={10}
+                  opts={node_browser_pagination_opts()}  />
+
+
+
           <% end %>
         </div>
 
+
         <!-- Button sidebar on the right -->
         <div class="ml-4 flex flex-col space-y-2 h-full">
-          <button class="px-4 py-2 bg-gray-300 dark:bg-gray-600  dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-700 focus:outline-none">
+          <button class={[
+            "px-4 py-2 rounded-lg focus:outline-none",
+            @display_mode == :graph && "bg-gray-500 text-white hover:bg-gray-600 dark:bg-purple-700 dark:hover:bg-gray-800",
+            @display_mode != :graph && "bg-gray-300 dark:bg-gray-600 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-700"
+          ]}
+            phx-click={JS.push("set-display-mode", value: %{mode: "graph"}, target: @myself)}>
             <div class="flex items-center">
-              <.icon name="hero-chart-bar-solid" class=" h-5 w-5 flex-none mr-1" />
+              <.icon name="hero-chart-bar-solid" class="h-5 w-5 flex-none mr-1" />
               Graph
             </div>
           </button>
 
-          <button class="px-4 py-2 bg-stone-300 dark:bg-stone-600 dark:text-white rounded-lg hover:bg-stone-400 dark:hover:bg-stone-700 focus:outline-none">
+          <button class={[
+            "px-4 py-2 rounded-lg focus:outline-none",
+            @display_mode == :table && "bg-stone-500 text-white hover:bg-stone-600 dark:bg-purple-700 dark:hover:bg-stone-800",
+            @display_mode != :table && "bg-stone-300 dark:bg-stone-600 dark:text-white hover:bg-stone-400 dark:hover:bg-stone-700"
+          ]}
+            phx-click={JS.push("set-display-mode", value: %{mode: "table"}, target: @myself)}>
             <div class="flex items-center">
-              <.icon name="hero-table-cells-solid" class=" h-5 w-5 flex-none mr-1" />
+              <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" />
               Table
             </div>
           </button>

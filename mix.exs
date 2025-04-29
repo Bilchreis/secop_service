@@ -65,7 +65,8 @@ defmodule SecopService.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:tzdata, "~> 1.1"},
       {:flop, "~> 0.26.1"},
-      {:flop_phoenix, "~> 0.24.1"}
+      {:flop_phoenix, "~> 0.24.1"},
+      {:exprintf, "~> 0.2.1"}
     ]
   end
 

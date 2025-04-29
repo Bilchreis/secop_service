@@ -420,14 +420,19 @@ defmodule SecopServiceWeb.BrowseComponents do
 
     <!-- Parameter Name -->
     <div class = "mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
-      <span class="text-xl font-bold text-gray-800 dark:text-white">
-          <%= if @parameter.readonly do %>
-            <span class="text-amber-600 dark:text-amber-400">📖</span>
-          <% else %>
-            <span class="text-green-600 dark:text-green-400">✏️</span>
-          <% end %>
-          {Util.display_name(@parameter.name)}:
-        </span>
+      <div class = "flex justify-between">
+          <div class="text-xl font-bold text-gray-800 dark:text-white">
+            {Util.display_name(@parameter.name)}:
+          </div>
+          <div class = "flex text-sm pt-1 ">
+            <div class="ml-2 px-2 py-0.5 rounded-full bg-white/75 dark:bg-gray-800/75 font-mono">{@parameter.datainfo["type"]}</div>
+            <%= if @parameter.readonly do %>
+              <div class="ml-2 px-2 py-0.5 rounded-full bg-white/75 dark:bg-gray-800/75 font-mono">r</div>
+            <% else %>
+            <div class="ml-2 px-2 py-0.5 rounded-full bg-white/75 dark:bg-gray-800/75 font-mono">r/w</div>
+            <% end %>
+          </div>
+        </div>
       <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300">
         <!-- Description -->
         <.property prop_key="Description" class = "" key_class="text-gray-700 dark:text-gray-300 text-sm font-bold">

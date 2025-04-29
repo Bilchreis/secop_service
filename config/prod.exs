@@ -6,7 +6,8 @@ import Config
 # which you should run after static files are built and
 # before starting your production server.
 config :secop_service, SecopServiceWeb.Endpoint,
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  check_origin: ["http://localhost:4001", "https://yourdomain.com"]
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: SecopService.Finch

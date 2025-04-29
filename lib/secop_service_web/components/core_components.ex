@@ -733,6 +733,38 @@ defmodule SecopServiceWeb.CoreComponents do
     ]
   end
 
+  def node_browser_pagination_opts do
+    [
+      wrapper_attrs: [
+        class:
+          " flex flex-wrap items-center justify-center gap-y-5 gap-x-2 p-4 " <>
+            "bg-white dark:bg-gray-700 shadow-md text-gray-700 dark:text-gray-200 z-50"
+      ],
+      # “Prev” and “Next” have order 1
+      previous_link_attrs: [
+        class:
+          "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+      ],
+      next_link_attrs: [
+        class:
+          "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+      ],
+      # Page links become order 2 and occupy a full row (basis-full)
+      pagination_list_attrs: [
+        class: "order-1 flex gap-2 basis-full justify-center"
+      ],
+      previous_link_content: Phoenix.HTML.raw("Prev"),
+      next_link_content: Phoenix.HTML.raw("Next"),
+      current_link_attrs: [
+        class: "p-2 border rounded bg-purple-500 text-white"
+      ],
+      pagination_link_attrs: [
+        class:
+          "p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+      ]
+    ]
+  end
+
   def table_opts do
     [
       table_attrs: [
