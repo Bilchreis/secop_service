@@ -2,9 +2,9 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches: [ "main", "migrate-model-to-db" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "migrate-model-to-db" ]
+    branches: [ "main" ]
   # Allow manual triggering
   workflow_dispatch:
 
