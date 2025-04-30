@@ -4,12 +4,11 @@ services:
     image: postgres:17.4
     env_file: ".env.example"
     restart: always
-    ports:
-      - 5432:5432
+
 
 
   secop-service:  
-    image: ghcr.io/bilchreis/secop_service:latest
+    image: ghcr.io/bilchreis/secop_service:main
     env_file: ".env.example"
     ports:
       - 4001:4001
