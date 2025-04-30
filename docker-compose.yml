@@ -4,22 +4,13 @@ services:
     image: postgres:17.4
     env_file: ".env.example"
     restart: always
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - 5432:5432
 
 
-  secop-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  secop-service:  
+    image: ghcr.io/bilchreis/secop_service:latest
     env_file: ".env.example"
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
     ports:
       - 4001:4001
     depends_on:
