@@ -19,11 +19,6 @@ defmodule SecopService.Repo.Migrations.CreateParameterValues do
     # Change ID to BigInt
     execute "ALTER TABLE parameter_values ALTER COLUMN id TYPE BIGINT"
 
-    # For PostgreSQL, create a GIN index for efficient JSONB querying
-    execute "CREATE INDEX parameter_values_value_idx ON parameter_values USING GIN (value jsonb_path_ops)",
-            "DROP INDEX IF EXISTS parameter_values_value_idx"
 
-    execute "CREATE INDEX parameter_values_qualifiers_idx ON parameter_values USING GIN (qualifiers jsonb_path_ops)",
-            "DROP INDEX IF EXISTS parameter_values_qualifiers_idx"
   end
 end

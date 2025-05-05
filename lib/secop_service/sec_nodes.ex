@@ -91,7 +91,7 @@ defmodule SecopService.Sec_Nodes do
 
     timestamps = Enum.map(parameter_values, fn param_value ->
       # Extract the timestamp - using DateTime values
-      DateTime.to_unix(param_value.timestamp, :millisecond) / 1000
+      DateTime.to_unix(param_value.timestamp, :millisecond)
       # Or if you prefer to use the timestamp from qualifiers:
       # param_value.qualifiers["t"]
     end)

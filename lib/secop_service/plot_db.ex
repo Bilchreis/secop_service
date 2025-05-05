@@ -3,7 +3,7 @@ defmodule SecopService.PlotDB do
   alias SecopService.Util
   alias SecopService.Sec_Nodes
 
-  defp plottable?(parameter) do
+  def plottable?(parameter) do
     case parameter.datainfo["type"] do
       numeric when numeric in ["double", "int", "scaled"] -> true
       # TODO
@@ -13,6 +13,15 @@ defmodule SecopService.PlotDB do
       # TODO
       "array" -> false
       _ -> false
+    end
+  end
+
+  def get_parameter(secop_obj) do
+    case secop_obj do
+      %SecopService.Sec_Nodes.Parameter{} = param ->
+        param
+      %SecopService.Sec_Nodes.Module{} = module ->
+        Enum.find(module.parameters, fn param -> param.name == "value" end)
     end
   end
 
