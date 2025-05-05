@@ -4,7 +4,6 @@ defmodule SecopService.NodeDBWriter do
 
   alias SecopService.Repo
 
-
   @pubsub_name :secop_client_pubsub
   # Batch parameter values for 5 seconds
   @batch_interval 10_000

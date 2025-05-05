@@ -18,7 +18,5 @@ defmodule SecopService.Repo.Migrations.CreateParameterValues do
 
     # Change ID to BigInt
     execute "ALTER TABLE parameter_values ALTER COLUMN id TYPE BIGINT"
-
-
   end
 end

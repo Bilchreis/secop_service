@@ -1,25 +1,24 @@
-<div >
+<div>
   <%= if Enum.empty?(@model.active_nodes) do %>
-  <div class="flex justify-center container mx-auto">
-    <.connect_node/>
-  </div>
+    <div class="flex justify-center container mx-auto">
+      <.connect_node />
+    </div>
   <% else %>
     <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
-        <li class="me-2 mb-2">
-          <button
-            phx-click="open_connect_modal"            
-            class={[
-              "border-gray-500",
-              "bg-ggray-500 hover:bg-purple-700",
-              "border-4 text-white text-left font-bold py-2 px-4 rounded"
-            ]}
-          >
-            <div class="text-xl">Connect Node</div>
-            <div class="text-sm text-white-400 invisible">placeholder</div>
-            <div class="invisible">placeholder</div>
-            
-          </button>
-        </li>
+      <li class="me-2 mb-2">
+        <button
+          phx-click="open_connect_modal"
+          class={[
+            "border-gray-500",
+            "bg-ggray-500 hover:bg-purple-700",
+            "border-4 text-white text-left font-bold py-2 px-4 rounded"
+          ]}
+        >
+          <div class="text-xl">Connect Node</div>
+          <div class="text-sm text-white-400 invisible">placeholder</div>
+          <div class="invisible">placeholder</div>
+        </button>
+      </li>
       <%= for {_addr,node} <- @model.active_nodes do %>
         <li class="me-2 mb-2">
           <.node_button
@@ -30,9 +29,6 @@
           />
         </li>
       <% end %>
-
-
-
     </ul>
 
     <div class="flex">
@@ -105,7 +101,6 @@
     </div>
   <% end %>
 
-
   <.modal
     :if={@show_connect_modal}
     id="connect-modal"
@@ -113,7 +108,6 @@
     show={@show_connect_modal}
     on_cancel={JS.push("close_connect_modal")}
   >
-    <.connect_node/>
-
+    <.connect_node />
   </.modal>
 </div>

@@ -126,7 +126,7 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   def get_raw_value(parameter_value, parameter) do
     case parameter_value.value do
       # Handle different map structures
-      %{"value" =>  v} ->
+      %{"value" => v} ->
         v
 
       %{"numeric" => n} ->
@@ -171,7 +171,6 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
           %{name: name} -> name
           _ -> "#{raw_value}"
         end
-
 
       _ ->
         if unit == "" do

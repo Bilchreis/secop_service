@@ -139,7 +139,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   def handle_event("connect-node", params, socket) do
-
     opts = %{
       host: params["host"] |> String.to_charlist(),
       port: params["port"] |> String.to_integer(),
@@ -148,7 +147,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     SEC_Node_Supervisor.start_child(opts)
     {:noreply, socket}
-
   end
 
   @impl true
