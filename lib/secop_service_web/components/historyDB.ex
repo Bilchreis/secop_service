@@ -47,22 +47,30 @@ defmodule SecopServiceWeb.Components.HistoryDB do
       if initialized do
         socket
       else
+        socket = socket
+          |> assign(:table_data, nil)
+          |> assign(:plot, nil)
+
+
+
         socket =
           if PlotDB.get_parameter(secop_obj) |> PlotDB.plottable?() do
             assign(socket, :display_mode, :graph)
             |> assign(:plottable, true)
+            |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
+
           else
             assign(socket, :display_mode, :table)
             |> assign(:plottable, false)
+            |> assign_async(:table_data, fn -> get_tabledata(secop_obj) end)
           end
 
         socket
-        |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
-        |> assign_async(:table_data, fn -> get_tabledata(secop_obj) end)
         |> assign(:initialised, true)
         |> assign(:id, assigns.id)
         |> assign(:class, assigns.class)
         |> assign(:parameter, get_parameter(secop_obj))
+        |> assign(:secop_obj, secop_obj)
       end
 
     {:ok, socket}
@@ -136,6 +144,30 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   @impl true
   def handle_event("set-display-mode", %{"mode" => mode}, socket) do
     display_mode = String.to_existing_atom(mode)
+    secop_obj = socket.assigns.secop_obj
+
+    socket = case display_mode do
+      :graph ->
+        if socket.assigns.plot == nil do
+          socket |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
+        else
+          socket
+        end
+
+
+      :table ->
+        if socket.assigns.table_data == nil do
+          socket |> assign_async(:table_data, fn -> get_tabledata(secop_obj) end)
+        else
+          socket
+        end
+
+
+      _ -> socket
+
+    end
+
+
     {:noreply, assign(socket, :display_mode, display_mode)}
   end
 
@@ -155,7 +187,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                     class="animate-pulse flex items-center justify-center h-full text-center bg-gray-300 p-4 rounded-lg"
                     style="min-height: 400px;"
                   >
-                    <p>Waiting for plottable Data</p>
+                    <span class= "text-gray-700">Fetching Plot Data</span>
                   </div>
                 </:loading>
                 <:failed>
@@ -252,7 +284,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
             </.async_result>
         <% end %>
       </div>
-      
+
     <!-- Button sidebar on the right -->
       <div class="ml-4 flex flex-col space-y-2 h-full">
         <button

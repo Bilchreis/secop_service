@@ -14,7 +14,9 @@ defmodule SecopService.Repo.Migrations.CreateParameterValues do
     end
 
     create index(:parameter_values, [:parameter_id])
-    create index(:parameter_values, [:timestamp])
+    create index(:parameter_values, [:parameter_id, :timestamp])
+
+    #create index(:parameter_values, [:timestamp])
 
     # Change ID to BigInt
     execute "ALTER TABLE parameter_values ALTER COLUMN id TYPE BIGINT"

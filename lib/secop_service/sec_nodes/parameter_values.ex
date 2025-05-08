@@ -172,11 +172,13 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
           _ -> "#{raw_value}"
         end
 
+
+
       _ ->
         if unit == "" do
-          "#{inspect(raw_value)}"
+          "#{Jason.encode!(raw_value)}"
         else
-          "#{inspect(raw_value)} #{unit}"
+          "#{Jason.encode!(raw_value)} #{unit}"
         end
     end
   end

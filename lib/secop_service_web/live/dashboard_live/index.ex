@@ -13,11 +13,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   def mount(_params, _session, socket) do
     model = Model.get_initial_model()
 
-    cond do
-      model.active_nodes == %{} ->
+    if model.active_nodes == %{} do
         Logger.info("No active nodes detected")
 
-      true ->
+    else
         values_pubsub_topic = model[:active_nodes][model.current_node_key][:pubsub_topic]
         Phoenix.PubSub.subscribe(:secop_client_pubsub, values_pubsub_topic)
     end
