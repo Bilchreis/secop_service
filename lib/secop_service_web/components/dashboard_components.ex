@@ -1,4 +1,4 @@
-defmodule SecopServiceWeb.BrowseComponents do
+defmodule DashboardComponents do
   use Phoenix.Component
 
   alias SecopService.Sec_Nodes.SEC_Node
@@ -10,16 +10,21 @@ defmodule SecopServiceWeb.BrowseComponents do
   import SecopServiceWeb.CoreComponents
 
   import SECoPComponents
+  import SecopServiceWeb.BrowseComponents
+
 
   attr :node, :map, required: true
+  attr :node_values, :map, default: %{}
 
-  def sec_node_view(assigns) do
+  def dash_sec_node(assigns) do
     grouped_modules = Enum.group_by(assigns.node.modules, &(&1.group || nil))
 
     assigns = assign(assigns, :grouped_modules, grouped_modules)
 
+
+
     ~H"""
-    <div class="bg-gray-200 dark:bg-gray-800 dark:text-gray-300 shadow-xl shadow-purple-600/30  p-4 rounded-lg shadow-md">
+    <div class="mt-4 ml-4 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg shadow-xl shadow-purple-600/30 shadow-md">
       <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -84,7 +89,7 @@ defmodule SecopServiceWeb.BrowseComponents do
                 {@node.host <> ":" <> to_string(@node.port)}
               </.property>
 
-              <.property prop_key="Created at">
+              <.property prop_key="Connected at">
                 {@node.inserted_at
                 |> DateTime.from_naive!("Etc/UTC")
                 |> DateTime.shift_zone!("Europe/Berlin")
@@ -102,7 +107,10 @@ defmodule SecopServiceWeb.BrowseComponents do
         <%= for {group_name, modules} <- Enum.sort(@grouped_modules) do %>
           <%= if group_name == nil do %>
             <%= for module <- modules do %>
-              <.module module={module} module_descr={@node.describe_message["modules"][module.name]} />
+              <.dash_module
+                module={module}
+                module_values={@node_values[module.name]}
+              />
             <% end %>
           <% else %>
             <div class="mb-6 border-l-4 border-t-4 border-stone-400 dark:border-stone-400 pl-4 rounded-lg">
@@ -111,9 +119,9 @@ defmodule SecopServiceWeb.BrowseComponents do
               </h3>
 
               <%= for module <- modules do %>
-                <.module
+                <.dash_module
                   module={module}
-                  module_descr={@node.describe_message["modules"][module.name]}
+                  module_values={@node_values[module.name]}
                 />
               <% end %>
             </div>
@@ -124,116 +132,75 @@ defmodule SecopServiceWeb.BrowseComponents do
     """
   end
 
-  attr :prop_key, :string, required: true
-  attr :class, :any
-  attr :key_class, :any
-  attr :value_class, :any
-  slot :inner_block, required: true
 
-  def property(assigns) do
-    ~H"""
-    <li class={["", assigns[:class]]}>
-      <span class={["font-bold", assigns[:key_class]]}>{@prop_key}:</span>
-      <span class={["", assigns[:value_class]]}>{render_slot(@inner_block)}</span>
-    </li>
-    """
-  end
+  attr :node, :map, required: true
+  attr :node_state, :atom, required: true
+  attr :values, :map, required: true
 
-  attr :enum, :map, required: true
-
-  def enum(assigns) do
-    ordered_members = assigns.enum["members"] |> Enum.sort_by(fn {_, v} -> v end)
-
-    assigns =
-      assigns
-      |> assign(:ordered_members, ordered_members)
+  def module_indicators(assigns) do
 
     ~H"""
-    <div class="space-y-4">
-      <!-- Badge View -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden mt-2 inline-flex">
-        <div class="p-4 flex flex-wrap gap-2">
-          <%= for {name, value} <- @ordered_members do %>
-            <div class="flex items-center px-3 py-1.5 rounded-md border bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600">
-              <span class="font-mono text-sm font-medium">{name}</span>
-              <span class="ml-2 px-2 py-0.5 rounded-full bg-white/75 dark:bg-gray-800/75 text-xs font-mono">
-                {value}
-              </span>
-            </div>
+    <div class="flex-none mt-4 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
+      <span class="text-lg font-bold  text-black dark:text-white ">Module Status:</span>
+      <ul class="mt-2 space-y space-y-4 text-sm font-medium">
+        <%= for module <- @node.modules do %>
+          <li class="me-2 flex-1 min-w-full">
+            <%= cond do  %>
+
+            <% module.highest_interface_class == "drivable" -> %>
+              <.module_indicator_status
+                module_name = {module.name}
+                node_status = {@node_state}
+                status_value = {@values[module.name]["status"]}
+
+              />
+
+
+            <% module.highest_interface_class == "readable" -> %>
+              <.module_indicator_status
+                module_name = {module.name}
+                node_status = {@node_state}
+                status_value = {@values[module.name]["status"]}
+
+              />
+
+            <% module.highest_interface_class == "measurable" -> %>
+
+              <.module_indicator_status
+                module_name = {module.name}
+                node_status = {@node_state}
+                status_value = {@values[module.name]["status"]}
+
+              />
+
+
+
+            <% module.highest_interface_class == "communicator" -> %>
+              <.module_indicator
+                module_name={module.name}
+                node_status = {@node_state}
+              />
+
+            <% true -> %>
+              <.module_indicator
+                module_name={module.name}
+                node_status = {@node_state}
+              />
           <% end %>
-        </div>
-      </div>
+
+          </li>
+        <% end %>
+      </ul>
     </div>
     """
-  end
 
-  defp get_color_class(code) do
-    color_classes = %{
-      :disabled =>
-        "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600",
-      :idle =>
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 border-green-200 dark:border-green-800",
-      :warn =>
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100 border-yellow-200 dark:border-yellow-800",
-      :busy =>
-        "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100 border-orange-200 dark:border-orange-800",
-      :error =>
-        "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 border-red-200 dark:border-red-800"
-    }
-
-    state =
-      cond do
-        code < 99 -> :disabled
-        code < 199 -> :idle
-        code < 299 -> :warn
-        code < 399 -> :busy
-        code < 499 -> :error
-        true -> :disabled
-      end
-
-    {state, color_classes[state]}
-  end
-
-  attr :status_tuple, :map, required: true
-
-  def status_tuple(assigns) do
-    ordered_members =
-      assigns.status_tuple["members"]
-      |> Enum.at(0)
-      |> Map.get("members")
-      |> Enum.sort_by(fn {_, v} -> v end)
-      |> Enum.map(fn {name, value} ->
-        {name, value, get_color_class(value)}
-      end)
-
-    assigns =
-      assigns
-      |> assign(:ordered_members, ordered_members)
-
-    ~H"""
-    <div class="">
-      <!-- Badge View -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden mt-2 inline-flex">
-        <div class="p-4 flex flex-wrap gap-2">
-          <%= for {name, value, {_state, color_class}} <- @ordered_members do %>
-            <div class={["flex items-center px-3 py-1.5 rounded-md border", color_class]}>
-              <span class="font-mono text-sm font-medium">{name}</span>
-              <span class="ml-2 px-2 py-0.5 rounded-full bg-white/75 dark:bg-gray-800/75 text-xs font-mono">
-                {value}
-              </span>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-    """
   end
 
   attr :module, :map, required: true
-  attr :module_descr, :map, required: true
-
-  def module(assigns) do
-    grouped_parameters = Enum.group_by(assigns.module.parameters, &(&1.group || nil))
+  attr :module_values, :map, required: true
+  def dash_module(assigns) do
+    #IO.inspect(assigns.module_values, label: "Module Values")
+     grouped_parameters = Enum.group_by(assigns.module.parameters, &(&1.group || nil))
     grouped_commands = Enum.group_by(assigns.module.commands, &(&1.group || nil))
 
     base_class = assigns.module.highest_interface_class
@@ -327,9 +294,9 @@ defmodule SecopServiceWeb.BrowseComponents do
               <%= if group_name == nil do %>
                 <div class="mt-4 border-l-4 border-transparent pl-4">
                   <%= for parameter <- parameters do %>
-                    <.parameter
+                    <.new_dash_parameter
                       parameter={parameter}
-                      parameter_descr={@module_descr["accessibles"][parameter.name]}
+                      value={@module_values[parameter.name]}
                     />
                   <% end %>
                 </div>
@@ -339,9 +306,9 @@ defmodule SecopServiceWeb.BrowseComponents do
                     {Util.display_name(group_name)}
                   </h4>
                   <%= for parameter <- parameters do %>
-                    <.parameter
+                    <.new_dash_parameter
                       parameter={parameter}
-                      parameter_descr={@module_descr["accessibles"][parameter.name]}
+                      value={@module_values[parameter.name]}
                     />
                   <% end %>
                 </div>
@@ -357,9 +324,9 @@ defmodule SecopServiceWeb.BrowseComponents do
                 <%= if group_name == nil do %>
                   <div class="mt-4 border-l-4 border-transparent pl-4">
                     <%= for command <- commands do %>
-                      <.command
+                      <.dash_command
                         command={command}
-                        command_descr={@module_descr["accessibles"][command.name]}
+                        return_val = {nil}
                       />
                     <% end %>
                   </div>
@@ -369,9 +336,9 @@ defmodule SecopServiceWeb.BrowseComponents do
                       {Util.display_name(group_name)}
                     </h4>
                     <%= for command <- commands do %>
-                      <.command
+                      <.dash_command
                         command={command}
-                        command_descr={@module_descr["accessibles"][command.name]}
+                        return_val = {nil}
                       />
                     <% end %>
                   </div>
@@ -382,83 +349,17 @@ defmodule SecopServiceWeb.BrowseComponents do
         </:panel>
       </.accordion>
 
-      <.live_component
-        module={SecopServiceWeb.Components.HistoryDB}
-        id={"module-plot-" <> to_string(@module.id)}
-        secop_obj={@module}
-        class="w-3/5 p-4 "
-      />
     </div>
     """
+
   end
 
-  # Helper function to get class-specific styles
-  def get_class_styles(interface_class) do
-    case interface_class do
-      "communicator" ->
-        %{
-          border: "border-blue-500 dark:border-blue-600/40",
-          bg:
-            "bg-gradient-to-r from-blue-200 to-blue-300 dark:from-blue-900/30 dark:to-blue-900/40",
-          header_bg: "bg-blue-300 dark:bg-blue-800/50",
-          icon: "hero-chat-bubble-left-right"
-        }
-
-      "readable" ->
-        %{
-          border: "border-green-500 dark:border-green-600/40",
-          bg:
-            "bg-gradient-to-r from-green-200 to-green-300 dark:from-green-900/30 dark:to-green-900/40",
-          header_bg: "bg-green-300 dark:bg-green-800/50",
-          icon: "hero-eye"
-        }
-
-      "writable" ->
-        %{
-          border: "border-amber-500 dark:border-amber-600/40",
-          bg:
-            "bg-gradient-to-r from-amber-200 to-amber-300 dark:from-amber-900/30 dark:to-amber-900/40",
-          header_bg: "bg-amber-300 dark:bg-amber-800/50",
-          icon: "hero-pencil-square"
-        }
-
-      "drivable" ->
-        %{
-          border: "border-purple-500 dark:border-purple-600/40",
-          bg:
-            "bg-gradient-to-r from-purple-200 to-purple-300 dark:from-purple-900/30 dark:to-purple-900/40",
-          header_bg: "bg-purple-300 dark:bg-purple-800/50",
-          icon: "hero-cog"
-        }
-
-      "measurable" ->
-        %{
-          border: "border-blue-500 dark:border-blue-600/40",
-          bg:
-            "bg-gradient-to-r from-blue-200 to-blue-300 dark:from-blue-900/30 dark:to-blue-900/40",
-          header_bg: "bg-blue-300 dark:bg-blue-800/50",
-          icon: "hero-clock"
-        }
-
-      _ ->
-        %{
-          border: "border-gray-500 dark:border-gray-600/40",
-          bg: "bg-gray-200 dark:bg-gray-800/50",
-          header_bg: "bg-gray-300 dark:bg-gray-700/50",
-          icon: "hero-cube"
-        }
-    end
-  end
 
   attr :parameter, :map, required: true
-  attr :parameter_descr, :map, required: true
+  attr :value, :map, required: true
 
-  def parameter(assigns) do
-    parameter_pretty = Jason.encode!(assigns.parameter_descr, pretty: true)
+  def new_dash_parameter(assigns) do
 
-    assigns =
-      assigns
-      |> assign(:parameter_pretty, parameter_pretty)
 
     ~H"""
 
@@ -547,35 +448,18 @@ defmodule SecopServiceWeb.BrowseComponents do
         <% end %>
       </ul>
 
-      <.accordion
-        id={@parameter.name <> to_string(@parameter.id)}
-        class="mt-3 bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-lg  "
-      >
-        <:trigger class="p-2  text-left text-sm">
-          <div class="flex flex-row">
-            <.icon name="hero-information-circle" class=" h-5 w-5 flex-none mr-1" />
-            <span>JSON Description: </span>
-          </div>
-        </:trigger>
-        <:panel class="p-4 ">
-          <pre class="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-xs p-2 rounded-lg ">
-            {@parameter_pretty}
-          </pre>
-        </:panel>
-      </.accordion>
+    {inspect(@value)}
+
     </div>
     """
   end
 
+
   attr :command, :map, required: true
-  attr :command_descr, :map, required: true
+  attr :return_val, :map, required: true
 
-  def command(assigns) do
-    datainfo_pretty = Jason.encode!(assigns.command.datainfo, pretty: true)
+  def dash_command(assigns) do
 
-    assigns =
-      assigns
-      |> assign(:datainfo_pretty, datainfo_pretty)
 
     ~H"""
     <div class="mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
@@ -635,30 +519,9 @@ defmodule SecopServiceWeb.BrowseComponents do
         </ul>
       </div>
 
-    <!-- Datainfo -->
-      <div>
-        <.accordion
-          id={@command.name <> to_string(@command.id)}
-          class="mt-3 bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-lg  "
-        >
-          <:trigger class="p-2  text-left text-sm">
-            <div class="flex flex-row">
-              <div class="p-1">
-                <.icon name="hero-information-circle" class=" h-5 w-5 flex-none" />
-              </div>
-              <div class="p-1">
-                <span>Datainfo </span>
-              </div>
-            </div>
-          </:trigger>
-          <:panel class="p-4 ">
-            <pre class="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-xs p-2 rounded-lg ">
-                {@datainfo_pretty}
-              </pre>
-          </:panel>
-        </.accordion>
-      </div>
+
     </div>
     """
   end
+
 end

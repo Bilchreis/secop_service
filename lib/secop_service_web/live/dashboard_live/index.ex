@@ -1,4 +1,6 @@
 defmodule SecopServiceWeb.DashboardLive.Index do
+alias SecopServiceWeb.BrowseComponents
+alias Phoenix.Socket.Broadcast
 alias SecopService.Sec_Nodes.SEC_Node
   use SecopServiceWeb, :live_view
 
@@ -10,6 +12,7 @@ alias SecopService.Sec_Nodes.SEC_Node
   require Logger
 
   import SECoPComponents
+  import DashboardComponents
 
   @impl true
   def mount(_params, _session, socket) do

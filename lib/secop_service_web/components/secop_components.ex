@@ -203,7 +203,7 @@ defmodule SECoPComponents do
       case @node_status do
         :connected -> "bg-orange-500"
         :disconnected -> "bg-red-500"
-        :initialized -> "bg-zinc-500"
+        :initialized -> "bg-zinc-400 dark:bg-zinc-500"
         _ -> "bg-red-500"  # default fallback
       end
     ]}>

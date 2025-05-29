@@ -28,57 +28,17 @@
       <% end %>
     </ul>
 
-    <div class="mt-4 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
-      <span class="text-lg font-bold  text-black dark:text-white "> Modules</span>
-      <ul class="mt-2 space-y space-y-4 text-sm font-medium">
-        <%= for module <- @model.current_node.modules do %>
-          <li class="me-2 flex-1 min-w-full">
-            <%= cond do  %>
+    <div class = "flex">
+      
+      <.module_indicators 
+        node = {@model.current_node} 
+        node_state = {@model.active_nodes[SEC_Node.get_node_id(@model.current_node)].state} 
+        values = {@model.values}
+        />
+      <.dash_sec_node 
+        node={@model.current_node}
+        node_values = {@model.values}  />
 
-            <% module.highest_interface_class == "drivable" -> %>
-              <.module_indicator_status
-                module_name = {module.name}
-                node_status = {@model.active_nodes[SEC_Node.get_node_id(@model.current_node)].state}
-                status_value = {@model.values[module.name]["status"]}
-
-              />
-
-
-            <% module.highest_interface_class == "readable" -> %>
-              <.module_indicator_status
-                module_name = {module.name}
-                node_status = {@model.active_nodes[SEC_Node.get_node_id(@model.current_node)].state}
-                status_value = {@model.values[module.name]["status"]}
-
-              />
-
-            <% module.highest_interface_class == "measurable" -> %>
-              
-              <.module_indicator_status
-                module_name = {module.name}
-                node_status = {@model.active_nodes[SEC_Node.get_node_id(@model.current_node)].state}
-                status_value = {@model.values[module.name]["status"]}
-
-              />
-
-            
-
-            <% module.highest_interface_class == "communicator" -> %>
-              <.module_indicator
-                module_name={module.name}
-                node_status={@model.active_nodes[SEC_Node.get_node_id(@model.current_node)].state}
-              />
-
-            <% true -> %>           
-              <.module_indicator
-                module_name={module.name}
-                node_status={@model.active_nodes[SEC_Node.get_node_id(@model.current_node)].state}
-              />
-          <% end %>
-
-          </li>
-        <% end %>
-      </ul>
     </div>
 
 
