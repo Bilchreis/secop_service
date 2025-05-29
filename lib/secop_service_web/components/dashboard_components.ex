@@ -24,7 +24,7 @@ defmodule DashboardComponents do
 
 
     ~H"""
-    <div class="mt-4 ml-4 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg shadow-xl shadow-purple-600/30 shadow-md">
+    <div class="flex-1 mt-4 ml-4 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg shadow-xl shadow-purple-600/30 shadow-md">
       <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -140,11 +140,11 @@ defmodule DashboardComponents do
   def module_indicators(assigns) do
 
     ~H"""
-    <div class="flex-none mt-4 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
+    <div class="flex-none  p-5  mt-4  bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
       <span class="text-lg font-bold  text-black dark:text-white ">Module Status:</span>
       <ul class="mt-2 space-y space-y-4 text-sm font-medium">
         <%= for module <- @node.modules do %>
-          <li class="me-2 flex-1 min-w-full">
+          <li class=" flex-1 min-w-full">
             <%= cond do  %>
 
             <% module.highest_interface_class == "drivable" -> %>
@@ -443,9 +443,6 @@ defmodule DashboardComponents do
           </.property>
         <% end %>
 
-        <%= if @parameter.name == "status" do %>
-          <.status_tuple status_tuple={@parameter.datainfo} />
-        <% end %>
       </ul>
 
     {inspect(@value)}

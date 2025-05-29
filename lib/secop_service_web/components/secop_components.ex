@@ -195,11 +195,17 @@ defmodule SECoPComponents do
 
 
   def module_indicator_status(assigns) do
+    display_name = Util.display_name(assigns.module_name)
+    # Adjust this threshold based on your needs (characters that fit in w-48)
+    text_too_long = String.length(display_name) > 20
 
+    assigns = assign(assigns, :display_name, display_name)
+    assigns = assign(assigns, :text_too_long, text_too_long)
 
     ~H"""
     <div class={[
-      "min-w-full text-white text-left font-bold py-2 px-4 rounded",
+      "w-[300px]",
+      "text-white text-left font-bold py-2 px-4 rounded",
       case @node_status do
         :connected -> "bg-orange-500"
         :disconnected -> "bg-red-500"
@@ -208,24 +214,34 @@ defmodule SECoPComponents do
       end
     ]}>
      <div class="flex items-center">
-        <div>
+        <div class="flex-shrink-0">
           <span class={[
             (if @status_value.data_report != nil, do: @status_value.stat_color, else: "bg-gray-500"),
             "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
           ]}>
           </span>
         </div>
-        <div>
-          <div class="text-xl">{Util.display_name(@module_name)}</div>
-            <%= if @status_value.data_report != nil do %>
-              <div class="text-sm text-white-400 opacity-60">
-                {@status_value.stat_code} : {@status_value.stat_string}
-              </div>
-            <% else %>
-              <div class="text-sm text-white-400 opacity-60">
-                waiting for data...
-              </div>
-            <% end %>
+        <div class="flex-1 min-w-0">
+          <div class={[
+            "text-xl",
+            if(@text_too_long, do: "overflow-hidden", else: "truncate")
+          ]}>
+            <div class={[
+              "whitespace-nowrap",
+              if(@text_too_long, do: "animate-marquee hover:pause-animation", else: "")
+            ]} title={@display_name}>
+              {@display_name}
+            </div>
+          </div>
+          <%= if @status_value.data_report != nil do %>
+            <div class="text-sm text-white-400 opacity-60 truncate">
+              {@status_value.stat_code} : {@status_value.stat_string}
+            </div>
+          <% else %>
+            <div class="text-sm text-white-400 opacity-60">
+              waiting for data...
+            </div>
+          <% end %>
         </div>
       </div>
     </div>
@@ -237,10 +253,17 @@ defmodule SECoPComponents do
   attr :node_status, :atom, required: true
 
   def module_indicator(assigns) do
+    display_name = Util.display_name(assigns.module_name)
+    # Adjust this threshold based on your needs (characters that fit in w-48)
+    text_too_long = String.length(display_name) > 20
+
+    assigns = assign(assigns, :display_name, display_name)
+    assigns = assign(assigns, :text_too_long, text_too_long)
 
     ~H"""
     <div class={[
-      "min-w-full text-white text-left font-bold py-2 px-4 rounded",
+      "w-65 min-w-65 max-w-65",
+      "text-white text-left font-bold py-2 px-4 rounded",
       case @node_status do
         :connected -> "bg-orange-500"
         :disconnected -> "bg-red-500"
@@ -249,7 +272,7 @@ defmodule SECoPComponents do
       end
     ]}>
      <div class="flex items-center">
-        <div>
+        <div class="flex-shrink-0">
           <span class={[
             "opacity-0",
             "bg-gray-500",
@@ -257,12 +280,21 @@ defmodule SECoPComponents do
           ]}>
           </span>
         </div>
-        <div>
-          <div class="text-xl">{Util.display_name(@module_name)}</div>
-            <div class="text-sm text-white-400 opacity-0">
-              placeholder
+        <div class="flex-1 min-w-0">
+          <div class={[
+            "text-xl",
+            if(@text_too_long, do: "overflow-hidden", else: "truncate")
+          ]}>
+            <div class={[
+              "whitespace-nowrap",
+              if(@text_too_long, do: "animate-marquee hover:pause-animation", else: "")
+            ]} title={@display_name}>
+              {@display_name}
             </div>
-
+          </div>
+          <div class="text-sm text-white-400 opacity-0">
+            placeholder
+          </div>
         </div>
       </div>
     </div>

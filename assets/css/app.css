@@ -103,6 +103,20 @@
 }
 
 
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-200%); }
+}
+
+.animate-marquee {
+  animation: marquee 8s linear infinite;
+}
+
+.hover\:animation-pause:hover {
+  animation-play-state: paused;
+}
+
 /* GG Plot */
 
 .gg-plot-background {

@@ -104,6 +104,10 @@ alias SecopService.Sec_Nodes.SEC_Node
 
       {:ok, :updated, model} ->
         assign(socket, :model, model)
+
+      {:error, :parameter_not_found, _model} ->
+        Logger.warning("Parameter #{accessible} in module #{module} not found in model")
+        socket
     end
 
 

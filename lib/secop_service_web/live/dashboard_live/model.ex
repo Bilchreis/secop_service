@@ -120,21 +120,25 @@ defmodule SecopServiceWeb.DashboardLive.Model do
   end
 
 
+def value_update(model, module, accessible, data_report) do
+  # Check if the module exists
+  case get_in(model, [:values, module, accessible]) do
+    nil ->
 
-  def value_update(model, module, accessible, data_report) do
+      {:error, :parameter_not_found, model}
 
-    old_param_val = model.values[module][accessible]
+    old_param_val ->
+      new_param_val = process_data_report(accessible, data_report, old_param_val.datainfo)
 
-    new_param_val = process_data_report(accessible, data_report, old_param_val.datainfo)
-
-    if Enum.at(old_param_val.data_report, 0) == Enum.at(new_param_val.data_report, 0) do
-      {:ok, :equal, model}
-    else
-      # Merge the old parameter value with the new one
-      merged_param_val = Map.merge(old_param_val, new_param_val)
-      {:ok, :updated, put_in(model, [:values, module, accessible], merged_param_val)}
-    end
+      if Enum.at(old_param_val.data_report, 0) == Enum.at(new_param_val.data_report, 0) do
+        {:ok, :equal, model}
+      else
+        # Merge the old parameter value with the new one
+        merged_param_val = Map.merge(old_param_val, new_param_val)
+        {:ok, :updated, put_in(model, [:values, module, accessible], merged_param_val)}
+      end
   end
+end
 
   def init_node(node) do
     node
