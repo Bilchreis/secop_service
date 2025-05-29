@@ -1,6 +1,6 @@
 <div>
-  <%= if @model.active_nodes != %{} do  %>
-     <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
+  <%= if @model.active_nodes != %{} do %>
+    <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
       <li class="me-2 mb-2">
         <button
           phx-click="open_connect_modal"
@@ -28,26 +28,19 @@
       <% end %>
     </ul>
 
-    <div class = "flex">
-      
-      <.module_indicators 
-        node = {@model.current_node} 
-        node_state = {@model.active_nodes[SEC_Node.get_node_id(@model.current_node)].state} 
-        values = {@model.values}
-        />
-      <.dash_sec_node 
+    <div class="flex">
+      <.module_indicators
         node={@model.current_node}
-        node_values = {@model.values}  />
-
+        node_state={@model.active_nodes[SEC_Node.get_node_id(@model.current_node)].state}
+        values={@model.values}
+      />
+      <.dash_sec_node node={@model.current_node} node_values={@model.values} />
     </div>
-
-
   <% else %>
     No nodes connected
-
   <% end %>
 
-   <.modal
+  <.modal
     :if={@show_connect_modal}
     id="connect-modal"
     title=""
@@ -56,6 +49,4 @@
   >
     <.connect_node />
   </.modal>
-
-
 </div>

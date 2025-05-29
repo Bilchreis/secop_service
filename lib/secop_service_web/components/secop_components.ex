@@ -193,7 +193,6 @@ defmodule SECoPComponents do
   attr :node_status, :atom, required: true
   attr :status_value, :map, required: true
 
-
   def module_indicator_status(assigns) do
     display_name = Util.display_name(assigns.module_name)
     # Adjust this threshold based on your needs (characters that fit in w-48)
@@ -203,20 +202,23 @@ defmodule SECoPComponents do
     assigns = assign(assigns, :text_too_long, text_too_long)
 
     ~H"""
-    <div class={[
-      "w-[300px]",
-      "text-white text-left font-bold py-2 px-4 rounded",
-      case @node_status do
-        :connected -> "bg-orange-500"
-        :disconnected -> "bg-red-500"
-        :initialized -> "bg-zinc-400 dark:bg-zinc-500"
-        _ -> "bg-red-500"  # default fallback
-      end
-    ]}>
-     <div class="flex items-center">
+    <div class={
+      [
+        "w-[300px]",
+        "text-white text-left font-bold py-2 px-4 rounded",
+        case @node_status do
+          :connected -> "bg-orange-500"
+          :disconnected -> "bg-red-500"
+          :initialized -> "bg-zinc-400 dark:bg-zinc-500"
+          # default fallback
+          _ -> "bg-red-500"
+        end
+      ]
+    }>
+      <div class="flex items-center">
         <div class="flex-shrink-0">
           <span class={[
-            (if @status_value.data_report != nil, do: @status_value.stat_color, else: "bg-gray-500"),
+            if(@status_value.data_report != nil, do: @status_value.stat_color, else: "bg-gray-500"),
             "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
           ]}>
           </span>
@@ -226,10 +228,13 @@ defmodule SECoPComponents do
             "text-xl",
             if(@text_too_long, do: "overflow-hidden", else: "truncate")
           ]}>
-            <div class={[
-              "whitespace-nowrap",
-              if(@text_too_long, do: "animate-marquee hover:pause-animation", else: "")
-            ]} title={@display_name}>
+            <div
+              class={[
+                "whitespace-nowrap",
+                if(@text_too_long, do: "animate-marquee hover:pause-animation", else: "")
+              ]}
+              title={@display_name}
+            >
               {@display_name}
             </div>
           </div>
@@ -248,7 +253,6 @@ defmodule SECoPComponents do
     """
   end
 
-
   attr :module_name, :string, required: true
   attr :node_status, :atom, required: true
 
@@ -261,17 +265,20 @@ defmodule SECoPComponents do
     assigns = assign(assigns, :text_too_long, text_too_long)
 
     ~H"""
-    <div class={[
-      "w-65 min-w-65 max-w-65",
-      "text-white text-left font-bold py-2 px-4 rounded",
-      case @node_status do
-        :connected -> "bg-orange-500"
-        :disconnected -> "bg-red-500"
-        :initialized -> "bg-zinc-500"
-        _ -> "bg-red-500"  # default fallback
-      end
-    ]}>
-     <div class="flex items-center">
+    <div class={
+      [
+        "w-65 min-w-65 max-w-65",
+        "text-white text-left font-bold py-2 px-4 rounded",
+        case @node_status do
+          :connected -> "bg-orange-500"
+          :disconnected -> "bg-red-500"
+          :initialized -> "bg-zinc-500"
+          # default fallback
+          _ -> "bg-red-500"
+        end
+      ]
+    }>
+      <div class="flex items-center">
         <div class="flex-shrink-0">
           <span class={[
             "opacity-0",
@@ -285,10 +292,13 @@ defmodule SECoPComponents do
             "text-xl",
             if(@text_too_long, do: "overflow-hidden", else: "truncate")
           ]}>
-            <div class={[
-              "whitespace-nowrap",
-              if(@text_too_long, do: "animate-marquee hover:pause-animation", else: "")
-            ]} title={@display_name}>
+            <div
+              class={[
+                "whitespace-nowrap",
+                if(@text_too_long, do: "animate-marquee hover:pause-animation", else: "")
+              ]}
+              title={@display_name}
+            >
               {@display_name}
             </div>
           </div>

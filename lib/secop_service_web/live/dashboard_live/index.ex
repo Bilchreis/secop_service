@@ -1,7 +1,7 @@
 defmodule SecopServiceWeb.DashboardLive.Index do
-alias SecopServiceWeb.BrowseComponents
-alias Phoenix.Socket.Broadcast
-alias SecopService.Sec_Nodes.SEC_Node
+  alias SecopServiceWeb.BrowseComponents
+  alias Phoenix.Socket.Broadcast
+  alias SecopService.Sec_Nodes.SEC_Node
   use SecopServiceWeb, :live_view
 
   alias SecopServiceWeb.DashboardLive.Model, as: Model
@@ -19,20 +19,18 @@ alias SecopService.Sec_Nodes.SEC_Node
     model = Model.get_initial_model()
 
     if model.active_nodes == %{} do
-        Logger.info("No active nodes detected")
-
+      Logger.info("No active nodes detected")
     else
+      values_pubsub_topic =
+        model[:active_nodes][SEC_Node.get_node_id(model.current_node)][:pubsub_topic]
 
-      values_pubsub_topic = model[:active_nodes][SEC_Node.get_node_id(model.current_node)][:pubsub_topic]
       Phoenix.PubSub.subscribe(:secop_client_pubsub, "value_update:#{values_pubsub_topic}")
-
     end
 
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "descriptive_data_change")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "state_change")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "secop_conn_state")
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "new_node")
-
 
     socket =
       socket
@@ -43,7 +41,6 @@ alias SecopService.Sec_Nodes.SEC_Node
   end
 
   ### New Values Map Update
-
 
   @impl true
   def handle_info({:description_change, _pubsub_topic, _state}, socket) do
@@ -61,9 +58,6 @@ alias SecopService.Sec_Nodes.SEC_Node
   def handle_info({:state_change, pubsub_topic, state}, socket) do
     Logger.info("new node status: #{pubsub_topic} #{state.state}")
 
-
-
-
     {:noreply, socket}
   end
 
@@ -73,10 +67,7 @@ alias SecopService.Sec_Nodes.SEC_Node
     {:noreply, socket}
   end
 
-
   def handle_info({:value_update, pubsub_topic, data_report}, socket) do
-
-
     # # Parameter-level plots
     # send_update(SecopServiceWeb.Components.PlotlyChart,
     #   id: "plotly:" <> pubsub_topic,
@@ -94,61 +85,51 @@ alias SecopService.Sec_Nodes.SEC_Node
     {:noreply, socket}
   end
 
-
   def handle_info({:value_update, module, accessible, data_report}, socket) do
+    socket =
+      case Model.value_update(socket.assigns.model, module, accessible, data_report) do
+        {:ok, :equal, _model} ->
+          socket
 
-    socket = case Model.value_update(socket.assigns.model, module, accessible, data_report) do
-      {:ok, :equal, _model} ->
-        socket
+        {:ok, :updated, model} ->
+          assign(socket, :model, model)
 
-
-      {:ok, :updated, model} ->
-        assign(socket, :model, model)
-
-      {:error, :parameter_not_found, _model} ->
-        Logger.warning("Parameter #{accessible} in module #{module} not found in model")
-        socket
-    end
-
-
-
+        {:error, :parameter_not_found, _model} ->
+          Logger.warning("Parameter #{accessible} in module #{module} not found in model")
+          socket
+      end
 
     {:noreply, socket}
-
   end
 
-
-    @impl true
+  @impl true
   def handle_event("node-select", %{"pstopic" => new_pubsub_topic}, socket) do
-
     # unsubscribe from the current node's pubsub topic
     current_node = Model.get_current_node(socket.assigns.model)
-    Phoenix.PubSub.unsubscribe(:secop_client_pubsub, SEC_Node.get_values_pubsub_topic(current_node))
 
+    Phoenix.PubSub.unsubscribe(
+      :secop_client_pubsub,
+      SEC_Node.get_values_pubsub_topic(current_node)
+    )
 
     # subscribe to the new node's pubsub topic & update the model
     new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
     new_model = Model.set_current_node(socket.assigns.model, new_node_id)
     socket = assign(socket, :model, new_model)
     new_current_node = Model.get_current_node(socket.assigns.model)
-    Phoenix.PubSub.subscribe(:secop_client_pubsub, SEC_Node.get_values_pubsub_topic(new_current_node))
 
+    Phoenix.PubSub.subscribe(
+      :secop_client_pubsub,
+      SEC_Node.get_values_pubsub_topic(new_current_node)
+    )
 
     {:noreply, socket}
   end
-
-
-
-
 
   defp remove_last_segment(topic) do
     parts = String.split(topic, ":")
     parts |> Enum.drop(-1) |> Enum.join(":")
   end
-
-
-
-
 
   @impl true
   def handle_event("set_parameter", unsigned_params, socket) do
@@ -195,7 +176,6 @@ alias SecopService.Sec_Nodes.SEC_Node
     SEC_Node_Supervisor.start_child(opts)
     {:noreply, socket}
   end
-
 
   defp pubsubtopic_to_node_id(pubsub_topic) do
     [ip, port] = String.split(pubsub_topic, ":")
