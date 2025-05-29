@@ -1,243 +1,161 @@
 defmodule SecopServiceWeb.DashboardLive.Model do
-  alias SecopServiceWeb.DashboardLive.Plot
+
+  require Logger
+  alias SecopService.Sec_Nodes.SEC_Node
   alias SEC_Node_Supervisor
   use Phoenix.Component
   alias SecopService.Sec_Nodes
+  alias NodeTable
 
   def get_initial_model() do
     active_nodes = SEC_Node_Supervisor.get_active_nodes()
 
+    # Select only the relevant keys from each node
+    active_nodes = Enum.reduce(active_nodes,%{}, fn {node_id, node}, acc ->
+      node = Map.take(node, [:host, :port, :node_id, :equipment_id, :pubsub_topic, :state, :active, :uuid, :error])
+
+      Map.put(acc, node_id, node)
+    end)
+
+
+
     model =
-      cond do
-        active_nodes == %{} ->
-          %{active_nodes: %{}, current_node_key: nil, current_module_key: nil}
-
-        true ->
+      if active_nodes == %{} do
+          %{active_nodes: %{}, current_node: nil, values: nil}
+      else
           # Get an arbitrary entry from the active_nodes map
-          {current_node_key, _current_node_value} = Map.to_list(active_nodes) |> List.first()
+          {_current_node_key, current_node} = Map.to_list(active_nodes) |> List.first()
 
-          initial_active_nodes =
-            Enum.reduce(active_nodes, %{}, fn {node_id, node}, acc ->
-              {current_module_key, _current_module_value} =
-                node[:description][:modules] |> Map.to_list() |> List.first()
+          current_node = if Sec_Nodes.node_exists?(current_node[:uuid]) do
+            Sec_Nodes.get_sec_node_by_uuid(current_node[:uuid])
+          end
 
-              node = Map.put(node, :current_module_key, current_module_key)
-              Map.put(acc, node_id, init_node(node))
-            end)
+
+
+
+
+
 
           %{
-            active_nodes: initial_active_nodes,
-            current_node_key: current_node_key,
-            current_module_key: initial_active_nodes[current_node_key][:current_module_key]
+            active_nodes: active_nodes,
+            current_node: current_node,
+            values: get_val_map(current_node),
           }
       end
+
 
     model
   end
 
-  def set_new_current_node(model, new_node_id) do
-    model = %{model | current_node_key: new_node_id}
+  def get_val_map(db_node) do
+    Enum.reduce(db_node.modules, %{}, fn module, mod_acc ->
+      parameter_map = Enum.reduce(module.parameters, %{}, fn parameter, param_acc ->
 
-    model =
-      Map.put(
-        model,
-        :current_module_key,
-        model.active_nodes[model.current_node_key][:current_module_key]
-      )
+        param_val = case NodeTable.lookup(SEC_Node.get_node_id(db_node), {:data_report, String.to_existing_atom(module.name), String.to_existing_atom(parameter.name)}) do
+          {:ok, data_report} ->  data_report
+          {:error, :notfound} ->
+            Logger.warning("Data report for module #{module.name} and parameter #{parameter.name} not found in NodeTable for node #{SEC_Node.get_node_id( db_node)}.")
+            nil
+        end
+
+
+        param_val = process_data_report(parameter.name, param_val, parameter.datainfo)
+          |> Map.put(:datainfo, parameter.datainfo)
+        Map.put(param_acc, parameter.name, param_val)
+      end)
+
+      Map.put(mod_acc, module.name, parameter_map)
+    end)
+
+  end
+
+  def set_current_node(model, node_id) do
+    current_node = Map.get(model.active_nodes, node_id)
+
+    # Get the current node from the active nodes map
+    model = if Sec_Nodes.node_exists?(current_node[:uuid]) do
+      db_node = Sec_Nodes.get_sec_node_by_uuid(current_node[:uuid])
+
+
+      model = model |>
+        Map.put(:current_node, db_node) |>
+        Map.put(:values, get_val_map(db_node))
+
+
+      model
+    else
+      Logger.warning("Node with UUID #{current_node[:uuid]} does not exist in the database.")
+      model
+    end
+
 
     model
   end
 
   def get_current_node(model) do
-    current_node =
-      case model.current_node_key do
-        nil -> nil
-        current_node_key -> model.active_nodes[current_node_key]
-      end
-
-    current_node
+    model.current_node
   end
 
+
+
   def set_state(model, state) do
-    active_nodes = model.active_nodes
-
-    model =
-      case state.state do
-        :initialized ->
-          state = init_node(state)
-          active_nodes = Map.put(active_nodes, state.node_id, state)
-
-          model =
-            case get_current_node(model) do
-              nil -> set_new_current_node(model, state.node_id)
-              _ -> model
-            end
-
-          current_node = get_current_node(model)
-          ## This prevents double subscription to the same topic
-          Phoenix.PubSub.unsubscribe(:secop_client_pubsub, current_node.pubsub_topic)
-          Phoenix.PubSub.subscribe(:secop_client_pubsub, current_node.pubsub_topic)
-          Map.put(model, :active_nodes, active_nodes)
-
-        _ ->
-          model
-      end
-
-    model =
-      cond do
-        Map.has_key?(model.active_nodes, state.node_id) ->
-          put_in(model, [:active_nodes, state.node_id, :state], state.state)
-
-        true ->
-          model
-      end
-
     model
   end
 
-  def update_model_values(model, values_map) do
-    curr_node_key = model.current_node_key
-    current_node = model[:active_nodes][curr_node_key]
+  def process_data_report("status", data_report, datainfo) do
+    [value, _qualifiers] = data_report
 
-    updated_node = update_node_values(current_node, values_map)
+    [stat_code , stat_string] = value
 
-    updated_model = put_in(model, [:active_nodes, curr_node_key], updated_node)
+   %{
+      data_report: data_report,
+      stat_string: stat_string,
+      stat_code: stat_code_lookup(stat_code, datainfo),
+      stat_color: stat_code_to_color(stat_code)
+    }
+  end
 
-    updated_model
+  def process_data_report(_accessible, data_report, datainfo) do
+    %{data_report: data_report}
+  end
+
+
+
+  def value_update(model, module, accessible, data_report) do
+
+    old_param_val = model.values[module][accessible]
+
+    new_param_val = process_data_report(accessible, data_report, old_param_val.datainfo)
+
+    if Enum.at(old_param_val.data_report, 0) == Enum.at(new_param_val.data_report, 0) do
+      {:ok, :equal, model}
+    else
+      # Merge the old parameter value with the new one
+      merged_param_val = Map.merge(old_param_val, new_param_val)
+      {:ok, :updated, put_in(model, [:values, module, accessible], merged_param_val)}
+    end
   end
 
   def init_node(node) do
-    modules =
-      Enum.reduce(node[:description][:modules], %{}, fn {module_name, module_description}, acc ->
-        parameters =
-          Enum.reduce(module_description[:parameters], %{}, fn {parameter_name,
-                                                                parameter_description},
-                                                               param_acc ->
-            new_param_description =
-              Map.put(parameter_description, :value, nil)
-              |> Map.put(:plot_data, {[], []})
-
-            new_param_description =
-              update_param_descr(nil, parameter_name, new_param_description)
-              |> Map.put(
-                :chart_id,
-                "plotly:#{node.host}:#{node.port}:#{module_name}:#{parameter_name}"
-              )
-              |> Map.put(
-                :parameter_id,
-                "#{node.host}:#{node.port}:#{module_name}:#{parameter_name}"
-              )
-              |> Map.put(
-                :set_form,
-                to_form(%{
-                  "host" => to_string(node.host),
-                  "port" => Integer.to_string(node.port),
-                  "parameter" => parameter_name,
-                  "module" => module_name,
-                  "value" => nil
-                })
-              )
-
-            updated_param_acc = Map.put(param_acc, parameter_name, new_param_description)
-
-            updated_param_acc
-          end)
-
-        module_description =
-          Map.put(
-            module_description,
-            :chart_id,
-            "plotly:#{node.host}:#{node.port}:#{module_name}"
-          )
-          |> Map.put(:parameters, parameters)
-
-        Map.put(acc, module_name, module_description)
-      end)
-
-    updated_node = put_in(node[:description][:modules], modules)
-
-    updated_node
+    node
   end
 
-  def update_node_values(node, values_map) do
-    modules =
-      Enum.reduce(node[:description][:modules], %{}, fn {module_name, module_description}, acc ->
-        parameters =
-          Enum.reduce(module_description[:parameters], %{}, fn {parameter_name,
-                                                                parameter_description},
-                                                               param_acc ->
-            new_val =
-              case values_map do
-                nil -> nil
-                _ -> Map.get(values_map, module_name) |> Map.get(parameter_name)
-              end
 
-            new_param_description =
-              update_param_descr(new_val, parameter_name, parameter_description)
-
-            updated_param_acc = Map.put(param_acc, parameter_name, new_param_description)
-
-            updated_param_acc
-          end)
-
-        Map.put(acc, module_name, Map.put(module_description, :parameters, parameters))
-      end)
-
-    updated_node = put_in(node[:description][:modules], modules)
-
-    updated_node
-  end
 
   def add_node(model, node) do
-    node_id = node.node_id
-
-    model =
-      cond do
-        model.active_nodes == %{} -> model |> Map.put(:current_node_key, node_id)
-        true -> model
-      end
-
-    active_nodes = model.active_nodes |> Map.put(node_id, node)
-
-    model = model |> Map.put(:active_nodes, active_nodes)
-
     model
   end
 
-  defp update_param_descr(new_val, parameter_name, parameter_description) do
-    new_parameter_description = Map.put(parameter_description, :value, new_val)
 
-    new_keys =
-      case parameter_name do
-        :status -> parse_status(new_parameter_description)
-        _ -> %{}
-      end
 
-    Map.merge(new_parameter_description, new_keys)
-  end
 
-  defp parse_status(status) do
-    statmap =
-      case status.value do
-        nil ->
-          %{stat_code: "stat_code", stat_string: "stat_string", status_color: "bg-gray-500"}
+  def stat_code_lookup(stat_code, status_datainfo) do
 
-        [[stat_code, stat_string] | _rest] ->
-          %{
-            stat_code: stat_code_lookup(stat_code, status.datainfo),
-            stat_string: stat_string,
-            status_color: stat_code_to_color(stat_code)
-          }
-      end
 
-    statmap
-  end
-
-  defp stat_code_lookup(stat_code, status_datainfo) do
-    status_datainfo.members
-    |> Enum.find(fn member -> member.type == "enum" end)
+    status_datainfo["members"]
+    |> Enum.find(fn member -> member["type"] == "enum" end)
     |> case do
-      %{members: members} ->
+      %{"members" => members} ->
         members
         |> Enum.find(fn {_key, value} -> value == stat_code end)
         |> case do
@@ -250,7 +168,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     end
   end
 
-  defp stat_code_to_color(stat_code) do
+  def stat_code_to_color(stat_code) do
     cond do
       # Disabled
       0 <= stat_code and stat_code < 100 -> "bg-gray-500"
@@ -266,48 +184,8 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     end
   end
 
-  def get_module(model, nodeid, module) do
-    get_in(model, [:active_nodes, nodeid, :description, :modules, module])
-  end
 
-  def set_module(model, nodeid, module_key, new_module) do
-    put_in(model, [:active_nodes, nodeid, :description, :modules, module_key], new_module)
-  end
 
-  def get_parameter(model, nodeid, module, parameter) do
-    get_in(model, [:active_nodes, nodeid, :description, :modules, module, :parameters, parameter])
-  end
 
-  def set_parameter(model, nodeid, module, parameter, new_parameter) do
-    put_in(
-      model,
-      [:active_nodes, nodeid, :description, :modules, module, :parameters, parameter],
-      new_parameter
-    )
-  end
 
-  defp get_plot_tuple(map) do
-    chart_id = map.chart_id
-
-    plot = Map.get(map, :plot)
-
-    plotly_data =
-      if Map.has_key?(plot, :plotly) do
-        Map.get(plot, :plotly)
-      else
-        nil
-      end
-
-    {chart_id, plotly_data}
-  end
-
-  def get_module_plot_data(model, nodeid, module) do
-    get_module(model, nodeid, module)
-    |> get_plot_tuple()
-  end
-
-  def get_parameter_plot_data(model, nodeid, module, parameter) do
-    get_parameter(model, nodeid, module, parameter)
-    |> get_plot_tuple()
-  end
 end

@@ -2,6 +2,7 @@ defmodule SecopService.Sec_Nodes do
   import Ecto.Query, warn: false
   alias SecopService.Repo
   alias SecopService.Sec_Nodes.{SEC_Node, Module, Parameter, Command, ParameterValue}
+  alias SecopService.Util
   require Logger
 
   # Parse and store a raw SECoP message
@@ -269,6 +270,7 @@ defmodule SecopService.Sec_Nodes do
       name: to_string(module_name),
       description: Map.get(properties, :description) || "",
       interface_classes: Map.get(properties, :interface_classes) || [],
+      highest_interface_class: (Map.get(properties, :interface_classes) || [] ) |> Util.get_highest_if_class() |> Atom.to_string() || "none",
       custom_properties: custom_properties || %{},
       sec_node_id: db_node.uuid,
 

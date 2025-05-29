@@ -9,6 +9,7 @@ defmodule SecopService.Sec_Nodes.Module do
     # mandatory properties
     field :description, :string
     field :interface_classes, {:array, :string}
+    field :highest_interface_class, :string
 
     # optional properties
     field :visibility, :string
@@ -36,6 +37,7 @@ defmodule SecopService.Sec_Nodes.Module do
       :name,
       :description,
       :interface_classes,
+      :highest_interface_class,
       :custom_properties,
       :sec_node_id,
       :visibility,

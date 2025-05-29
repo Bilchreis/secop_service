@@ -3,11 +3,12 @@ defmodule SECoPComponents do
 
   alias Phoenix.LiveView.JS
   alias Jason
-
+  alias SecopService.Util
   import SecopServiceWeb.CoreComponents
 
   attr :equipment_id, :string, required: true
   attr :pubsub_topic, :string, required: true
+  attr :uuid, :string, required: true
   attr :current, :boolean, default: false
   attr :state, :atom, required: true
 
@@ -23,14 +24,14 @@ defmodule SECoPComponents do
     ~H"""
     <button
       phx-click="node-select"
-      phx-value-pubsubtopic={@pubsub_topic}
+      phx-value-pstopic={@pubsub_topic}
       class={[
         @button_col,
         @border_col,
         "border-4 text-white text-left font-bold py-2 px-4 rounded"
       ]}
     >
-      <div class="text-xl">{@equipment_id}</div>
+      <div class="text-xl">{Util.display_name(@equipment_id)}</div>
       <div class="text-sm text-white-400 opacity-60">{@pubsub_topic}</div>
       <div>{@state}</div>
     </button>
@@ -189,61 +190,82 @@ defmodule SECoPComponents do
   end
 
   attr :module_name, :string, required: true
-  attr :module, :map, required: true
-  attr :current, :boolean, default: false
   attr :node_status, :atom, required: true
-  attr :hide_indicator, :string, default: ""
+  attr :status_value, :map, required: true
 
-  def module_button(assigns) do
-    assigns =
-      if Map.has_key?(assigns.module.parameters, :status) do
-        assigns = assign(assigns, :status, assigns.module.parameters.status)
 
-        assigns =
-          case assigns.node_status do
-            :initialized ->
-              assigns
+  def module_indicator_status(assigns) do
 
-            _ ->
-              status = assigns.status
-              status = %{status | status_color: "gray-500"}
-
-              assign(assigns, :status, status)
-          end
-
-        assigns
-      else
-        status = %{status_color: "bg-gray-500", stat_code: 0, stat_string: "blah"}
-
-        assign(assigns, :status, status)
-        |> assign(:hide_indicator, "hidden")
-      end
 
     ~H"""
-    <button class={
-      if @current do
-        " min-w-full bg-purple-500 hover:bg-purple-700 text-white text-left font-bold py-2 px-4 rounded"
-      else
-        "min-w-full bg-zinc-500  hover:bg-zinc-700 text-white text-left font-bold py-2 px-4 rounded"
+    <div class={[
+      "min-w-full text-white text-left font-bold py-2 px-4 rounded",
+      case @node_status do
+        :connected -> "bg-orange-500"
+        :disconnected -> "bg-red-500"
+        :initialized -> "bg-zinc-500"
+        _ -> "bg-red-500"  # default fallback
       end
-    }>
-      <div class="flex items-center">
+    ]}>
+     <div class="flex items-center">
         <div>
           <span class={[
-            @hide_indicator,
-            @status.status_color,
+            (if @status_value.data_report != nil, do: @status_value.stat_color, else: "bg-gray-500"),
             "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
           ]}>
           </span>
         </div>
         <div>
-          <div class="text-xl">{@module_name}</div>
-          <div class="text-sm text-white-400 opacity-60">
-            {@status.stat_code} : {@status.stat_string}
-          </div>
+          <div class="text-xl">{Util.display_name(@module_name)}</div>
+            <%= if @status_value.data_report != nil do %>
+              <div class="text-sm text-white-400 opacity-60">
+                {@status_value.stat_code} : {@status_value.stat_string}
+              </div>
+            <% else %>
+              <div class="text-sm text-white-400 opacity-60">
+                waiting for data...
+              </div>
+            <% end %>
         </div>
       </div>
-    </button>
+    </div>
+    """
+  end
+
+
+  attr :module_name, :string, required: true
+  attr :node_status, :atom, required: true
+
+  def module_indicator(assigns) do
+
+    ~H"""
+    <div class={[
+      "min-w-full text-white text-left font-bold py-2 px-4 rounded",
+      case @node_status do
+        :connected -> "bg-orange-500"
+        :disconnected -> "bg-red-500"
+        :initialized -> "bg-zinc-500"
+        _ -> "bg-red-500"  # default fallback
+      end
+    ]}>
+     <div class="flex items-center">
+        <div>
+          <span class={[
+            "opacity-0",
+            "bg-gray-500",
+            "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
+          ]}>
+          </span>
+        </div>
+        <div>
+          <div class="text-xl">{Util.display_name(@module_name)}</div>
+            <div class="text-sm text-white-400 opacity-0">
+              placeholder
+            </div>
+
+        </div>
+      </div>
+    </div>
     """
   end
 

@@ -7,6 +7,7 @@ defmodule SecopService.Repo.Migrations.CreateModules do
 
       add :description, :text
       add :interface_classes, {:array, :string}
+      add :highest_interface_class, :string
 
       add :visibility, :string
       add :group, :string
