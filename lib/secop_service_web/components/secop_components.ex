@@ -198,27 +198,44 @@ defmodule SECoPComponents do
     # Adjust this threshold based on your needs (characters that fit in w-48)
     text_too_long = String.length(display_name) > 20
 
-    assigns = assign(assigns, :display_name, display_name)
-    assigns = assign(assigns, :text_too_long, text_too_long)
+    bg_col =  case assigns.node_status do
+        :connected -> "bg-orange-500"
+        :disconnected -> "bg-red-500"
+        :initialized -> "bg-zinc-400 dark:bg-zinc-500"
+        # default fallback
+        _ -> "bg-red-500"
+    end
+
+    stat_col = if assigns.status_value.data_report != nil do
+      assigns.status_value.stat_color
+    else
+      "bg-gray-500"
+    end
+
+    show = if text_too_long do "overflow-hidden" else "truncate" end
+    animate_marquee = if text_too_long do "animate-marquee hover:pause-animation" else "" end
+
+
+    assigns = assigns
+      |> assign(:display_name, display_name)
+      |> assign(:bg_col, bg_col)
+      |> assign(:stat_col, stat_col)
+      |> assign(:show, show)
+      |> assign(:animate_marquee, animate_marquee)
+
 
     ~H"""
     <div class={
       [
         "w-[300px]",
         "text-white text-left font-bold py-2 px-4 rounded",
-        case @node_status do
-          :connected -> "bg-orange-500"
-          :disconnected -> "bg-red-500"
-          :initialized -> "bg-zinc-400 dark:bg-zinc-500"
-          # default fallback
-          _ -> "bg-red-500"
-        end
+        @bg_col,
       ]
     }>
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <span class={[
-            if(@status_value.data_report != nil, do: @status_value.stat_color, else: "bg-gray-500"),
+            @stat_col,
             "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
           ]}>
           </span>
@@ -226,12 +243,12 @@ defmodule SECoPComponents do
         <div class="flex-1 min-w-0">
           <div class={[
             "text-xl",
-            if(@text_too_long, do: "overflow-hidden", else: "truncate")
+            @show
           ]}>
             <div
               class={[
                 "whitespace-nowrap",
-                if(@text_too_long, do: "animate-marquee hover:pause-animation", else: "")
+                @animate_marquee,
               ]}
               title={@display_name}
             >
