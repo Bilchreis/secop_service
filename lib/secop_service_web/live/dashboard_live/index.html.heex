@@ -1,5 +1,5 @@
 <div>
-  <%= if @model.active_nodes != %{} do %>
+  <%= if @active_nodes != %{} do %>
     <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
       <li class="me-2 mb-2">
         <button
@@ -15,13 +15,13 @@
           <div class="invisible">placeholder</div>
         </button>
       </li>
-      <%= for {_addr,node} <- @model.active_nodes do %>
+      <%= for {_addr,node} <- @active_nodes do %>
         <li class="me-2 mb-2">
           <.node_button
             equipment_id={node.equipment_id}
             pubsub_topic={node.pubsub_topic}
             uuid={node.uuid}
-            current={node.uuid == @model.current_node.uuid}
+            current={node.uuid == @current_node.uuid}
             state={node.state}
           />
         </li>
@@ -30,11 +30,11 @@
 
     <div class="flex">
       <.module_indicators
-        node={@model.current_node}
-        node_state={@model.active_nodes[SEC_Node.get_node_id(@model.current_node)].state}
-        values={@model.values}
+        node={@current_node}
+        node_state={@active_nodes[SEC_Node.get_node_id(@current_node)].state}
+        values={@values}
       />
-      <.dash_sec_node node={@model.current_node} node_values={@model.values} />
+      <.dash_sec_node node={@current_node} />
     </div>
   <% else %>
     No nodes connected

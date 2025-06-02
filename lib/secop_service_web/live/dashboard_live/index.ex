@@ -12,7 +12,24 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   require Logger
 
   import SECoPComponents
-  import DashboardComponents
+  import SecopServiceWeb.DashboardComponents
+
+  def model_from_socket(socket) do
+    model = %{
+      active_nodes: socket.assigns.active_nodes,
+      current_node: socket.assigns.current_node,
+      values: socket.assigns.values
+    }
+  end
+
+  def model_to_socket(model,socket) do
+    socket
+    |> assign(:active_nodes, model.active_nodes)
+    |> assign(:current_node, model.current_node)
+    |> assign(:values, model.values)
+  end
+
+
 
   @impl true
   def mount(_params, _session, socket) do
@@ -34,7 +51,9 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     socket =
       socket
-      |> assign(:model, model)
+      |> assign(:active_nodes, model.active_nodes)
+      |> assign(:current_node, model.current_node)
+      |> assign(:values, model.values)
       |> assign(:show_connect_modal, false)
 
     {:ok, socket}
@@ -85,42 +104,86 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
-  def handle_info({:value_update, module, accessible, data_report}, socket) do
+  def handle_info({:value_update, module, "status", data_report}, socket) do
+
+    accessible = "status"
+
     socket =
-      case Model.value_update(socket.assigns.model, module, accessible, data_report) do
-        {:ok, :equal, _model} ->
+      case Model.value_update(socket.assigns.values, module, accessible, data_report) do
+        {:ok, :equal, _values} ->
           socket
 
-        {:ok, :updated, model} ->
-          assign(socket, :model, model)
+        {:ok, :updated, values} ->
+          send_update(SecopServiceWeb.Components.ModuleIndicator,
+            id: "module_indicator:" <> module,
+            value_update: data_report
+          )
+          send_update(SecopServiceWeb.Components.ModuleIndicator,
+            id: "module_indicator_mod:" <> module,
+            value_update: data_report
+          )
 
-        {:error, :parameter_not_found, _model} ->
-          Logger.warning("Parameter #{accessible} in module #{module} not found in model")
+          send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+            id: "parameter_value:" <> module <> ":" <> accessible,
+            value_update: data_report
+          )
+          assign(socket, :values, values)
+
+        {:error, :parameter_not_found, _values} ->
+          Logger.warning("Parameter #{accessible} in module #{module} not found in values")
           socket
       end
 
     {:noreply, socket}
   end
 
+  def handle_info({:value_update, module, accessible, data_report}, socket) do
+    socket =
+      case Model.value_update(socket.assigns.values, module, accessible, data_report) do
+        {:ok, :equal, _values} ->
+          socket
+
+        {:ok, :updated, values} ->
+          send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+            id: "parameter_value:" <> module <> ":" <> accessible,
+            value_update: data_report
+          )
+
+
+          assign(socket, :values, values)
+
+        {:error, :parameter_not_found, _values} ->
+          Logger.warning("Parameter #{accessible} in module #{module} not found in values")
+          socket
+      end
+
+    {:noreply, socket}
+  end
+
+
   @impl true
   def handle_event("node-select", %{"pstopic" => new_pubsub_topic}, socket) do
     # unsubscribe from the current node's pubsub topic
-    current_node = Model.get_current_node(socket.assigns.model)
+
+    current_node = socket.assigns.current_node
+
 
     Phoenix.PubSub.unsubscribe(
       :secop_client_pubsub,
       SEC_Node.get_values_pubsub_topic(current_node)
     )
 
+
+
     # subscribe to the new node's pubsub topic & update the model
     new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
-    new_model = Model.set_current_node(socket.assigns.model, new_node_id)
-    socket = assign(socket, :model, new_model)
-    new_current_node = Model.get_current_node(socket.assigns.model)
+    new_model = model_from_socket(socket) |> Model.set_current_node(new_node_id)
+    socket = model_to_socket(new_model, socket)
+
 
     Phoenix.PubSub.subscribe(
       :secop_client_pubsub,
-      SEC_Node.get_values_pubsub_topic(new_current_node)
+      SEC_Node.get_values_pubsub_topic(new_model.current_node)
     )
 
     {:noreply, socket}

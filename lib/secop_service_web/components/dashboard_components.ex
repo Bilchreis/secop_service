@@ -1,19 +1,22 @@
-defmodule DashboardComponents do
+defmodule SecopServiceWeb.DashboardComponents do
   use Phoenix.Component
 
+  alias Credo.Check.Readability.ModuleAttributeNames
   alias SecopService.Sec_Nodes.SEC_Node
   alias SecopService.Sec_Nodes.Module
 
   alias SecopService.Util
   alias Jason
+  alias SecopServiceWeb.Components.ModuleIndicator
+  alias SecopServiceWeb.Components.ParameterValueDisplay
 
-  import SecopServiceWeb.CoreComponents
 
   import SECoPComponents
   import SecopServiceWeb.BrowseComponents
 
+
   attr :node, :map, required: true
-  attr :node_values, :map, default: %{}
+
 
   def dash_sec_node(assigns) do
     grouped_modules = Enum.group_by(assigns.node.modules, &(&1.group || nil))
@@ -21,9 +24,9 @@ defmodule DashboardComponents do
     assigns = assign(assigns, :grouped_modules, grouped_modules)
 
     ~H"""
-    <div class="flex-1 mt-4 ml-4 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg shadow-xl shadow-purple-600/30 shadow-md">
+    <div class="flex-1 mt-4 ml-4 p-3 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg shadow-xl shadow-purple-600/30 shadow-md">
       <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-2 gap-2">
           <div>
             <span class="bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-4xl font-bold text-transparent">
               {SEC_Node.display_equipment_id(@node)}
@@ -98,13 +101,13 @@ defmodule DashboardComponents do
       </div>
 
     <!--Modules -->
-      <div class="mt-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
+      <div class="mt-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
         <h2 class="text-2xl font-bold mb-4">Modules:</h2>
 
         <%= for {group_name, modules} <- Enum.sort(@grouped_modules) do %>
           <%= if group_name == nil do %>
             <%= for module <- modules do %>
-              <.dash_module module={module} module_values={@node_values[module.name]} />
+              <.dash_module module={module} host={@node.host} port={@node.port}/>
             <% end %>
           <% else %>
             <div class="mb-6 border-l-4 border-t-4 border-stone-400 dark:border-stone-400 pl-4 rounded-lg">
@@ -113,7 +116,7 @@ defmodule DashboardComponents do
               </h3>
 
               <%= for module <- modules do %>
-                <.dash_module module={module} module_values={@node_values[module.name]} />
+                <.dash_module module={module} host={@node.host} port={@node.port} />
               <% end %>
             </div>
           <% end %>
@@ -127,18 +130,25 @@ defmodule DashboardComponents do
   attr :node_state, :atom, required: true
   attr :values, :map, required: true
 
+
   def module_indicators(assigns) do
     ~H"""
-    <div class="flex-none  p-5  mt-4  bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
+    <div class="flex-none  p-4  mt-4  bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
       <span class="text-lg font-bold  text-black dark:text-white ">Module Status:</span>
-      <ul class="mt-2 space-y space-y-4 text-sm font-medium">
+      <ul class="mt-1 space-y space-y-2 text-sm font-medium">
         <%= for module <- @node.modules do %>
           <li class=" flex-1 min-w-full">
-            <.module_status_wrapper
-              module={module}
-              node_status={@node_state}
-              module_status={@values[module.name]["status"]}
-            />
+          <.live_component
+            module={ModuleIndicator}
+            id={"module_indicator:" <> module.name}
+            host = {@node.host}
+            port = {@node.port}
+            module_name = {module.name}
+            highest_if_class = {module.highest_interface_class}
+            status_param = {Module.get_parameter(module,"status")}
+            node_state = {@node_state}
+            indicator_select = {:outer}
+          />
           </li>
         <% end %>
       </ul>
@@ -146,64 +156,10 @@ defmodule DashboardComponents do
     """
   end
 
-  # New helper component
-  attr :module, :map, required: true
-  attr :node_status, :atom, required: true
-  attr :module_status, :map, required: true
-
-  def module_status_wrapper(assigns) do
-    ~H"""
-    <%= if @module.highest_interface_class in ["drivable", "readable", "measurable"] do %>
-      <.module_indicator_status
-        module_name={@module.name}
-        node_status={@node_status}
-        status_value={@module_status}
-      />
-    <% else %>
-      <.module_indicator module_name={@module.name} node_status={@node_status} />
-    <% end %>
-    """
-  end
-
-
-  attr :status_value, :map, required: true
-
-  def inner_status_indicator(assigns) do
-
-    ~H"""
-    <div class="flex items-center">
-      <div class="flex-shrink-0">
-        <span class={[
-          if(@status_value.data_report != nil, do: @status_value.stat_color, else: "bg-gray-500"),
-          "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
-        ]}>
-        </span>
-      </div>
-      <div class="mb-1">
-        <%= if @status_value.data_report != nil do %>
-          <div class="text-lg font-semibold text-white opacity-60 truncate">
-            {@status_value.stat_code}
-          </div>
-        <% end %>
-      </div>
-
-    </div>
-    <%= if @status_value.data_report != nil do %>
-      <div class="text-white" >
-        Status: {@status_value.stat_string}
-      </div>
-        <% else %>
-      <div class="text-sm text-white opacity-60">
-        waiting for data...
-      </div>
-    <% end %>
-    """
-
-  end
 
   attr :module, :map, required: true
-  attr :module_values, :map, required: true
-
+  attr :host, :string, required: true
+  attr :port, :integer, required: true
   def dash_module(assigns) do
     grouped_parameters = Enum.group_by(assigns.module.parameters, &(&1.group || nil))
     grouped_commands = Enum.group_by(assigns.module.commands, &(&1.group || nil))
@@ -222,7 +178,7 @@ defmodule DashboardComponents do
     <div class="flex  items-start">
       <.accordion
         id={@module.name <> to_string(@module.id)}
-        class={"w-3/4  flex-1 h-auto mt-3 p-4 #{@styles.bg} rounded-lg shadow-md hover:shadow-lg border-l-4 #{@styles.border}"}
+        class={"w-3/4  flex-1 h-auto mt-3 p-2 #{@styles.bg} rounded-lg shadow-md hover:shadow-lg border-l-4 #{@styles.border}"}
       >
         <:trigger class="text-left">
           <!-- Module Name with Interface Class Icon -->
@@ -238,65 +194,77 @@ defmodule DashboardComponents do
           </div>
 
     <!-- Module Properties -->
-        <div class="flex">
-          <div class="w-3/4 mr-2 border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-4">
-            <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-2">
-              <.property
-                prop_key="Description"
-                key_class="text-gray-700 dark:text-gray-300 text-lg font-bold"
-                value_class="text-lg font-semibold"
-              >
-                {@module.description}
-              </.property>
-              <.property
-                prop_key="Interface Classes"
-                key_class="text-gray-600 dark:text-gray-400 font-semibold"
-              >
-                {@module.interface_classes |> Enum.join(", ")}
-              </.property>
+          <div class="flex">
+            <div class="w-3/4 mr-2 border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-4">
+              <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-2">
+                <.property
+                  prop_key="Description"
+                  key_class="text-gray-700 dark:text-gray-300 text-lg font-bold"
+                  value_class="text-lg font-semibold"
+                >
+                  {@module.description}
+                </.property>
+                <.property
+                  prop_key="Interface Classes"
+                  key_class="text-gray-600 dark:text-gray-400 font-semibold"
+                >
+                  {@module.interface_classes |> Enum.join(", ")}
+                </.property>
 
     <!-- ...existing module properties... -->
-              <%= if @module.implementor do %>
-                <.property
-                  prop_key="Implementor"
-                  key_class="text-gray-600 dark:text-gray-400 font-semibold"
-                >
-                  {@module.implementor}
-                </.property>
-              <% end %>
+                <%= if @module.implementor do %>
+                  <.property
+                    prop_key="Implementor"
+                    key_class="text-gray-600 dark:text-gray-400 font-semibold"
+                  >
+                    {@module.implementor}
+                  </.property>
+                <% end %>
 
-              <%= if @module.group do %>
-                <.property prop_key="Group" key_class="text-gray-600 dark:text-gray-400 font-semibold">
-                  {@module.group}
-                </.property>
-              <% end %>
+                <%= if @module.group do %>
+                  <.property
+                    prop_key="Group"
+                    key_class="text-gray-600 dark:text-gray-400 font-semibold"
+                  >
+                    {@module.group}
+                  </.property>
+                <% end %>
 
-              <%= if @module.meaning do %>
-                <.property
-                  prop_key="Meaning"
-                  key_class="text-gray-600 dark:text-gray-400 font-semibold"
-                >
-                  {inspect(@module.meaning)}
-                </.property>
-              <% end %>
+                <%= if @module.meaning do %>
+                  <.property
+                    prop_key="Meaning"
+                    key_class="text-gray-600 dark:text-gray-400 font-semibold"
+                  >
+                    {inspect(@module.meaning)}
+                  </.property>
+                <% end %>
 
-              <%= for {property_name, property_value} <- @module.custom_properties do %>
-                <.property
-                  prop_key={String.replace_prefix(property_name, "_", "")}
-                  key_class="text-gray-600 dark:text-gray-400 font-semibold"
-                >
-                  {inspect(property_value)}
-                </.property>
-              <% end %>
-            </ul>
-          </div>
-          <%= if Map.has_key?(@module_values,"status") do %>
-            <div class="w-1/4 border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-3">
-              <.inner_status_indicator status_value={@module_values["status"]} />
+                <%= for {property_name, property_value} <- @module.custom_properties do %>
+                  <.property
+                    prop_key={String.replace_prefix(property_name, "_", "")}
+                    key_class="text-gray-600 dark:text-gray-400 font-semibold"
+                  >
+                    {inspect(property_value)}
+                  </.property>
+                <% end %>
+              </ul>
             </div>
-          <% end %>
-
-        </div>
+            <%= if Module.has_status?(@module) do %>
+              <div class="w-1/4 border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-3">
+                <.live_component
+                  module={ModuleIndicator}
+                  id={"module_indicator_mod:" <> @module.name}
+                  host = {@host}
+                  port = {@port}
+                  module_name = {@module.name}
+                  highest_if_class = {@module.highest_interface_class}
+                  status_param = {Module.get_parameter(@module,"status")}
+                  node_state = {:initialized},
+                  indicator_select = {:inner}
+                />
+              </div>
+            <% end %>
+          </div>
         </:trigger>
         <:panel class="">
           <!-- Parameters -->
@@ -306,7 +274,11 @@ defmodule DashboardComponents do
               <%= if group_name == nil do %>
                 <div class="mt-4 border-l-4 border-transparent pl-4">
                   <%= for parameter <- parameters do %>
-                    <.new_dash_parameter parameter={parameter} value={@module_values[parameter.name]} />
+                    <.new_dash_parameter
+                      host = {@host}
+                      port = {@port}
+                      module_name = {@module.name}
+                      parameter={parameter} />
                   <% end %>
                 </div>
               <% else %>
@@ -315,7 +287,11 @@ defmodule DashboardComponents do
                     {Util.display_name(group_name)}
                   </h4>
                   <%= for parameter <- parameters do %>
-                    <.new_dash_parameter parameter={parameter} value={@module_values[parameter.name]} />
+                    <.new_dash_parameter
+                      host = {@host}
+                      port = {@port}
+                      module_name = {@module.name}
+                      parameter={parameter} />
                   <% end %>
                 </div>
               <% end %>
@@ -330,7 +306,7 @@ defmodule DashboardComponents do
                 <%= if group_name == nil do %>
                   <div class="mt-4 border-l-4 border-transparent pl-4">
                     <%= for command <- commands do %>
-                      <.dash_command command={command} return_val={nil} />
+                      <.dash_command command={command}  />
                     <% end %>
                   </div>
                 <% else %>
@@ -339,7 +315,7 @@ defmodule DashboardComponents do
                       {Util.display_name(group_name)}
                     </h4>
                     <%= for command <- commands do %>
-                      <.dash_command command={command} return_val={nil} />
+                      <.dash_command command={command}  />
                     <% end %>
                   </div>
                 <% end %>
@@ -353,7 +329,10 @@ defmodule DashboardComponents do
   end
 
   attr :parameter, :map, required: true
-  attr :value, :map, required: true
+  attr :host, :string, required: true
+  attr :port, :integer, required: true
+  attr :module_name, :string, required: true
+
 
   def new_dash_parameter(assigns) do
     ~H"""
@@ -387,7 +366,6 @@ defmodule DashboardComponents do
         >
           {@parameter.description}
         </.property>
-
 
     <!-- Optional Properties -->
         <%= if @parameter.group do %>
@@ -434,13 +412,21 @@ defmodule DashboardComponents do
         <% end %>
       </ul>
 
-      {inspect(@value)}
+      <.live_component
+        module={ParameterValueDisplay}
+        id={"parameter_value:" <> @module_name <> ":" <> @parameter.name}
+        host = {@host}
+        port = {@port}
+        module_name = {@module_name}
+        parameter = {@parameter}
+      />
+
     </div>
     """
   end
 
   attr :command, :map, required: true
-  attr :return_val, :map, required: true
+
 
   def dash_command(assigns) do
     ~H"""

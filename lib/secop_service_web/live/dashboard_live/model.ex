@@ -104,46 +104,58 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     model
   end
 
-  def get_current_node(model) do
-    model.current_node
-  end
-
   def set_state(model, state) do
     model
   end
 
   def process_data_report("status", data_report, datainfo) do
-    [value, _qualifiers] = data_report
+    if data_report != nil do
+      [value, _qualifiers] = data_report
 
-    [stat_code, stat_string] = value
+      [stat_code, stat_string] = value
 
-    %{
-      data_report: data_report,
-      stat_string: stat_string,
-      stat_code: stat_code_lookup(stat_code, datainfo),
-      stat_color: stat_code_to_color(stat_code)
-    }
+      %{
+        data_report: data_report,
+        stat_string: stat_string,
+        stat_code: stat_code_lookup(stat_code, datainfo),
+        stat_color: stat_code_to_color(stat_code),
+        datainfo: datainfo
+      }
+      else
+      %{
+        data_report: nil,
+        datainfo: datainfo
+      }
+
+    end
+
+  end
+
+  def process_data_report(nil, nil, nil) do
+    nil
   end
 
   def process_data_report(_accessible, data_report, datainfo) do
-    %{data_report: data_report}
+    %{data_report: data_report,
+      datainfo: datainfo}
+
   end
 
-  def value_update(model, module, accessible, data_report) do
+  def value_update(values, module, accessible, data_report) do
     # Check if the module exists
-    case get_in(model, [:values, module, accessible]) do
+    case get_in(values, [module, accessible]) do
       nil ->
-        {:error, :parameter_not_found, model}
+        {:error, :parameter_not_found, values}
 
       old_param_val ->
         new_param_val = process_data_report(accessible, data_report, old_param_val.datainfo)
 
         if Enum.at(old_param_val.data_report, 0) == Enum.at(new_param_val.data_report, 0) do
-          {:ok, :equal, model}
+          {:ok, :equal, values}
         else
           # Merge the old parameter value with the new one
           merged_param_val = Map.merge(old_param_val, new_param_val)
-          {:ok, :updated, put_in(model, [:values, module, accessible], merged_param_val)}
+          {:ok, :updated, put_in(values, [module, accessible], merged_param_val)}
         end
     end
   end
