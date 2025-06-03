@@ -198,40 +198,50 @@ defmodule SECoPComponents do
     # Adjust this threshold based on your needs (characters that fit in w-48)
     text_too_long = String.length(display_name) > 20
 
-    bg_col =  case assigns.node_status do
+    bg_col =
+      case assigns.node_status do
         :connected -> "bg-orange-500"
         :disconnected -> "bg-red-500"
         :initialized -> "bg-zinc-400 dark:bg-zinc-500"
         # default fallback
         _ -> "bg-red-500"
-    end
+      end
 
-    stat_col = if assigns.status_value.data_report != nil do
-      assigns.status_value.stat_color
-    else
-      "bg-gray-500"
-    end
+    stat_col =
+      if assigns.status_value.data_report != nil do
+        assigns.status_value.stat_color
+      else
+        "bg-gray-500"
+      end
 
-    show = if text_too_long do "overflow-hidden" else "truncate" end
-    animate_marquee = if text_too_long do "animate-marquee hover:pause-animation" else "" end
+    show =
+      if text_too_long do
+        "overflow-hidden"
+      else
+        "truncate"
+      end
 
+    animate_marquee =
+      if text_too_long do
+        "animate-marquee hover:pause-animation"
+      else
+        ""
+      end
 
-    assigns = assigns
+    assigns =
+      assigns
       |> assign(:display_name, display_name)
       |> assign(:bg_col, bg_col)
       |> assign(:stat_col, stat_col)
       |> assign(:show, show)
       |> assign(:animate_marquee, animate_marquee)
 
-
     ~H"""
-    <div class={
-      [
-        "w-[300px]",
-        "text-white text-left font-bold py-2 px-4 rounded",
-        @bg_col,
-      ]
-    }>
+    <div class={[
+      "w-[300px]",
+      "text-white text-left font-bold py-2 px-4 rounded",
+      @bg_col
+    ]}>
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <span class={[
@@ -248,7 +258,7 @@ defmodule SECoPComponents do
             <div
               class={[
                 "whitespace-nowrap",
-                @animate_marquee,
+                @animate_marquee
               ]}
               title={@display_name}
             >

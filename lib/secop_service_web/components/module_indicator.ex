@@ -7,53 +7,52 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
   alias NodeTable
   alias SecopService.Util
 
-
-
-
   @impl true
   def mount(socket) do
     {:ok, socket}
   end
 
   defp get_status_value(module_name, node_id, status_param) do
-    stat_val = if status_param != nil do
-      stat_val = case NodeTable.lookup(
-            node_id,
-            {:data_report, String.to_existing_atom(module_name),
-            :status}
-          ) do
-      {:ok, data_report} ->
-        Model.process_data_report(status_param.name, data_report, status_param.datainfo)
+    stat_val =
+      if status_param != nil do
+        stat_val =
+          case NodeTable.lookup(
+                 node_id,
+                 {:data_report, String.to_existing_atom(module_name), :status}
+               ) do
+            {:ok, data_report} ->
+              Model.process_data_report(status_param.name, data_report, status_param.datainfo)
 
+            {:error, :notfound} ->
+              Logger.warning(
+                "Data report for module #{module_name} and parameter status not found in NodeTable for node #{inspect(node_id)}}."
+              )
 
-      {:error, :notfound} ->
-        Logger.warning(
-          "Data report for module #{module_name} and parameter status not found in NodeTable for node #{inspect(node_id)}}.")
-        Model.process_data_report(status_param.name, nil, status_param.datainfo)
+              Model.process_data_report(status_param.name, nil, status_param.datainfo)
+          end
 
+        stat_val
+      else
+        nil
       end
-
-      stat_val
-    else
-      nil
-    end
-
 
     stat_val
   end
 
   @impl true
-  def update(%{
-    host: host,
-    port: port,
-    module_name: module_name,
-    highest_if_class: highest_if_class,
-    status_param: status_param,
-    node_state: node_state,
-    indicator_select: indicator_select} = _assigns, socket) do
-
+  def update(
+        %{
+          host: host,
+          port: port,
+          module_name: module_name,
+          highest_if_class: highest_if_class,
+          status_param: status_param,
+          node_state: node_state,
+          indicator_select: indicator_select
+        } = _assigns,
+        socket
+      ) do
     node_id = {String.to_charlist(host), port}
-
 
     socket =
       socket
@@ -63,7 +62,7 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
       |> assign(:node_state, node_state)
       |> assign(:node_id, node_id)
       |> assign(:indicator_select, indicator_select)
-      |> assign_new(:status_value, fn ->  get_status_value(module_name, node_id, status_param) end )
+      |> assign_new(:status_value, fn -> get_status_value(module_name, node_id, status_param) end)
 
     {:ok, socket}
   end
@@ -72,15 +71,11 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
   def update(%{value_update: data_report} = _assigns, socket) do
     status_param = socket.assigns.status_param
 
-    status_value = Model.process_data_report(status_param.name, data_report, status_param.datainfo)
+    status_value =
+      Model.process_data_report(status_param.name, data_report, status_param.datainfo)
 
     {:ok, assign(socket, :status_value, status_value)}
   end
-
-
-
-
-
 
   attr :status_value, :map, required: true
 
@@ -114,7 +109,6 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
     """
   end
 
-
   attr :module_name, :string, required: true
   attr :node_state, :atom, required: true
   attr :status_value, :map, required: true
@@ -124,40 +118,50 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
     # Adjust this threshold based on your needs (characters that fit in w-48)
     text_too_long = String.length(display_name) > 20
 
-    bg_col =  case assigns.node_state do
+    bg_col =
+      case assigns.node_state do
         :connected -> "bg-orange-500"
         :disconnected -> "bg-red-500"
         :initialized -> "bg-zinc-400 dark:bg-zinc-500"
         # default fallback
         _ -> "bg-red-500"
-    end
+      end
 
-    stat_col = if assigns.status_value.data_report != nil do
-      assigns.status_value.stat_color
-    else
-      "bg-gray-500"
-    end
+    stat_col =
+      if assigns.status_value.data_report != nil do
+        assigns.status_value.stat_color
+      else
+        "bg-gray-500"
+      end
 
-    show = if text_too_long do "overflow-hidden" else "truncate" end
-    animate_marquee = if text_too_long do "animate-marquee hover:pause-animation" else "" end
+    show =
+      if text_too_long do
+        "overflow-hidden"
+      else
+        "truncate"
+      end
 
+    animate_marquee =
+      if text_too_long do
+        "animate-marquee hover:pause-animation"
+      else
+        ""
+      end
 
-    assigns = assigns
+    assigns =
+      assigns
       |> assign(:display_name, display_name)
       |> assign(:bg_col, bg_col)
       |> assign(:stat_col, stat_col)
       |> assign(:show, show)
       |> assign(:animate_marquee, animate_marquee)
 
-
     ~H"""
-    <div class={
-      [
-        "w-[300px]",
-        "text-white text-left font-bold py-2 px-4 rounded",
-        @bg_col,
-      ]
-    }>
+    <div class={[
+      "w-[300px]",
+      "text-white text-left font-bold py-2 px-4 rounded",
+      @bg_col
+    ]}>
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <span class={[
@@ -174,7 +178,7 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
             <div
               class={[
                 "whitespace-nowrap",
-                @animate_marquee,
+                @animate_marquee
               ]}
               title={@display_name}
             >
@@ -254,33 +258,24 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
     """
   end
 
-
-
-
-
-
   @impl true
   def render(assigns) do
     ~H"""
     <div>
-    <%= case @indicator_select do %>
-      <% :outer -> %>
-
-      <%= if @status_param do %>
-        <.module_indicator_status
-          module_name={@module_name}
-          node_state={@node_state}
-          status_value={@status_value}
-        />
-      <% else %>
-        <.module_indicator module_name={@module_name} node_state={@node_state} />
+      <%= case @indicator_select do %>
+        <% :outer -> %>
+          <%= if @status_param do %>
+            <.module_indicator_status
+              module_name={@module_name}
+              node_state={@node_state}
+              status_value={@status_value}
+            />
+          <% else %>
+            <.module_indicator module_name={@module_name} node_state={@node_state} />
+          <% end %>
+        <% :inner -> %>
+          <.inner_status_indicator status_value={@status_value} />
       <% end %>
-
-
-      <% :inner -> %>
-        <.inner_status_indicator status_value = {@status_value} />
-
-    <% end %>
     </div>
     """
   end

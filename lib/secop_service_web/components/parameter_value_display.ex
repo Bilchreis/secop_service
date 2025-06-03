@@ -7,33 +7,28 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
   alias SecopService.Sec_Nodes.ParameterValue
   alias NodeTable
 
-
-
-
   @impl true
   def mount(socket) do
     {:ok, socket}
   end
 
   defp get_parameter_value(module_name, node_id, parameter) do
-
     case NodeTable.lookup(
-          node_id,
-          {:data_report, String.to_existing_atom(module_name),
-          String.to_existing_atom(parameter.name)}
-        ) do
+           node_id,
+           {:data_report, String.to_existing_atom(module_name),
+            String.to_existing_atom(parameter.name)}
+         ) do
       {:ok, data_report} ->
         Model.process_data_report(parameter.name, data_report, parameter.datainfo)
 
-
       {:error, :notfound} ->
         Logger.warning(
-          "Data report for module #{module_name} and parameter #{parameter.name} not found in NodeTable for node #{inspect(node_id)}}.")
-        Model.process_data_report(parameter.name, nil, parameter.datainfo)
+          "Data report for module #{module_name} and parameter #{parameter.name} not found in NodeTable for node #{inspect(node_id)}}."
+        )
 
+        Model.process_data_report(parameter.name, nil, parameter.datainfo)
     end
   end
-
 
   def get_display_value(raw_value, parameter) do
     unit = parameter.datainfo["unit"] || ""
@@ -52,44 +47,50 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
       "enum" ->
         # Return the name for display
-         {name, _} = parameter.datainfo["members"]
-        |> Enum.find(fn
-          {_name, val} -> val == raw_value
-          _ -> false
-        end)
+        {name, _} =
+          parameter.datainfo["members"]
+          |> Enum.find(fn
+            {_name, val} -> val == raw_value
+            _ -> false
+          end)
 
-        name
+        "#{raw_value}: #{name}"
 
       _ ->
         if unit == "" do
-          "#{Jason.encode!(raw_value)}"
+          "#{Jason.encode!(raw_value, pretty: true)}"
         else
-          "#{Jason.encode!(raw_value)} #{unit}"
+          "#{Jason.encode!(raw_value, pretty: true)} #{unit}"
         end
     end
   end
 
   @impl true
-  def update(%{
-    host: host,
-    port: port,
-    module_name: module_name,
-    parameter: parameter} = _assigns, socket) do
-
+  def update(
+        %{
+          class: class,
+          host: host,
+          port: port,
+          module_name: module_name,
+          parameter: parameter
+        } = _assigns,
+        socket
+      ) do
     node_id = {String.to_charlist(host), port}
 
-    parameter_value = case get_parameter_value(module_name, node_id, parameter) do
-      nil -> "Waiting for data..."
-      val_map   -> Map.get(val_map,:data_report) |> Enum.at(0) |>  get_display_value(parameter)
-    end
-
+    parameter_value =
+      case get_parameter_value(module_name, node_id, parameter) do
+        nil -> "Waiting for data..."
+        val_map -> Map.get(val_map, :data_report) |> Enum.at(0) |> get_display_value(parameter)
+      end
 
     socket =
       socket
       |> assign(:parameter, parameter)
       |> assign(:module_name, module_name)
       |> assign(:node_id, node_id)
-      |> assign_new(:parameter_value, fn -> parameter_value end )
+      |> assign(:class, class)
+      |> assign_new(:parameter_value, fn -> parameter_value end)
 
     {:ok, socket}
   end
@@ -98,28 +99,23 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
   def update(%{value_update: data_report} = _assigns, socket) do
     parameter = socket.assigns.parameter
 
-
-
-
-    parameter_value = case data_report do
-      nil -> "Waiting for data..."
-      val_map   -> Enum.at(data_report,0) |>  get_display_value(parameter)
-    end
+    parameter_value =
+      case data_report do
+        nil -> "Waiting for data..."
+        val_map -> Enum.at(data_report, 0) |> get_display_value(parameter)
+      end
 
     {:ok, assign(socket, :parameter_value, parameter_value)}
   end
 
-
-
-
-
-
-
   @impl true
   def render(assigns) do
     ~H"""
-    <div class = "bg-gray-600 border rounded-lg p-2 mt-2 border-stone-400">
-      <span class= "text-white opacity-100">{@parameter_value}</span>
+    <div class={[
+      "max-h-80 bg-zinc-800 border rounded-lg p-2 mt-2 border-stone-400 overflow-scroll",
+      @class
+    ]}>
+      <span class="font-mono text-gray-200 opacity-100"><pre>{@parameter_value}</pre></span>
     </div>
     """
   end

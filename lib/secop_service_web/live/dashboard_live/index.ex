@@ -22,14 +22,12 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     }
   end
 
-  def model_to_socket(model,socket) do
+  def model_to_socket(model, socket) do
     socket
     |> assign(:active_nodes, model.active_nodes)
     |> assign(:current_node, model.current_node)
     |> assign(:values, model.values)
   end
-
-
 
   @impl true
   def mount(_params, _session, socket) do
@@ -104,39 +102,55 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
-  def handle_info({:value_update, module, "status", data_report}, socket) do
+  def update_components(node_id_str, module, "status", data_report) do
+    send_update(SecopServiceWeb.Components.ModuleIndicator,
+      id: "module_indicator:" <> node_id_str <> ":" <> module,
+      value_update: data_report
+    )
 
-    accessible = "status"
+    send_update(SecopServiceWeb.Components.ModuleIndicator,
+      id: "module_indicator_mod:" <> node_id_str <> ":" <> module,
+      value_update: data_report
+    )
 
-    socket =
-      case Model.value_update(socket.assigns.values, module, accessible, data_report) do
-        {:ok, :equal, _values} ->
-          socket
-
-        {:ok, :updated, values} ->
-          send_update(SecopServiceWeb.Components.ModuleIndicator,
-            id: "module_indicator:" <> module,
-            value_update: data_report
-          )
-          send_update(SecopServiceWeb.Components.ModuleIndicator,
-            id: "module_indicator_mod:" <> module,
-            value_update: data_report
-          )
-
-          send_update(SecopServiceWeb.Components.ParameterValueDisplay,
-            id: "parameter_value:" <> module <> ":" <> accessible,
-            value_update: data_report
-          )
-          assign(socket, :values, values)
-
-        {:error, :parameter_not_found, _values} ->
-          Logger.warning("Parameter #{accessible} in module #{module} not found in values")
-          socket
-      end
-
-    {:noreply, socket}
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "parameter_value:" <> node_id_str <> ":" <> module <> ":" <> "status",
+      value_update: data_report
+    )
   end
 
+  def update_components(node_id_str, module, "value", data_report) do
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "module_dash:" <> node_id_str <> ":" <> module <> ":" <> "value",
+      value_update: data_report
+    )
+
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "parameter_value:" <> node_id_str <> ":" <> module <> ":" <> "value",
+      value_update: data_report
+    )
+  end
+
+  def update_components(node_id_str, module, "target", data_report) do
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "parameter_value:" <> node_id_str <> ":" <> module <> ":" <> "target",
+      value_update: data_report
+    )
+
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "module_dash:" <> node_id_str <> ":" <> module <> ":" <> "target",
+      value_update: data_report
+    )
+  end
+
+  def update_components(node_id_str, module, accessible, data_report) do
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "parameter_value:" <> node_id_str <> ":" <> module <> ":" <> accessible,
+      value_update: data_report
+    )
+  end
+
+  @impl true
   def handle_info({:value_update, module, accessible, data_report}, socket) do
     socket =
       case Model.value_update(socket.assigns.values, module, accessible, data_report) do
@@ -144,11 +158,15 @@ defmodule SecopServiceWeb.DashboardLive.Index do
           socket
 
         {:ok, :updated, values} ->
-          send_update(SecopServiceWeb.Components.ParameterValueDisplay,
-            id: "parameter_value:" <> module <> ":" <> accessible,
-            value_update: data_report
-          )
+          node_id_str =
+            "#{to_string(socket.assigns.current_node.host)}:#{socket.assigns.current_node.port}"
 
+          update_components(
+            node_id_str,
+            module,
+            accessible,
+            data_report
+          )
 
           assign(socket, :values, values)
 
@@ -160,26 +178,21 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
-
   @impl true
   def handle_event("node-select", %{"pstopic" => new_pubsub_topic}, socket) do
     # unsubscribe from the current node's pubsub topic
 
     current_node = socket.assigns.current_node
 
-
     Phoenix.PubSub.unsubscribe(
       :secop_client_pubsub,
       SEC_Node.get_values_pubsub_topic(current_node)
     )
 
-
-
     # subscribe to the new node's pubsub topic & update the model
     new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
     new_model = model_from_socket(socket) |> Model.set_current_node(new_node_id)
     socket = model_to_socket(new_model, socket)
-
 
     Phoenix.PubSub.subscribe(
       :secop_client_pubsub,

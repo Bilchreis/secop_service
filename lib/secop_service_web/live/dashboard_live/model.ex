@@ -121,14 +121,12 @@ defmodule SecopServiceWeb.DashboardLive.Model do
         stat_color: stat_code_to_color(stat_code),
         datainfo: datainfo
       }
-      else
+    else
       %{
         data_report: nil,
         datainfo: datainfo
       }
-
     end
-
   end
 
   def process_data_report(nil, nil, nil) do
@@ -136,9 +134,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
   end
 
   def process_data_report(_accessible, data_report, datainfo) do
-    %{data_report: data_report,
-      datainfo: datainfo}
-
+    %{data_report: data_report, datainfo: datainfo}
   end
 
   def value_update(values, module, accessible, data_report) do
