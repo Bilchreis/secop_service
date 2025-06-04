@@ -91,18 +91,18 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
       </div>
       <div class="mb-1">
         <%= if @status_value.data_report != nil do %>
-          <div class="text-lg font-semibold text-white opacity-60 truncate">
+          <div class="text-lg font-semibold dark:text-white truncate">
             {@status_value.stat_code}
           </div>
         <% end %>
       </div>
     </div>
     <%= if @status_value.data_report != nil do %>
-      <div class="text-white opacity-70">
+      <div class="dark:text-white ">
         {@status_value.stat_string}
       </div>
     <% else %>
-      <div class="text-sm text-white opacity-60">
+      <div class="text-sm dark:text-white opacity-60">
         waiting for data...
       </div>
     <% end %>

@@ -76,8 +76,7 @@ Hooks.PlotlyChart = {
             y: y   // Array of y arrays
           }, traceIndices || [0]);
         } else {
-          // If plot isn't initialized, request full data
-          this.pushEventTo(this.el, "request-plotly-data", { id: this.el.id });
+          console.warn("Plotly chart is not initialized yet.");
         }
       } catch (error) {
         console.error("Error extending traces:", error);

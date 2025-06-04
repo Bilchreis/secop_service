@@ -152,6 +152,13 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
   @impl true
   def handle_info({:value_update, module, accessible, data_report}, socket) do
+    send_update(SecopServiceWeb.Components.HistoryDB,
+      id: "module-plot:#{module}",
+      value_update: data_report,
+      parameter: accessible
+    )
+
+
     socket =
       case Model.value_update(socket.assigns.values, module, accessible, data_report) do
         {:ok, :equal, _values} ->
@@ -181,6 +188,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   @impl true
   def handle_event("node-select", %{"pstopic" => new_pubsub_topic}, socket) do
     # unsubscribe from the current node's pubsub topic
+    Logger.info("Switching to node with pubsub topic: #{new_pubsub_topic}")
 
     current_node = socket.assigns.current_node
 

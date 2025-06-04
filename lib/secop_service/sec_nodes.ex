@@ -78,7 +78,7 @@ defmodule SecopService.Sec_Nodes do
   def get_values(parameter_id) do
     ParameterValue
     |> where(parameter_id: ^parameter_id)
-    |> order_by(desc: :timestamp)
+    |> order_by(asc: :timestamp)
     |> Repo.all()
   end
 
@@ -458,7 +458,13 @@ defmodule SecopService.Sec_Nodes do
   def get_sec_node_by_uuid(uuid) do
     SEC_Node
     |> Repo.get_by(uuid: uuid)
-    |> Repo.preload(modules: [:parameters, :commands])
+    |> Repo.preload(modules: {
+      from(m in Module, order_by: m.name),
+      [
+        parameters: from(p in Parameter, order_by: p.name),
+        commands: from(c in Command, order_by: c.name)
+      ]
+    })
   end
 
   # Query functions

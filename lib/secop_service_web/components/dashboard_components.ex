@@ -20,6 +20,8 @@ defmodule SecopServiceWeb.DashboardComponents do
     grouped_modules = Enum.group_by(assigns.node.modules, &(&1.group || nil))
 
     assigns = assign(assigns, :grouped_modules, grouped_modules)
+      |> assign(:n_modules, length(assigns.node.modules))
+
 
     ~H"""
     <div class="flex-1 mt-4 ml-3 p-3 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg shadow-xl shadow-purple-600/30 shadow-md">
@@ -99,22 +101,22 @@ defmodule SecopServiceWeb.DashboardComponents do
       </div>
 
     <!--Modules -->
-      <div class="mt-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
-        <h2 class="text-2xl font-bold mb-4">Modules:</h2>
-
+      <div class="mt-3 bg-gray-100 dark:bg-gray-700 rounded-lg  ">
         <%= for {group_name, modules} <- Enum.sort(@grouped_modules) do %>
           <%= if group_name == nil do %>
+            <div class = "pl-2">
             <%= for module <- modules do %>
               <.dash_module module={module} host={@node.host} port={@node.port} />
             <% end %>
+            </div>
           <% else %>
-            <div class="mb-6 border-l-4 border-t-4 border-stone-400 dark:border-stone-400 pl-4 rounded-lg">
-              <h3 class="text-xl font-semibold m-2 text-stone-500 dark:text-stone-400">
+            <div class="pl-2 pt-2 mt-4 border-4 border-stone-400 dark:border-stone-500 rounded-lg">
+              <h3 class="text-2xl font-semibold m-2 text-stone-400 dark:text-stone-400">
                 {Util.display_name(group_name)}
               </h3>
 
               <%= for module <- modules do %>
-                <.dash_module module={module} host={@node.host} port={@node.port} />
+                <.dash_module module={module} host={@node.host} port={@node.port} n_modules={@n_modules} />
               <% end %>
             </div>
           <% end %>
@@ -128,6 +130,8 @@ defmodule SecopServiceWeb.DashboardComponents do
   attr :node_state, :atom, required: true
   attr :values, :map, required: true
   attr :node_id_str, :string, required: true
+
+
 
   def module_indicators(assigns) do
     assigns =
@@ -162,6 +166,8 @@ defmodule SecopServiceWeb.DashboardComponents do
   attr :module, :map, required: true
   attr :host, :string, required: true
   attr :port, :integer, required: true
+  attr :n_modules, :integer, default: 0
+
 
   def dash_module(assigns) do
     grouped_parameters = Enum.group_by(assigns.module.parameters, &(&1.group || nil))
@@ -371,7 +377,18 @@ defmodule SecopServiceWeb.DashboardComponents do
           <% end %>
         </:panel>
       </.accordion>
+
+      <%= if @n_modules < 20 do %>
+
+        <.live_component
+          module={SecopServiceWeb.Components.HistoryDB}
+          id={"module-plot:" <> to_string(@module.name)}
+          secop_obj={@module}
+          class="w-3/5 p-4 "
+        />
+      <% end %>
     </div>
+
     """
   end
 
@@ -415,18 +432,6 @@ defmodule SecopServiceWeb.DashboardComponents do
         </.property>
 
     <!-- Optional Properties -->
-        <%= if @parameter.group do %>
-          <.property prop_key="Group" key_class="text-gray-600 dark:text-gray-400 font-semibold">
-            {@parameter.group}
-          </.property>
-        <% end %>
-
-        <%= if @parameter.visibility do %>
-          <.property prop_key="Visibility" key_class="text-gray-600 dark:text-gray-400 font-semibold">
-            {@parameter.visibility}
-          </.property>
-        <% end %>
-
         <%= if @parameter.meaning do %>
           <.property prop_key="Meaning" key_class="text-gray-600 dark:text-gray-400 font-semibold">
             {inspect(@parameter.meaning)}
@@ -436,15 +441,6 @@ defmodule SecopServiceWeb.DashboardComponents do
         <%= if @parameter.checkable do %>
           <.property prop_key="Checkable" key_class="text-gray-600 dark:text-gray-400 font-semibold">
             {@parameter.checkable}
-          </.property>
-        <% end %>
-
-        <%= if @parameter.datainfo["type"] == "enum" do %>
-          <.property
-            prop_key="Enum Members"
-            key_class="text-gray-600 dark:text-gray-400 font-semibold"
-          >
-            <.enum enum={@parameter.datainfo} />
           </.property>
         <% end %>
 

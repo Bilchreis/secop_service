@@ -770,7 +770,7 @@ defmodule SecopServiceWeb.CoreComponents do
       table_attrs: [
         class:
           "w-full border-collapse border border-slate-300 dark:border-slate-600 " <>
-            "text-gray-700 dark:text-gray-200"
+            "text-gray-700 dark:text-gray-200 table-fixed"
       ],
       thead_th_attrs: [
         class: "p-2 bg-gray-50 dark:bg-gray-800 border border-slate-300 dark:border-slate-600"

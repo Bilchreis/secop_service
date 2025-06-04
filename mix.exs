@@ -5,7 +5,7 @@ defmodule SecopService.MixProject do
     [
       app: :secop_service,
       version: "0.0.2",
-      elixir: "~> 1.14",
+      elixir: "~> 1.18.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -19,7 +19,7 @@ defmodule SecopService.MixProject do
   def application do
     [
       mod: {SecopService.Application, []},
-      extra_applications: [:logger, :runtime_tools, :os_mon, :secop_client]
+      extra_applications: [:logger, :runtime_tools, :os_mon, :secop_client,:observer, :wx]
     ]
   end
 
@@ -61,12 +61,14 @@ defmodule SecopService.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.35"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      #{:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:tzdata, "~> 1.1"},
       {:flop, "~> 0.26.1"},
       {:flop_phoenix, "~> 0.24.1"},
       {:exprintf, "~> 0.2.1"},
-      {:ecto_psql_extras, "~> 0.6"}
+      #{:ecto_psql_extras, "~> 0.6"},
+      {:observer_cli, "~> 1.7"}
+
     ]
   end
 
