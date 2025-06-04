@@ -115,7 +115,9 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
       "max-h-80 bg-zinc-300 dark:bg-zinc-800 border rounded-lg p-2 mt-2 border-stone-500 overflow-scroll",
       @class
     ]}>
-      <span class="font-mono text-gray-900 dark:text-gray-200 opacity-100"><pre>{@parameter_value}</pre></span>
+      <span class="font-mono text-gray-900 dark:text-gray-200 opacity-100">
+        <pre>{@parameter_value}</pre>
+      </span>
     </div>
     """
   end

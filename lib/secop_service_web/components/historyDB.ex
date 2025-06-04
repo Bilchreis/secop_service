@@ -74,69 +74,62 @@ defmodule SecopServiceWeb.Components.HistoryDB do
     {:ok, socket}
   end
 
+  def update(%{value_update: value_update, parameter: parameter} = _assigns, socket) do
+    param_list =
+      case socket.assigns.secop_obj do
+        %SecopService.Sec_Nodes.Parameter{} = param ->
+          [param.name]
 
-def update(%{value_update: value_update, parameter: parameter} = _assigns, socket) do
-
-  param_list = case socket.assigns.secop_obj do
-    %SecopService.Sec_Nodes.Parameter{} = param ->
-      [param.name]
-
-
-    %SecopService.Sec_Nodes.Module{} = module ->
-      case module.highest_interface_class do
-        "readable"-> ["value"]
-        "drivable" -> ["value","target"]
-        "communicator" -> []
-        "measurable" -> ["value"]
-        _ -> []
+        %SecopService.Sec_Nodes.Module{} = module ->
+          case module.highest_interface_class do
+            "readable" -> ["value"]
+            "drivable" -> ["value", "target"]
+            "communicator" -> []
+            "measurable" -> ["value"]
+            _ -> []
+          end
       end
-
-  end
-
-  socket = if socket.assigns.plottable and parameter in param_list and socket.assigns.plot.ok? do
-
-    [value, qualifiers] = value_update
 
     socket =
-      case qualifiers do
-        %{t: timestamp} ->
-          timestamp = trunc(timestamp* 1000) # Convert to milliseconds if needed
-          # Find the trace index based on the parameter name
-          # This assumes traces are ordered by parameter name in plot.data
-          trace_index =
-            Enum.find_index(socket.assigns.plot.result.data, fn trace ->
-              trace[:name] == parameter
-            end) || 0
+      if socket.assigns.plottable and parameter in param_list and socket.assigns.plot.ok? do
+        [value, qualifiers] = value_update
 
-          # Format data for the extend-traces event
-          # The event expects arrays of arrays (one per trace)
-          update_data = %{
-            # Add one timestamp to the specified trace
-            x: [[timestamp]],
-            # Add one value to the specified trace
-            y: [[value]],
-            traceIndices: [trace_index]
-          }
+        socket =
+          case qualifiers do
+            %{t: timestamp} ->
+              # Convert to milliseconds if needed
+              timestamp = trunc(timestamp * 1000)
+              # Find the trace index based on the parameter name
+              # This assumes traces are ordered by parameter name in plot.data
+              trace_index =
+                Enum.find_index(socket.assigns.plot.result.data, fn trace ->
+                  trace[:name] == parameter
+                end) || 0
 
+              # Format data for the extend-traces event
+              # The event expects arrays of arrays (one per trace)
+              update_data = %{
+                # Add one timestamp to the specified trace
+                x: [[timestamp]],
+                # Add one value to the specified trace
+                y: [[value]],
+                traceIndices: [trace_index]
+              }
 
-          # Push the event to the client
-          push_event(socket, "extend-traces-#{socket.assigns.id}", update_data)
+              # Push the event to the client
+              push_event(socket, "extend-traces-#{socket.assigns.id}", update_data)
 
-        _ ->
-          socket
+            _ ->
+              socket
+          end
+
+        socket
+      else
+        socket
       end
 
-    socket
-  else
-    socket
+    {:ok, socket}
   end
-
-
-
-  {:ok, socket}
-end
-
-
 
   @impl true
   def handle_event("request-plotly-data", %{"id" => _chart_id}, %{assigns: assigns} = socket) do
@@ -376,8 +369,6 @@ end
             </.async_result>
         <% end %>
       </div>
-
-
     </div>
     """
   end

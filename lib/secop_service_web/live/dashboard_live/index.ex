@@ -158,7 +158,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
       parameter: accessible
     )
 
-
     socket =
       case Model.value_update(socket.assigns.values, module, accessible, data_report) do
         {:ok, :equal, _values} ->

@@ -19,9 +19,9 @@ defmodule SecopServiceWeb.DashboardComponents do
   def dash_sec_node(assigns) do
     grouped_modules = Enum.group_by(assigns.node.modules, &(&1.group || nil))
 
-    assigns = assign(assigns, :grouped_modules, grouped_modules)
+    assigns =
+      assign(assigns, :grouped_modules, grouped_modules)
       |> assign(:n_modules, length(assigns.node.modules))
-
 
     ~H"""
     <div class="flex-1 mt-4 ml-3 p-3 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg shadow-xl shadow-purple-600/30 shadow-md">
@@ -99,15 +99,15 @@ defmodule SecopServiceWeb.DashboardComponents do
           </div>
         </div>
       </div>
-
+      
     <!--Modules -->
       <div class="mt-3 bg-gray-100 dark:bg-gray-700 rounded-lg  ">
         <%= for {group_name, modules} <- Enum.sort(@grouped_modules) do %>
           <%= if group_name == nil do %>
-            <div class = "pl-2">
-            <%= for module <- modules do %>
-              <.dash_module module={module} host={@node.host} port={@node.port} />
-            <% end %>
+            <div class="pl-2">
+              <%= for module <- modules do %>
+                <.dash_module module={module} host={@node.host} port={@node.port} />
+              <% end %>
             </div>
           <% else %>
             <div class="pl-2 pt-2 mt-4 border-4 border-stone-400 dark:border-stone-500 rounded-lg">
@@ -116,7 +116,12 @@ defmodule SecopServiceWeb.DashboardComponents do
               </h3>
 
               <%= for module <- modules do %>
-                <.dash_module module={module} host={@node.host} port={@node.port} n_modules={@n_modules} />
+                <.dash_module
+                  module={module}
+                  host={@node.host}
+                  port={@node.port}
+                  n_modules={@n_modules}
+                />
               <% end %>
             </div>
           <% end %>
@@ -130,8 +135,6 @@ defmodule SecopServiceWeb.DashboardComponents do
   attr :node_state, :atom, required: true
   attr :values, :map, required: true
   attr :node_id_str, :string, required: true
-
-
 
   def module_indicators(assigns) do
     assigns =
@@ -168,7 +171,6 @@ defmodule SecopServiceWeb.DashboardComponents do
   attr :port, :integer, required: true
   attr :n_modules, :integer, default: 0
 
-
   def dash_module(assigns) do
     grouped_parameters = Enum.group_by(assigns.module.parameters, &(&1.group || nil))
     grouped_commands = Enum.group_by(assigns.module.commands, &(&1.group || nil))
@@ -201,9 +203,8 @@ defmodule SecopServiceWeb.DashboardComponents do
                 {@base_class}
               </span>
             <% end %>
-
           </div>
-
+          
     <!-- Module Properties -->
           <div class="flex">
             <div class="w-3/4 mr-2 border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-4">
@@ -221,7 +222,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                 >
                   {@module.interface_classes |> Enum.join(", ")}
                 </.property>
-
+                
     <!-- ...existing module properties... -->
                 <%= if @module.implementor do %>
                   <.property
@@ -350,7 +351,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               <% end %>
             <% end %>
           </div>
-
+          
     <!-- Commands -->
           <%= if @module.commands != [] do %>
             <div class="border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-4 mt-4">
@@ -379,7 +380,6 @@ defmodule SecopServiceWeb.DashboardComponents do
       </.accordion>
 
       <%= if @n_modules < 20 do %>
-
         <.live_component
           module={SecopServiceWeb.Components.HistoryDB}
           id={"module-plot:" <> to_string(@module.name)}
@@ -388,7 +388,6 @@ defmodule SecopServiceWeb.DashboardComponents do
         />
       <% end %>
     </div>
-
     """
   end
 
@@ -430,7 +429,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         >
           {@parameter.description}
         </.property>
-
+        
     <!-- Optional Properties -->
         <%= if @parameter.meaning do %>
           <.property prop_key="Meaning" key_class="text-gray-600 dark:text-gray-400 font-semibold">
@@ -443,7 +442,7 @@ defmodule SecopServiceWeb.DashboardComponents do
             {@parameter.checkable}
           </.property>
         <% end %>
-
+        
     <!-- Custom Properties -->
         <%= for {property_name, property_value} <- @parameter.custom_properties do %>
           <.property
@@ -473,7 +472,7 @@ defmodule SecopServiceWeb.DashboardComponents do
   def dash_command(assigns) do
     ~H"""
     <div class="mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
-
+      
     <!-- Parameter Name -->
       <div>
         <span class="text-xl font-bold text-gray-800 dark:text-white">
@@ -488,7 +487,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           >
             {@command.description}
           </.property>
-
+          
     <!-- Optional Properties -->
           <%= if @command.group do %>
             <.property prop_key="Group" key_class="text-gray-600 dark:text-gray-400 font-semibold">
@@ -516,7 +515,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               {@command.checkable}
             </.property>
           <% end %>
-
+          
     <!-- Custom Properties -->
           <%= for {property_name, property_value} <- @command.custom_properties do %>
             <.property

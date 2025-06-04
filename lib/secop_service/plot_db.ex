@@ -101,7 +101,6 @@ defmodule SecopService.PlotDB do
           type: "scatter",
           mode: "lines",
           name: "value"
-
         },
         %{
           x: target_ts,
@@ -111,8 +110,6 @@ defmodule SecopService.PlotDB do
           name: "target"
         }
       ]
-
-
 
       layout = %{
         xaxis: %{title: %{text: "Time"}, type: "date"},

@@ -458,13 +458,15 @@ defmodule SecopService.Sec_Nodes do
   def get_sec_node_by_uuid(uuid) do
     SEC_Node
     |> Repo.get_by(uuid: uuid)
-    |> Repo.preload(modules: {
-      from(m in Module, order_by: m.name),
-      [
-        parameters: from(p in Parameter, order_by: p.name),
-        commands: from(c in Command, order_by: c.name)
-      ]
-    })
+    |> Repo.preload(
+      modules: {
+        from(m in Module, order_by: m.name),
+        [
+          parameters: from(p in Parameter, order_by: p.name),
+          commands: from(c in Command, order_by: c.name)
+        ]
+      }
+    )
   end
 
   # Query functions
