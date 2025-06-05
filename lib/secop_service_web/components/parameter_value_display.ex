@@ -5,7 +5,9 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   alias SecopServiceWeb.DashboardLive.Model
   alias SecopService.Sec_Nodes.ParameterValue
+  alias SecopService.NodeControl
   alias NodeTable
+  import SecopServiceWeb.CoreComponents
 
   @impl true
   def mount(socket) do
@@ -72,7 +74,8 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
           host: host,
           port: port,
           module_name: module_name,
-          parameter: parameter
+          parameter: parameter,
+          location: location
         } = _assigns,
         socket
       ) do
@@ -84,12 +87,26 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         val_map -> Map.get(val_map, :data_report) |> Enum.at(0) |> get_display_value(parameter)
       end
 
+    set_form =
+      to_form(%{
+        "location" => "#{location}",
+        "host" => to_string(host),
+        "port" => Integer.to_string(port),
+        "parameter" => parameter.name,
+        "module" => module_name,
+        "value" => nil
+      })
+
     socket =
       socket
       |> assign(:parameter, parameter)
       |> assign(:module_name, module_name)
       |> assign(:node_id, node_id)
+      |> assign(:host, host)
+      |> assign(:port, port)
       |> assign(:class, class)
+      |> assign(:set_form, set_form)
+      |> assign(:location, location)
       |> assign_new(:parameter_value, fn -> parameter_value end)
 
     {:ok, socket}
@@ -108,16 +125,90 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
     {:ok, assign(socket, :parameter_value, parameter_value)}
   end
 
+  def update(%{control: :validate, unsigned_params: unsigned_params} = _assigns, socket) do
+    Logger.info(
+      "Validating parameter #{unsigned_params["parameter"]} with value #{unsigned_params["value"]}"
+    )
+
+    updated_set_form =
+      NodeControl.validate(
+        unsigned_params,
+        socket.assigns.parameter.datainfo,
+        socket.assigns.set_form
+      )
+
+    {:ok, assign(socket, :set_form, updated_set_form)}
+  end
+
+  def update(%{control: :set_parameter, unsigned_params: unsigned_params} = _assigns, socket) do
+    Logger.info(
+      "Setting parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}"
+    )
+
+    ret = NodeControl.change(unsigned_params)
+    Logger.info("NodeControl.change returned: #{inspect(ret)}")
+
+    updated_set_form =
+      NodeControl.validate(
+        unsigned_params,
+        socket.assigns.parameter.datainfo,
+        socket.assigns.set_form
+      )
+
+    {:ok, assign(socket, :set_form, updated_set_form)}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
-    <div class={[
-      "max-h-80 bg-zinc-300 dark:bg-zinc-800 border rounded-lg p-2 mt-2 border-stone-500 overflow-scroll",
-      @class
-    ]}>
-      <span class="font-mono text-gray-900 dark:text-gray-200 opacity-100">
-        <pre>{@parameter_value}</pre>
-      </span>
+    <div class="flex gap-2 mt-2 ">
+      <div class={[
+        "flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-800 border rounded-lg p-2 border-stone-500 overflow-scroll",
+        @class
+      ]}>
+        <span class="font-mono text-gray-900 dark:text-gray-200 opacity-100">
+          <pre>{@parameter_value}</pre>
+        </span>
+      </div>
+      <%= if not @parameter.readonly do %>
+        <div class="flex justify-between items-start">
+          <.form
+            for={@set_form}
+            phx-submit="set_parameter"
+            phx-change="validate_parameter"
+            class="flex space-x-2"
+          >
+            <input type="hidden" name="port" value={Phoenix.HTML.Form.input_value(@set_form, :port)} />
+            <input type="hidden" name="host" value={Phoenix.HTML.Form.input_value(@set_form, :host)} />
+            <input
+              type="hidden"
+              name="location"
+              value={Phoenix.HTML.Form.input_value(@set_form, :location)}
+            />
+            <input
+              type="hidden"
+              name="module"
+              value={Phoenix.HTML.Form.input_value(@set_form, :module)}
+            />
+            <input type="hidden" name="parameter" value={@parameter.name} />
+            <.input
+              name="value"
+              type="text"
+              field={@set_form[:value]}
+              placeholder="new value"
+              phx-debounce="500"
+              id={"form:" <> to_string(@parameter.id)}
+              class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2 border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+            />
+            <button
+              type="submit"
+              class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700"
+            >
+              Set
+            </button>
+          </.form>
+        </div>
+      <% end %>
     </div>
     """
   end

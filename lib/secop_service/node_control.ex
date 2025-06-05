@@ -1,65 +1,65 @@
-defmodule SecopServiceWeb.NodeControl do
+defmodule SecopService.NodeControl do
   require Logger
   alias SEC_Node_Statem
   alias Jason
-  alias SecopServiceWeb.DashboardLive.Model, as: Model
 
-  def change(set_form, model) do
-    nodeid = {String.to_charlist(set_form["host"]), String.to_integer(set_form["port"])}
-
-    module = set_form["module"]
-    parameter = set_form["parameter"]
-    value = set_form["value"]
-
-    return = SEC_Node_Statem.change(nodeid, module, parameter, value)
+  # Add this helper function to convert string keys to atoms recursively
+  defp atomize_keys(map) when is_map(map) do
+    Map.new(map, fn {k, v} -> {string_to_atom(k), atomize_keys(v)} end)
   end
 
-  def validate(set_form, model) do
-    nodeid = {String.to_charlist(set_form["host"]), String.to_integer(set_form["port"])}
+  defp atomize_keys(list) when is_list(list) do
+    Enum.map(list, &atomize_keys/1)
+  end
 
-    module = String.to_atom(set_form["module"])
-    parameter = String.to_atom(set_form["parameter"])
+  defp atomize_keys(value), do: value
 
-    parameter_map = Model.get_parameter(model, nodeid, module, parameter)
+  defp string_to_atom(key) when is_binary(key), do: String.to_atom(key)
+  defp string_to_atom(key), do: key
 
-    datainfo = parameter_map.datainfo
+  def change(unsigned_params) do
+    nodeid =
+      {String.to_charlist(unsigned_params["host"]), String.to_integer(unsigned_params["port"])}
 
-    parameter_map =
-      case Jason.decode(set_form["value"], keys: :atoms) do
-        {:ok, value} ->
-          case validate_against_datainfo(datainfo, value) do
-            {:ok, _} ->
-              # Add validation indicator AND update the form's value
-              set_form = %{
-                parameter_map.set_form
-                | params: Map.put(parameter_map.set_form.params, "value", set_form["value"]),
-                  source: Map.put(parameter_map.set_form.source, "value", set_form["value"]),
-                  errors: []
-              }
+    module = unsigned_params["module"]
+    parameter = unsigned_params["parameter"]
+    value = unsigned_params["value"]
 
-              parameter_map
-              |> Map.put(:validation, "border-4 border-green-500")
-              |> Map.put(:set_form, set_form)
+    SEC_Node_Statem.change(nodeid, module, parameter, value)
+  end
 
-            {:error, msg} ->
-              set_form = parameter_map.set_form
+  def validate(unsigned_params, datainfo, set_form) do
+    # Convert datainfo string keys to atoms
+    atomized_datainfo = atomize_keys(datainfo)
 
-              # Field-specific error
-              set_form = %{parameter_map.set_form | errors: [value: {msg, []}]}
-              Map.put(parameter_map, :set_form, set_form)
-          end
+    case Jason.decode(unsigned_params["value"], keys: :atoms) do
+      {:ok, value} ->
+        case validate_against_datainfo(atomized_datainfo, value) do
+          {:ok, _} ->
+            # Add validation indicator AND update the form's value
+            set_form = %{
+              set_form
+              | params: Map.put(set_form.params, "value", unsigned_params["value"]),
+                source: Map.put(set_form.source, "value", unsigned_params["value"]),
+                errors: []
+            }
 
-        {:error, _} ->
-          # Field-specific JSON error
-          set_form = %{parameter_map.set_form | errors: [value: {"Invalid JSON format", []}]}
-          Map.put(parameter_map, :set_form, set_form)
-      end
+            set_form
 
-    Model.set_parameter(model, nodeid, module, parameter, parameter_map)
+          {:error, msg} ->
+            # Field-specific error
+            %{set_form | errors: [value: {msg, []}]}
+        end
+
+      {:error, _} ->
+        # Field-specific JSON error
+        %{set_form | errors: [value: {"Invalid JSON format", []}]}
+    end
   end
 
   def validate_against_datainfo(datainfo, value) do
-    case datainfo.type do
+    # Changed from datainfo["type"] to datainfo[:type]
+    case datainfo[:type] do
       "double" -> validate_double(datainfo, value)
       "int" -> validate_int(datainfo, value)
       "scaled" -> validate_scaled(datainfo, value)

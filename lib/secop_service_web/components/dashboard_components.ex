@@ -104,13 +104,13 @@ defmodule SecopServiceWeb.DashboardComponents do
       <div class="mt-3 bg-gray-100 dark:bg-gray-700 rounded-lg  ">
         <%= for {group_name, modules} <- Enum.sort(@grouped_modules) do %>
           <%= if group_name == nil do %>
-            <div class="pl-2">
+            <div class="p-2">
               <%= for module <- modules do %>
                 <.dash_module module={module} host={@node.host} port={@node.port} />
               <% end %>
             </div>
           <% else %>
-            <div class="pl-2 pt-2 mt-4 border-4 border-stone-400 dark:border-stone-500 rounded-lg">
+            <div class="p-2 mt-4 border-4 border-stone-400 dark:border-stone-500 rounded-lg">
               <h3 class="text-2xl font-semibold m-2 text-stone-400 dark:text-stone-400">
                 {Util.display_name(group_name)}
               </h3>
@@ -283,6 +283,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                   host={@host}
                   port={@port}
                   module_name={@module.name}
+                  location="module_dash"
                   parameter={Module.get_parameter(@module, "target")}
                 />
 
@@ -295,6 +296,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                   class=""
                   host={@host}
                   port={@port}
+                  location="module_dash"
                   module_name={@module.name}
                   parameter={Module.get_parameter(@module, "value")}
                 />
@@ -310,6 +312,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                   class=""
                   host={@host}
                   port={@port}
+                  location="module_dash"
                   module_name={@module.name}
                   parameter={Module.get_parameter(@module, "value")}
                 />
@@ -384,7 +387,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           module={SecopServiceWeb.Components.HistoryDB}
           id={"module-plot:" <> to_string(@module.name)}
           secop_obj={@module}
-          class="w-3/5 p-4 "
+          class="w-3/5 p-4 hidden xl:block"
         />
       <% end %>
     </div>
@@ -460,6 +463,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         class=""
         host={@host}
         port={@port}
+        location="parameter_value"
         module_name={@module_name}
         parameter={@parameter}
       />

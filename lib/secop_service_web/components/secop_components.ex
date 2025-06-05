@@ -351,12 +351,16 @@ defmodule SECoPComponents do
     ~H"""
     <div class={["accordion", assigns[:class]]} id={@id} {@rest}>
       <%= for {{trigger, panel}, idx} <- @trigger |> Enum.zip(@panel) |> Enum.with_index() do %>
-        <h3>
+        <div class="flex">
+          <div class="flex-1">
+            {render_slot(trigger)}
+          </div>
+
           <button
             aria-controls={panel_id(@id, idx)}
             aria-expanded={to_string(panel[:default_expanded] == true)}
             class={[
-              "accordion-trigger relative w-full [&_.accordion-trigger-icon]:aria-expanded:rotate-180",
+              "accordion-trigger  w-10 rounded-lg  [&_.accordion-trigger-icon]:aria-expanded:rotate-180",
               trigger[:class]
             ]}
             id={trigger_id(@id, idx)}
@@ -364,13 +368,13 @@ defmodule SECoPComponents do
             type="button"
             {assigns_to_attributes(trigger, [:class, :icon_name])}
           >
-            {render_slot(trigger)}
             <.icon
-              class="accordion-trigger-icon h-5 w-5 absolute right-4 transition-all ease-in-out duration-300 top-1/2 -translate-y-1/2"
+              class="accordion-trigger-icon h-5 w-5 transition-all ease-in-out duration-300 top-1/2 translate-x-5"
               name={trigger[:icon_name] || "hero-chevron-down"}
             />
           </button>
-        </h3>
+        </div>
+
         <div
           class="accordion-panel grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all transform ease-in duration-200"
           data-expanded={panel[:default_expanded]}
