@@ -3,11 +3,12 @@ defmodule SECoPComponents do
 
   alias Phoenix.LiveView.JS
   alias Jason
-
+  alias SecopService.Util
   import SecopServiceWeb.CoreComponents
 
   attr :equipment_id, :string, required: true
   attr :pubsub_topic, :string, required: true
+  attr :uuid, :string, required: true
   attr :current, :boolean, default: false
   attr :state, :atom, required: true
 
@@ -23,14 +24,14 @@ defmodule SECoPComponents do
     ~H"""
     <button
       phx-click="node-select"
-      phx-value-pubsubtopic={@pubsub_topic}
+      phx-value-pstopic={@pubsub_topic}
       class={[
         @button_col,
         @border_col,
         "border-4 text-white text-left font-bold py-2 px-4 rounded"
       ]}
     >
-      <div class="text-xl">{@equipment_id}</div>
+      <div class="text-xl">{Util.display_name(@equipment_id)}</div>
       <div class="text-sm text-white-400 opacity-60">{@pubsub_topic}</div>
       <div>{@state}</div>
     </button>
@@ -189,61 +190,151 @@ defmodule SECoPComponents do
   end
 
   attr :module_name, :string, required: true
-  attr :module, :map, required: true
-  attr :current, :boolean, default: false
   attr :node_status, :atom, required: true
-  attr :hide_indicator, :string, default: ""
+  attr :status_value, :map, required: true
 
-  def module_button(assigns) do
-    assigns =
-      if Map.has_key?(assigns.module.parameters, :status) do
-        assigns = assign(assigns, :status, assigns.module.parameters.status)
+  def module_indicator_status(assigns) do
+    display_name = Util.display_name(assigns.module_name)
+    # Adjust this threshold based on your needs (characters that fit in w-48)
+    text_too_long = String.length(display_name) > 20
 
-        assigns =
-          case assigns.node_status do
-            :initialized ->
-              assigns
-
-            _ ->
-              status = assigns.status
-              status = %{status | status_color: "gray-500"}
-
-              assign(assigns, :status, status)
-          end
-
-        assigns
-      else
-        status = %{status_color: "bg-gray-500", stat_code: 0, stat_string: "blah"}
-
-        assign(assigns, :status, status)
-        |> assign(:hide_indicator, "hidden")
+    bg_col =
+      case assigns.node_status do
+        :connected -> "bg-orange-500"
+        :disconnected -> "bg-red-500"
+        :initialized -> "bg-zinc-400 dark:bg-zinc-500"
+        # default fallback
+        _ -> "bg-red-500"
       end
+
+    stat_col =
+      if assigns.status_value.data_report != nil do
+        assigns.status_value.stat_color
+      else
+        "bg-gray-500"
+      end
+
+    show =
+      if text_too_long do
+        "overflow-hidden"
+      else
+        "truncate"
+      end
+
+    animate_marquee =
+      if text_too_long do
+        "animate-marquee hover:pause-animation"
+      else
+        ""
+      end
+
+    assigns =
+      assigns
+      |> assign(:display_name, display_name)
+      |> assign(:bg_col, bg_col)
+      |> assign(:stat_col, stat_col)
+      |> assign(:show, show)
+      |> assign(:animate_marquee, animate_marquee)
 
     ~H"""
-    <button class={
-      if @current do
-        " min-w-full bg-purple-500 hover:bg-purple-700 text-white text-left font-bold py-2 px-4 rounded"
-      else
-        "min-w-full bg-zinc-500  hover:bg-zinc-700 text-white text-left font-bold py-2 px-4 rounded"
-      end
-    }>
+    <div class={[
+      "w-[300px]",
+      "text-white text-left font-bold py-2 px-4 rounded",
+      @bg_col
+    ]}>
       <div class="flex items-center">
-        <div>
+        <div class="flex-shrink-0">
           <span class={[
-            @hide_indicator,
-            @status.status_color,
+            @stat_col,
             "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
           ]}>
           </span>
         </div>
-        <div>
-          <div class="text-xl">{@module_name}</div>
-          <div class="text-sm text-white-400 opacity-60">
-            {@status.stat_code} : {@status.stat_string}
+        <div class="flex-1 min-w-0">
+          <div class={[
+            "text-xl",
+            @show
+          ]}>
+            <div
+              class={[
+                "whitespace-nowrap",
+                @animate_marquee
+              ]}
+              title={@display_name}
+            >
+              {@display_name}
+            </div>
+          </div>
+          <%= if @status_value.data_report != nil do %>
+            <div class="text-sm text-white-400 opacity-60 truncate">
+              {@status_value.stat_code} : {@status_value.stat_string}
+            </div>
+          <% else %>
+            <div class="text-sm text-white-400 opacity-60">
+              waiting for data...
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :module_name, :string, required: true
+  attr :node_status, :atom, required: true
+
+  def module_indicator(assigns) do
+    display_name = Util.display_name(assigns.module_name)
+    # Adjust this threshold based on your needs (characters that fit in w-48)
+    text_too_long = String.length(display_name) > 20
+
+    assigns = assign(assigns, :display_name, display_name)
+    assigns = assign(assigns, :text_too_long, text_too_long)
+
+    ~H"""
+    <div class={
+      [
+        "w-65 min-w-65 max-w-65",
+        "text-white text-left font-bold py-2 px-4 rounded",
+        case @node_status do
+          :connected -> "bg-orange-500"
+          :disconnected -> "bg-red-500"
+          :initialized -> "bg-zinc-500"
+          # default fallback
+          _ -> "bg-red-500"
+        end
+      ]
+    }>
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <span class={[
+            "opacity-0",
+            "bg-gray-500",
+            "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
+          ]}>
+          </span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class={[
+            "text-xl",
+            if(@text_too_long, do: "overflow-hidden", else: "truncate")
+          ]}>
+            <div
+              class={[
+                "whitespace-nowrap",
+                if(@text_too_long, do: "animate-marquee hover:pause-animation", else: "")
+              ]}
+              title={@display_name}
+            >
+              {@display_name}
+            </div>
+          </div>
+          <div class="text-sm text-white-400 opacity-0">
+            placeholder
           </div>
         </div>
       </div>
-    </button>
+    </div>
     """
   end
 
@@ -260,12 +351,16 @@ defmodule SECoPComponents do
     ~H"""
     <div class={["accordion", assigns[:class]]} id={@id} {@rest}>
       <%= for {{trigger, panel}, idx} <- @trigger |> Enum.zip(@panel) |> Enum.with_index() do %>
-        <h3>
+        <div class="flex">
+          <div class="flex-1">
+            {render_slot(trigger)}
+          </div>
+
           <button
             aria-controls={panel_id(@id, idx)}
             aria-expanded={to_string(panel[:default_expanded] == true)}
             class={[
-              "accordion-trigger relative w-full [&_.accordion-trigger-icon]:aria-expanded:rotate-180",
+              "accordion-trigger  w-10 rounded-lg  [&_.accordion-trigger-icon]:aria-expanded:rotate-180",
               trigger[:class]
             ]}
             id={trigger_id(@id, idx)}
@@ -273,13 +368,13 @@ defmodule SECoPComponents do
             type="button"
             {assigns_to_attributes(trigger, [:class, :icon_name])}
           >
-            {render_slot(trigger)}
             <.icon
-              class="accordion-trigger-icon h-5 w-5 absolute right-4 transition-all ease-in-out duration-300 top-1/2 -translate-y-1/2"
+              class="accordion-trigger-icon h-5 w-5 transition-all ease-in-out duration-300 top-1/2 translate-x-5"
               name={trigger[:icon_name] || "hero-chevron-down"}
             />
           </button>
-        </h3>
+        </div>
+
         <div
           class="accordion-panel grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all transform ease-in duration-200"
           data-expanded={panel[:default_expanded]}

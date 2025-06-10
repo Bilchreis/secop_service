@@ -1,16 +1,12 @@
-<div>
-  <%= if Enum.empty?(@model.active_nodes) do %>
-    <div class="flex justify-center container mx-auto">
-      <.connect_node />
-    </div>
-  <% else %>
+<div class="max-w-[2560px] mx-auto">
+  <%= if @active_nodes != %{} do %>
     <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
       <li class="me-2 mb-2">
         <button
           phx-click="open_connect_modal"
           class={[
-            "border-gray-500",
-            "bg-ggray-500 hover:bg-purple-700",
+            "border-gray-400",
+            "bg-zinc-500 hover:bg-zinc-700",
             "border-4 text-white text-left font-bold py-2 px-4 rounded"
           ]}
         >
@@ -19,12 +15,13 @@
           <div class="invisible">placeholder</div>
         </button>
       </li>
-      <%= for {_addr,node} <- @model.active_nodes do %>
+      <%= for {_addr,node} <- @active_nodes do %>
         <li class="me-2 mb-2">
           <.node_button
             equipment_id={node.equipment_id}
             pubsub_topic={node.pubsub_topic}
-            current={node.node_id == @model.current_node_key}
+            uuid={node.uuid}
+            current={node.uuid == @current_node.uuid}
             state={node.state}
           />
         </li>
@@ -32,73 +29,15 @@
     </ul>
 
     <div class="flex">
-      <div
-        :if={@model.active_nodes[@model.current_node_key].description}
-        class="w-1/4 text-gray-500 dark:text-gray-400 me-4 mb-4 mb-0  "
-      >
-        <div class="p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
-          <h3 class="text-lg font-bold text-gray-900 dark:text-white ">
-            Node Properties:
-          </h3>
-
-          <%= for {prop_name, prop_value} <- @model.active_nodes[@model.current_node_key].description.properties do %>
-            <div class="">
-              <div class="mt-2 dark:bg-gray-700  hover:bg-zinc-700 text-gray-300 text-left  py-2 px-4 rounded">
-                <span class=" font-bold  text-black dark:text-white ">{prop_name}:</span> <br />
-                {prop_value}
-              </div>
-            </div>
-          <% end %>
-        </div>
-
-        <div class="mt-4 p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
-          <span class="text-lg font-bold  text-black dark:text-white "> Modules</span>
-          <ul class="mt-2 space-y space-y-4 text-sm font-medium">
-            <%= for {mod_name,module} <- @model.active_nodes[@model.current_node_key].description.modules do %>
-              <li class="me-2 flex-1 min-w-full">
-                <.module_button
-                  module_name={mod_name}
-                  module={module}
-                  current={mod_name == @model.current_module_key}
-                  node_status={@model.active_nodes[@model.current_node_key].state}
-                />
-              </li>
-            <% end %>
-          </ul>
-        </div>
-      </div>
-
-      <div
-        :if={@model.active_nodes[@model.current_node_key].description}
-        class="w-full text-medium  "
-      >
-        <%= for {mod_name,module} <- @model.active_nodes[@model.current_node_key].description.modules do %>
-          <div class="grid grid-cols-2 gap-4">
-            <.module_box
-              mod_name={mod_name}
-              module={module}
-              state={@model.active_nodes[@model.current_node_key][:state]}
-            />
-            <div class="pb-4 h-85 ">
-              <div class=" p-5  bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
-                <.live_component
-                  module={SecopServiceWeb.Components.PlotlyChart}
-                  id={module.chart_id}
-                  secop_obj={module}
-                  path={
-                    {
-                      @model.active_nodes[@model.current_node_key].host,
-                      @model.active_nodes[@model.current_node_key].port,
-                      mod_name
-                    }
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        <% end %>
-      </div>
+      <.module_indicators
+        node={@current_node}
+        node_state={@active_nodes[SEC_Node.get_node_id(@current_node)].state}
+        values={@values}
+      />
+      <.dash_sec_node node={@current_node} />
     </div>
+  <% else %>
+    No nodes connected
   <% end %>
 
   <.modal

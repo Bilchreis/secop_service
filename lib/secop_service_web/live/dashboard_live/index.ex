@@ -1,25 +1,43 @@
 defmodule SecopServiceWeb.DashboardLive.Index do
+  alias SecopService.Sec_Nodes.SEC_Node
   use SecopServiceWeb, :live_view
 
   alias SecopServiceWeb.DashboardLive.Model, as: Model
-  alias SecopServiceWeb.NodeControl
+  alias SecopService.NodeControl
   alias SecopClient
   alias SEC_Node_Supervisor
+  alias SEC_Node
   require Logger
 
   import SECoPComponents
+  import SecopServiceWeb.DashboardComponents
+
+  def model_from_socket(socket) do
+    %{
+      active_nodes: socket.assigns.active_nodes,
+      current_node: socket.assigns.current_node,
+      values: socket.assigns.values
+    }
+  end
+
+  def model_to_socket(model, socket) do
+    socket
+    |> assign(:active_nodes, model.active_nodes)
+    |> assign(:current_node, model.current_node)
+    |> assign(:values, model.values)
+  end
 
   @impl true
   def mount(_params, _session, socket) do
     model = Model.get_initial_model()
 
-    cond do
-      model.active_nodes == %{} ->
-        Logger.info("No active nodes detected")
+    if model.active_nodes == %{} do
+      Logger.info("No active nodes detected")
+    else
+      values_pubsub_topic =
+        model[:active_nodes][SEC_Node.get_node_id(model.current_node)][:pubsub_topic]
 
-      true ->
-        values_pubsub_topic = model[:active_nodes][model.current_node_key][:pubsub_topic]
-        Phoenix.PubSub.subscribe(:secop_client_pubsub, values_pubsub_topic)
+      Phoenix.PubSub.subscribe(:secop_client_pubsub, "value_update:#{values_pubsub_topic}")
     end
 
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "descriptive_data_change")
@@ -29,25 +47,15 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     socket =
       socket
-      |> assign(:model, model)
+      |> assign(:active_nodes, model.active_nodes)
+      |> assign(:current_node, model.current_node)
+      |> assign(:values, model.values)
       |> assign(:show_connect_modal, false)
 
     {:ok, socket}
   end
 
   ### New Values Map Update
-  @impl true
-  def handle_info({:values_map, pubsub_topic, values_map}, socket) do
-    current_node = Model.get_current_node(socket.assigns.model)
-
-    socket =
-      if pubsub_topic == current_node.pubsub_topic do
-        updated_model = Model.update_model_values(socket.assigns.model, values_map)
-        assign(socket, :model, updated_model)
-      end
-
-    {:noreply, socket}
-  end
 
   @impl true
   def handle_info({:description_change, _pubsub_topic, _state}, socket) do
@@ -65,39 +73,69 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   def handle_info({:state_change, pubsub_topic, state}, socket) do
     Logger.info("new node status: #{pubsub_topic} #{state.state}")
 
-    updated_model =
-      Model.set_state(
-        socket.assigns.model,
-        state
-      )
-
-    {:noreply, assign(socket, :model, updated_model)}
+    {:noreply, socket}
   end
 
-  def handle_info({:new_node, _pubsub_topic, state}, socket) do
-    updated_model = Model.add_node(socket.assigns.model, state)
+  def handle_info({:new_node, pubsub_topic, state}, socket) do
+    Logger.info("new node status: #{pubsub_topic} #{inspect(state)}")
 
-    {:noreply, assign(socket, :model, updated_model)}
+    {:noreply, socket}
   end
 
-  defp remove_last_segment(topic) do
-    parts = String.split(topic, ":")
-    parts |> Enum.drop(-1) |> Enum.join(":")
-  end
-
-  def handle_info({:value_update, pubsub_topic, data_report}, socket) do
-    # Parameter-level plots
-    send_update(SecopServiceWeb.Components.PlotlyChart,
-      id: "plotly:" <> pubsub_topic,
+  @impl true
+  def handle_info({:value_update, module, accessible, data_report}, socket) do
+    send_update(SecopServiceWeb.Components.HistoryDB,
+      id: "module-plot:#{module}",
       value_update: data_report,
-      pubsub_topic: pubsub_topic
+      parameter: accessible
     )
 
-    # Module-level plots
-    send_update(SecopServiceWeb.Components.PlotlyChart,
-      id: "plotly:" <> remove_last_segment(pubsub_topic),
-      value_update: data_report,
-      pubsub_topic: pubsub_topic
+    socket =
+      case Model.value_update(socket.assigns.values, module, accessible, data_report) do
+        {:ok, :equal, _values} ->
+          socket
+
+        {:ok, :updated, values} ->
+          node_id_str =
+            "#{to_string(socket.assigns.current_node.host)}:#{socket.assigns.current_node.port}"
+
+          update_components(
+            node_id_str,
+            module,
+            accessible,
+            data_report
+          )
+
+          assign(socket, :values, values)
+
+        {:error, :parameter_not_found, _values} ->
+          Logger.warning("Parameter #{accessible} in module #{module} not found in values")
+          socket
+      end
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("node-select", %{"pstopic" => new_pubsub_topic}, socket) do
+    # unsubscribe from the current node's pubsub topic
+    Logger.info("Switching to node with pubsub topic: #{new_pubsub_topic}")
+
+    current_node = socket.assigns.current_node
+
+    Phoenix.PubSub.unsubscribe(
+      :secop_client_pubsub,
+      SEC_Node.get_values_pubsub_topic(current_node)
+    )
+
+    # subscribe to the new node's pubsub topic & update the model
+    new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
+    new_model = model_from_socket(socket) |> Model.set_current_node(new_node_id)
+    socket = model_to_socket(new_model, socket)
+
+    Phoenix.PubSub.subscribe(
+      :secop_client_pubsub,
+      SEC_Node.get_values_pubsub_topic(new_model.current_node)
     )
 
     {:noreply, socket}
@@ -105,24 +143,60 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
   @impl true
   def handle_event("set_parameter", unsigned_params, socket) do
-    Logger.info(
-      "Setting parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}"
-    )
+    case unsigned_params["location"] do
+      "module_dash" ->
+        send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+          id: "module_dash:" <> path_from_unsigned_params(unsigned_params),
+          control: :set_parameter,
+          unsigned_params: unsigned_params
+        )
 
-    NodeControl.change(unsigned_params, socket.assigns.model)
+      "parameter_value" ->
+        send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+          id: "parameter_value:" <> path_from_unsigned_params(unsigned_params),
+          control: :set_parameter,
+          unsigned_params: unsigned_params
+        )
+
+      _ ->
+        Logger.warning(
+          "Unknown location for parameter validation: #{unsigned_params["location"]}"
+        )
+
+        # Handle the case where the location is not recognized
+        # You might want to send an error message or log it
+    end
 
     {:noreply, socket}
   end
 
   @impl true
   def handle_event("validate_parameter", unsigned_params, socket) do
-    Logger.info(
-      "validating parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}"
-    )
+    case unsigned_params["location"] do
+      "module_dash" ->
+        send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+          id: "module_dash:" <> path_from_unsigned_params(unsigned_params),
+          control: :validate,
+          unsigned_params: unsigned_params
+        )
 
-    model = NodeControl.validate(unsigned_params, socket.assigns.model)
+      "parameter_value" ->
+        send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+          id: "parameter_value:" <> path_from_unsigned_params(unsigned_params),
+          control: :validate,
+          unsigned_params: unsigned_params
+        )
 
-    {:noreply, assign(socket, :model, model)}
+      _ ->
+        Logger.warning(
+          "Unknown location for parameter validation: #{unsigned_params["location"]}"
+        )
+
+        # Handle the case where the location is not recognized
+        # You might want to send an error message or log it
+    end
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -149,26 +223,70 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
-  @impl true
-  def handle_event("node-select", %{"pubsubtopic" => new_pubsub_topic}, socket) do
-    current_node = Model.get_current_node(socket.assigns.model)
-    Phoenix.PubSub.unsubscribe(:secop_client_pubsub, current_node.pubsub_topic)
-
-    new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
-
-    new_model = Model.set_new_current_node(socket.assigns.model, new_node_id)
-
-    socket = assign(socket, :model, new_model)
-
-    new_current_node = Model.get_current_node(socket.assigns.model)
-
-    Phoenix.PubSub.subscribe(:secop_client_pubsub, new_current_node.pubsub_topic)
-
-    {:noreply, socket}
-  end
-
   defp pubsubtopic_to_node_id(pubsub_topic) do
     [ip, port] = String.split(pubsub_topic, ":")
     {String.to_charlist(ip), String.to_integer(port)}
+  end
+
+  def update_components(node_id_str, module, "status", data_report) do
+    send_update(SecopServiceWeb.Components.ModuleIndicator,
+      id: "module_indicator:" <> node_id_str <> ":" <> module,
+      value_update: data_report
+    )
+
+    send_update(SecopServiceWeb.Components.ModuleIndicator,
+      id: "module_indicator_mod:" <> node_id_str <> ":" <> module,
+      value_update: data_report
+    )
+
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "parameter_value:" <> node_id_str <> ":" <> module <> ":" <> "status",
+      value_update: data_report
+    )
+  end
+
+  def update_components(node_id_str, module, "value", data_report) do
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "module_dash:" <> node_id_str <> ":" <> module <> ":" <> "value",
+      value_update: data_report
+    )
+
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "parameter_value:" <> node_id_str <> ":" <> module <> ":" <> "value",
+      value_update: data_report
+    )
+  end
+
+  def update_components(node_id_str, module, "target", data_report) do
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "parameter_value:" <> node_id_str <> ":" <> module <> ":" <> "target",
+      value_update: data_report
+    )
+
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "module_dash:" <> node_id_str <> ":" <> module <> ":" <> "target",
+      value_update: data_report
+    )
+  end
+
+  def update_components(node_id_str, module, accessible, data_report) do
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "parameter_value:" <> node_id_str <> ":" <> module <> ":" <> accessible,
+      value_update: data_report
+    )
+  end
+
+  defp remove_last_segment(topic) do
+    parts = String.split(topic, ":")
+    parts |> Enum.drop(-1) |> Enum.join(":")
+  end
+
+  defp path_from_unsigned_params(unsigned_params) do
+    host = unsigned_params["host"]
+    port = unsigned_params["port"]
+    module = unsigned_params["module"]
+    parameter = unsigned_params["parameter"]
+
+    "#{host}:#{port}:#{module}:#{parameter}"
   end
 end

@@ -295,6 +295,7 @@ defmodule SecopServiceWeb.CoreComponents do
   attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
   attr :options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2"
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
+  attr :class, :string, default: nil
 
   attr :rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
@@ -327,7 +328,7 @@ defmodule SecopServiceWeb.CoreComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+          class={["rounded border-zinc-300 text-zinc-900 focus:ring-0", @class]}
           {@rest}
         />
         {@label}
@@ -386,7 +387,8 @@ defmodule SecopServiceWeb.CoreComponents do
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          " block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          @class,
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400"
         ]}
@@ -770,7 +772,7 @@ defmodule SecopServiceWeb.CoreComponents do
       table_attrs: [
         class:
           "w-full border-collapse border border-slate-300 dark:border-slate-600 " <>
-            "text-gray-700 dark:text-gray-200"
+            "text-gray-700 dark:text-gray-200 table-fixed"
       ],
       thead_th_attrs: [
         class: "p-2 bg-gray-50 dark:bg-gray-800 border border-slate-300 dark:border-slate-600"

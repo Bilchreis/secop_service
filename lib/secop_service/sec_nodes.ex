@@ -2,6 +2,7 @@ defmodule SecopService.Sec_Nodes do
   import Ecto.Query, warn: false
   alias SecopService.Repo
   alias SecopService.Sec_Nodes.{SEC_Node, Module, Parameter, Command, ParameterValue}
+  alias SecopService.Util
   require Logger
 
   # Parse and store a raw SECoP message
@@ -77,7 +78,7 @@ defmodule SecopService.Sec_Nodes do
   def get_values(parameter_id) do
     ParameterValue
     |> where(parameter_id: ^parameter_id)
-    |> order_by(desc: :timestamp)
+    |> order_by(asc: :timestamp)
     |> Repo.all()
   end
 
@@ -269,6 +270,10 @@ defmodule SecopService.Sec_Nodes do
       name: to_string(module_name),
       description: Map.get(properties, :description) || "",
       interface_classes: Map.get(properties, :interface_classes) || [],
+      highest_interface_class:
+        (Map.get(properties, :interface_classes) || [])
+        |> Util.get_highest_if_class()
+        |> Atom.to_string() || "none",
       custom_properties: custom_properties || %{},
       sec_node_id: db_node.uuid,
 
@@ -453,7 +458,15 @@ defmodule SecopService.Sec_Nodes do
   def get_sec_node_by_uuid(uuid) do
     SEC_Node
     |> Repo.get_by(uuid: uuid)
-    |> Repo.preload(modules: [:parameters, :commands])
+    |> Repo.preload(
+      modules: {
+        from(m in Module, order_by: m.name),
+        [
+          parameters: from(p in Parameter, order_by: p.name),
+          commands: from(c in Command, order_by: c.name)
+        ]
+      }
+    )
   end
 
   # Query functions

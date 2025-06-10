@@ -69,4 +69,12 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
   def display_equipment_id(sec_node) do
     Util.display_name(sec_node.equipment_id)
   end
+
+  def get_node_id(sec_node) do
+    {String.to_charlist(sec_node.host), sec_node.port}
+  end
+
+  def get_values_pubsub_topic(sec_node) do
+    "value_update:#{sec_node.host}:#{sec_node.port}"
+  end
 end

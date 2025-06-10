@@ -8,7 +8,10 @@ config :secop_service, SecopService.Repo,
   database: "secop_service_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  pool_size: 20,
+  timeout: 80_000,
+  queue_target: 5000,
+  queue_interval: 5000
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

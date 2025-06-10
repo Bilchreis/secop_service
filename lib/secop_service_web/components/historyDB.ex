@@ -48,21 +48,84 @@ defmodule SecopServiceWeb.Components.HistoryDB do
         socket
       else
         socket =
+          socket
+          |> assign(:table_data, nil)
+          |> assign(:plot, nil)
+
+        socket =
           if PlotDB.get_parameter(secop_obj) |> PlotDB.plottable?() do
             assign(socket, :display_mode, :graph)
             |> assign(:plottable, true)
+            |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
           else
             assign(socket, :display_mode, :table)
             |> assign(:plottable, false)
+            |> assign_async(:table_data, fn -> get_tabledata(secop_obj) end)
           end
 
         socket
-        |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
-        |> assign_async(:table_data, fn -> get_tabledata(secop_obj) end)
         |> assign(:initialised, true)
         |> assign(:id, assigns.id)
         |> assign(:class, assigns.class)
         |> assign(:parameter, get_parameter(secop_obj))
+        |> assign(:secop_obj, secop_obj)
+      end
+
+    {:ok, socket}
+  end
+
+  def update(%{value_update: value_update, parameter: parameter} = _assigns, socket) do
+    param_list =
+      case socket.assigns.secop_obj do
+        %SecopService.Sec_Nodes.Parameter{} = param ->
+          [param.name]
+
+        %SecopService.Sec_Nodes.Module{} = module ->
+          case module.highest_interface_class do
+            "readable" -> ["value"]
+            "drivable" -> ["value", "target"]
+            "communicator" -> []
+            "measurable" -> ["value"]
+            _ -> []
+          end
+      end
+
+    socket =
+      if socket.assigns.plottable and parameter in param_list and socket.assigns.plot.ok? do
+        [value, qualifiers] = value_update
+
+        socket =
+          case qualifiers do
+            %{t: timestamp} ->
+              # Convert to milliseconds if needed
+              timestamp = trunc(timestamp * 1000)
+              # Find the trace index based on the parameter name
+              # This assumes traces are ordered by parameter name in plot.data
+              trace_index =
+                Enum.find_index(socket.assigns.plot.result.data, fn trace ->
+                  trace[:name] == parameter
+                end) || 0
+
+              # Format data for the extend-traces event
+              # The event expects arrays of arrays (one per trace)
+              update_data = %{
+                # Add one timestamp to the specified trace
+                x: [[timestamp]],
+                # Add one value to the specified trace
+                y: [[value]],
+                traceIndices: [trace_index]
+              }
+
+              # Push the event to the client
+              push_event(socket, "extend-traces-#{socket.assigns.id}", update_data)
+
+            _ ->
+              socket
+          end
+
+        socket
+      else
+        socket
       end
 
     {:ok, socket}
@@ -136,16 +199,70 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   @impl true
   def handle_event("set-display-mode", %{"mode" => mode}, socket) do
     display_mode = String.to_existing_atom(mode)
+    secop_obj = socket.assigns.secop_obj
+
+    socket =
+      case display_mode do
+        :graph ->
+          if socket.assigns.plot == nil do
+            socket |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
+          else
+            socket
+          end
+
+        :table ->
+          if socket.assigns.table_data == nil do
+            socket |> assign_async(:table_data, fn -> get_tabledata(secop_obj) end)
+          else
+            socket
+          end
+
+        _ ->
+          socket
+      end
+
     {:noreply, assign(socket, :display_mode, display_mode)}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class={["h-full flex", assigns[:class]]}>
+    <div class={["h-full", assigns[:class]]}>
       <!-- Main content area - plot -->
+          <!-- Button sidebar on the right -->
+      <div class=" flex  gap-2 h-full mb-2">
+        <button
+          class={[
+            "px-4 py-2 rounded-lg focus:outline-none",
+            @display_mode == :graph &&
+              "bg-gray-500 text-white hover:bg-gray-600 dark:bg-purple-700 dark:hover:bg-gray-800",
+            @display_mode != :graph &&
+              "bg-gray-300 dark:bg-gray-600 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-700"
+          ]}
+          phx-click={JS.push("set-display-mode", value: %{mode: "graph"}, target: @myself)}
+        >
+          <div class="flex items-center">
+            <.icon name="hero-chart-bar-solid" class="h-5 w-5 flex-none mr-1" /> Graph
+          </div>
+        </button>
 
-      <div class="flex-grow h-full">
+        <button
+          class={[
+            "px-4 py-2 rounded-lg focus:outline-none",
+            @display_mode == :table &&
+              "bg-stone-500 text-white hover:bg-stone-600 dark:bg-purple-700 dark:hover:bg-stone-800",
+            @display_mode != :table &&
+              "bg-stone-300 dark:bg-stone-600 dark:text-white hover:bg-stone-400 dark:hover:bg-stone-700"
+          ]}
+          phx-click={JS.push("set-display-mode", value: %{mode: "table"}, target: @myself)}
+        >
+          <div class="flex items-center">
+            <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
+          </div>
+        </button>
+      </div>
+
+      <div class="h-full">
         <%= case @display_mode do %>
           <% :graph -> %>
             <%= if @plottable do %>
@@ -155,7 +272,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                     class="animate-pulse flex items-center justify-center h-full text-center bg-gray-300 p-4 rounded-lg"
                     style="min-height: 400px;"
                   >
-                    <p>Waiting for plottable Data</p>
+                    <span class="text-gray-700">Fetching Plot Data</span>
                   </div>
                 </:loading>
                 <:failed>
@@ -237,9 +354,9 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                   |> Calendar.strftime("%d.%m.%Y %H:%M:%S.%f")}
                 </:col>
                 <:col :let={parameter_value} label="Value" field={:value}>
-                  <span class="font-mono">
+                  <div class="w-full max-w-1/2 font-mono truncate">
                     {ParameterValue.get_display_value(parameter_value, @parameter)}
-                  </span>
+                  </div>
                 </:col>
               </Flop.Phoenix.table>
 
@@ -251,39 +368,6 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               />
             </.async_result>
         <% end %>
-      </div>
-      
-    <!-- Button sidebar on the right -->
-      <div class="ml-4 flex flex-col space-y-2 h-full">
-        <button
-          class={[
-            "px-4 py-2 rounded-lg focus:outline-none",
-            @display_mode == :graph &&
-              "bg-gray-500 text-white hover:bg-gray-600 dark:bg-purple-700 dark:hover:bg-gray-800",
-            @display_mode != :graph &&
-              "bg-gray-300 dark:bg-gray-600 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-700"
-          ]}
-          phx-click={JS.push("set-display-mode", value: %{mode: "graph"}, target: @myself)}
-        >
-          <div class="flex items-center">
-            <.icon name="hero-chart-bar-solid" class="h-5 w-5 flex-none mr-1" /> Graph
-          </div>
-        </button>
-
-        <button
-          class={[
-            "px-4 py-2 rounded-lg focus:outline-none",
-            @display_mode == :table &&
-              "bg-stone-500 text-white hover:bg-stone-600 dark:bg-purple-700 dark:hover:bg-stone-800",
-            @display_mode != :table &&
-              "bg-stone-300 dark:bg-stone-600 dark:text-white hover:bg-stone-400 dark:hover:bg-stone-700"
-          ]}
-          phx-click={JS.push("set-display-mode", value: %{mode: "table"}, target: @myself)}
-        >
-          <div class="flex items-center">
-            <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
-          </div>
-        </button>
       </div>
     </div>
     """

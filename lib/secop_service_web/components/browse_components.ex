@@ -236,7 +236,7 @@ defmodule SecopServiceWeb.BrowseComponents do
     grouped_parameters = Enum.group_by(assigns.module.parameters, &(&1.group || nil))
     grouped_commands = Enum.group_by(assigns.module.commands, &(&1.group || nil))
 
-    base_class = Util.get_highest_if_class(assigns.module.interface_classes)
+    base_class = assigns.module.highest_interface_class
     styles = get_class_styles(base_class)
 
     assigns =
@@ -255,15 +255,14 @@ defmodule SecopServiceWeb.BrowseComponents do
         <:trigger class="text-left">
           <!-- Module Name with Interface Class Icon -->
           <div class="mb-4 flex items-center">
-            <.icon name={@styles.icon} class="h-6 w-6 mr-3" />
             <span class="text-2xl font-bold text-gray-800 dark:text-white">
               {Module.display_name(@module)}
-              <%= if @base_class do %>
-                <span class={"text-sm ml-2 px-2 py-1 rounded-full #{@styles.header_bg}"}>
-                  {@base_class}
-                </span>
-              <% end %>
             </span>
+            <%= if @base_class do %>
+              <span class={" font-bold text-gray-800 dark:text-white text-sm ml-2 px-2 py-1 mb-1 rounded-full #{@styles.header_bg}"}>
+                {@base_class}
+              </span>
+            <% end %>
           </div>
           
     <!-- Module Properties -->
@@ -393,9 +392,9 @@ defmodule SecopServiceWeb.BrowseComponents do
   end
 
   # Helper function to get class-specific styles
-  defp get_class_styles(interface_class) do
+  def get_class_styles(interface_class) do
     case interface_class do
-      :communicator ->
+      "communicator" ->
         %{
           border: "border-blue-500 dark:border-blue-600/40",
           bg:
@@ -404,7 +403,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           icon: "hero-chat-bubble-left-right"
         }
 
-      :readable ->
+      "readable" ->
         %{
           border: "border-green-500 dark:border-green-600/40",
           bg:
@@ -413,7 +412,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           icon: "hero-eye"
         }
 
-      :writable ->
+      "writable" ->
         %{
           border: "border-amber-500 dark:border-amber-600/40",
           bg:
@@ -422,7 +421,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           icon: "hero-pencil-square"
         }
 
-      :drivable ->
+      "drivable" ->
         %{
           border: "border-purple-500 dark:border-purple-600/40",
           bg:
@@ -431,7 +430,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           icon: "hero-cog"
         }
 
-      :measurable ->
+      "measurable" ->
         %{
           border: "border-blue-500 dark:border-blue-600/40",
           bg:
@@ -461,7 +460,6 @@ defmodule SecopServiceWeb.BrowseComponents do
       |> assign(:parameter_pretty, parameter_pretty)
 
     ~H"""
-
     <!-- Parameter Name -->
     <div class="mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
       <div class="flex justify-between">
