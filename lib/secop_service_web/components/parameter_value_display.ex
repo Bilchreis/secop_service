@@ -202,7 +202,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
             />
             <button
               type="submit"
-              class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700"
+              class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
             >
               Set
             </button>
