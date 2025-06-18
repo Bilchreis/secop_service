@@ -68,15 +68,20 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     current_node = socket.assigns.current_node
 
     socket =
-      if state.host == current_node.host and
-           state.port == current_node.port do
+      if state.node_id == SEC_Node.get_node_id(current_node) do
         current_node =
           if Sec_Nodes.node_exists?(state[:uuid]) do
             Sec_Nodes.get_sec_node_by_uuid(state[:uuid])
+          else
+            Logger.warning(
+              "Node with UUID #{state[:uuid]} does not exist in the database"
+            )
           end
 
+        Logger.info("Current node updated")
         assign(socket, current_node: current_node)
       else
+        Logger.info("Current node not updated")
         socket
       end
 
