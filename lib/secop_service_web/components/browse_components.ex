@@ -549,15 +549,15 @@ defmodule SecopServiceWeb.BrowseComponents do
         id={@parameter.name <> to_string(@parameter.id)}
         class="mt-3 bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-lg  "
       >
-        <:trigger class="p-2  text-left text-sm">
-          <div class="flex flex-row">
-            <.icon name="hero-information-circle" class=" h-5 w-5 flex-none mr-1" />
-            <span>JSON Description: </span>
+        <:trigger class=" text-left text-sm mr-3">
+          <div class="flex p-2">
+            <.icon name="hero-information-circle" class=" h-5 w-5  mr-1" />
+            <div>JSON Description:</div>
           </div>
         </:trigger>
         <:panel class="p-4 ">
           <pre class="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-xs p-2 rounded-lg ">
-            {@parameter_pretty}
+    {@parameter_pretty}
           </pre>
         </:panel>
       </.accordion>
@@ -651,7 +651,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           </:trigger>
           <:panel class="p-4 ">
             <pre class="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-xs p-2 rounded-lg ">
-                {@datainfo_pretty}
+    {@datainfo_pretty}
               </pre>
           </:panel>
         </.accordion>

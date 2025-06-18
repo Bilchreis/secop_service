@@ -117,43 +117,22 @@
   animation-play-state: paused;
 }
 
-/* GG Plot */
-
-.gg-plot-background {
-  fill: none;
+.command_item {
+  background-color: rgb(39,39,42);
+  
 }
 
-.gg-panel-background {
-  fill: white;
-  color: gray;
+.command_item[mod-highlight="error"] {
+  background-color:  rgb(153,27,27);
+  transition: background-color 0.2s;
 }
 
-.gg-text {font-family: Helvetica, Arial, sans-serif;}
-.gg-legend-key {stroke-width: 0.5;stroke: #EEEEEE;fill: #EEEEEE;}
-.gg-axis-text {font-size: 6px;fill: gray;} 
-.gg-axis-ticks {stroke: gray;} 
-.gg-axis-title {font-size: 8px;fill:gray;}
-.gg-legend-text {font-size: 6px;fill: #000000;} 
-.gg-legend-title {font-size: 8px;fill: #000000;} 
-.gg-panel-border {stroke: darkgray} 
-.gg-panel-grid {stroke: #EEEEEE;} 
-.gg-panel-grid-major {stroke-width: 1;} 
-.gg-panel-grid-minor {stroke-width: 0.5;} 
-.gg-plot-title {font-size: 10px;}
+.command_item[mod-highlight="done"] {
+  background-color:  rgb(22,101,52);
+  transition: background-color 0.2s;
+}
 
-
-.dark  .gg-text {font-family: Helvetica, Arial, sans-serif;}
-.dark .gg-legend-key {stroke-width: 0.5;stroke: #EEEEEE;fill: #EEEEEE;}
-.dark .gg-axis-text {font-size: 6px;fill: lightgray;} 
-.dark .gg-axis-ticks {stroke: darkgray;} 
-.dark .gg-axis-title {font-size: 8px;fill:lightgray;}
-.dark .gg-legend-text {font-size: 6px; fill: white;} 
-.dark .gg-legend-title {font-size: 8px;fill: white;} 
-.dark .gg-panel-border {stroke: white} 
-.dark .gg-panel-grid {stroke: darkgray;} 
-.dark .gg-panel-grid-major {stroke-width: 1;} 
-.dark .gg-panel-grid-minor {stroke-width: 0.5;} 
-.dark .gg-plot-title {font-size: 10px;}
-.dark .gg-plot-background {  fill: none;}
-.dark .gg-panel-background {  fill: gray;  color: gray;}
-
+.command_item[mod-highlight="running"] {
+  background-color:  white;
+  transition: background-color 0.2s;
+}

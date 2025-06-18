@@ -9,6 +9,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   alias SEC_Node
   require Logger
 
+  alias SEC_Node_Statem
   import SECoPComponents
   import SecopServiceWeb.DashboardComponents
 
@@ -58,28 +59,63 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   ### New Values Map Update
 
   @impl true
-  def handle_info({:description_change, _pubsub_topic, _state}, socket) do
-    # TODO
-    Logger.info("Description Change")
-    {:noreply, socket}
+  def handle_info({:description_change, pubsub_topic, state}, socket) do
+    Logger.info("node state change: #{pubsub_topic} #{state.state}")
+
+    node_id = pubsubtopic_to_node_id(pubsub_topic)
+    active_nodes = socket.assigns.active_nodes |> Map.put(node_id, state)
+    current_node = socket.assigns.current_node
+
+    socket =
+      if state.host == current_node.host and
+           state.port == current_node.port do
+        current_node =
+          if Sec_Nodes.node_exists?(state[:uuid]) do
+            Sec_Nodes.get_sec_node_by_uuid(state[:uuid])
+          end
+
+        assign(socket, current_node: current_node)
+      else
+        socket
+      end
+
+    {:noreply, assign(socket, active_nodes: active_nodes)}
   end
 
   def handle_info({:conn_state, _pubsub_topic, active}, socket) do
     # TODO
-    Logger.info("conn_state Change #{inspect(active)}")
+    node_state =
+      socket.assigns.active_nodes[SEC_Node.get_node_id(socket.assigns.current_node)]
+      |> Map.put(:active, active)
+
+    socket =
+      socket
+      |> assign(
+        :active_nodes,
+        Map.put(socket.assigns.active_nodes, node_state.node_id, node_state)
+      )
+
     {:noreply, socket}
   end
 
   def handle_info({:state_change, pubsub_topic, state}, socket) do
-    Logger.info("new node status: #{pubsub_topic} #{state.state}")
+    Logger.info("node state change: #{pubsub_topic} #{state.state}")
+
+    node_id = pubsubtopic_to_node_id(pubsub_topic)
+    active_nodes = socket.assigns.active_nodes |> Map.put(node_id, state)
+
+    {:noreply, assign(socket, active_nodes: active_nodes)}
+  end
+
+  def handle_info({:new_node, pubsub_topic, state}, socket) do
+    Logger.info("new node discovered: #{pubsub_topic} #{inspect(state)}")
 
     {:noreply, socket}
   end
 
-  def handle_info({:new_node, pubsub_topic, state}, socket) do
-    Logger.info("new node status: #{pubsub_topic} #{inspect(state)}")
-
-    {:noreply, socket}
+  @impl true
+  def handle_info({:put_flash, [type, message]}, socket) do
+    {:noreply, put_flash(socket, type, message)}
   end
 
   @impl true
@@ -112,6 +148,26 @@ defmodule SecopServiceWeb.DashboardLive.Index do
           Logger.warning("Parameter #{accessible} in module #{module} not found in values")
           socket
       end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("toggle-conn-state", _unsigned_params, socket) do
+    Logger.info("Toggling connection state for current node")
+
+    node_state = socket.assigns.active_nodes[SEC_Node.get_node_id(socket.assigns.current_node)]
+    node_id = node_state.node_id
+    active = node_state.active
+
+    Task.start(fn ->
+      case active do
+        true ->
+          SEC_Node_Statem.deactivate(node_id)
+
+        false ->
+          SEC_Node_Statem.activate(node_id)
+      end
+    end)
 
     {:noreply, socket}
   end

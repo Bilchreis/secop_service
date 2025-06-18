@@ -11,6 +11,7 @@ defmodule SECoPComponents do
   attr :uuid, :string, required: true
   attr :current, :boolean, default: false
   attr :state, :atom, required: true
+  attr :connstate, :boolean, required: true
 
   def node_button(assigns) do
     assigns = assign(assigns, :border_col, state_to_col(assigns.state))
@@ -28,12 +29,24 @@ defmodule SECoPComponents do
       class={[
         @button_col,
         @border_col,
-        "border-4 text-white text-left font-bold py-2 px-4 rounded"
+        "min-w-[240px] border-4 text-white text-left font-bold py-2 px-4 rounded",
+        "font-mono"
       ]}
     >
-      <div class="text-xl">{Util.display_name(@equipment_id)}</div>
+      <div class="text-xl font-sans">{Util.display_name(@equipment_id)}</div>
       <div class="text-sm text-white-400 opacity-60">{@pubsub_topic}</div>
-      <div>{@state}</div>
+      <div class="flex gap-2">
+        <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-300 dark:bg-zinc-600 font-mono">
+          {@state}
+        </div>
+        <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-300 dark:bg-zinc-600 font-mono">
+          <%= if @connstate do %>
+            <span class="text-green-500">active </span>
+          <% else %>
+            <span class="text-orange-500">inactive</span>
+          <% end %>
+        </div>
+      </div>
     </button>
     """
   end
