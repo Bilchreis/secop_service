@@ -67,6 +67,7 @@ defmodule SecopService.NodeManager do
     Logger.info("Description Change for node: #{node_state.equipment_id}")
 
     # Find the old UUID if present
+
     old_uuid = find_old_uuid(state.nodes, node_state.node_id)
 
     # If we have an old UUID and it's different, stop the old writer
@@ -76,9 +77,9 @@ defmodule SecopService.NodeManager do
         NodeDBWriterSupervisor.stop_writer(old_uuid)
 
         # Store the new node configuration
-        {:ok, node} = Sec_Nodes.store_single_node(node_state)
+        {:ok, _node} = Sec_Nodes.store_single_node(node_state)
 
-        updated_nodes = Map.put(state.nodes, node_state.node_id, node)
+        updated_nodes = Map.put(state.nodes, node_state.node_id, node_state)
         # Start a new writer
         NodeDBWriterSupervisor.start_writer(node_state)
         %{state | nodes: updated_nodes}
@@ -100,7 +101,7 @@ defmodule SecopService.NodeManager do
 
   def handle_info({:conn_state, _pubsub_topic, active}, state) do
     # TODO
-    Logger.info("conn_state Change #{inspect(active)}")
+
     {:noreply, state}
   end
 
@@ -135,8 +136,8 @@ defmodule SecopService.NodeManager do
               "New node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
             )
 
-            {:ok, node} = Sec_Nodes.store_single_node(node_state)
-            Map.put(acc, node_id, node)
+            {:ok, _node} = Sec_Nodes.store_single_node(node_state)
+            Map.put(acc, node_id, node_state)
 
           true ->
             # Update existing node

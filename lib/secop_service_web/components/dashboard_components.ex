@@ -1,9 +1,6 @@
 defmodule SecopServiceWeb.DashboardComponents do
   use Phoenix.Component
 
-  alias Ecto.Migration.Command
-  alias Credo.Code.Charlists
-  alias Credo.Check.Readability.ModuleAttributeNames
   alias SecopService.Sec_Nodes.SEC_Node
   alias SecopService.Sec_Nodes.Module
 
@@ -11,12 +8,14 @@ defmodule SecopServiceWeb.DashboardComponents do
   alias Jason
   alias SecopServiceWeb.Components.ModuleIndicator
   alias SecopServiceWeb.Components.ParameterValueDisplay
+  alias SecopServiceWeb.Components.CommandDisplay
 
   import SECoPComponents
   import SecopServiceWeb.BrowseComponents
   import SecopServiceWeb.CoreComponents
 
   attr :node, :map, required: true
+  attr :state_map, :map, required: true
 
   def dash_sec_node(assigns) do
     grouped_modules = Enum.group_by(assigns.node.modules, &(&1.group || nil))
@@ -81,7 +80,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               </div>
             </div>
           </div>
-          <div>
+          <div class="relative">
             <ul class="text-lg font-medium text-right">
               <.property prop_key="UUID" value_class="font-mono">
                 {@node.uuid}
@@ -98,10 +97,30 @@ defmodule SecopServiceWeb.DashboardComponents do
                 |> Calendar.strftime("%d.%m.%Y %H:%M")}
               </.property>
             </ul>
+            <div class="absolute right-0 bottom-0  p-2 rounded-lg bg-gray-800">
+              <div class="mb-2 ">Async update Messages</div>
+
+              <label class="inline-flex items-center justify-items-end cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={@state_map.active}
+                  phx-click="toggle-conn-state"
+                  class="sr-only peer"
+                />
+                <div class="
+                  relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4
+                  peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer
+                  dark:bg-gray-900 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
+                  peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px]
+                  after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all
+                  dark:border-gray-600 peer-checked:bg-purple-600 dark:peer-checked:bg-purple-600">
+                </div>
+              </label>
+            </div>
           </div>
         </div>
       </div>
-
+      
     <!--Modules -->
       <div class="mt-3 bg-gray-100 dark:bg-gray-700 rounded-lg  ">
         <%= for {group_name, modules} <- Enum.sort(@grouped_modules) do %>
@@ -206,7 +225,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               </span>
             <% end %>
           </div>
-
+          
     <!-- Module Properties -->
           <div class="flex">
             <div class="w-3/4 mr-2 border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-4">
@@ -224,7 +243,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                 >
                   {@module.interface_classes |> Enum.join(", ")}
                 </.property>
-
+                
     <!-- ...existing module properties... -->
                 <%= if @module.implementor do %>
                   <.property
@@ -302,8 +321,6 @@ defmodule SecopServiceWeb.DashboardComponents do
                   location="module_dash"
                   parameter={Module.get_parameter(@module, "target")}
                 />
-
-
               </div>
             <% Module.has_parameter?(@module, "value") -> %>
               <div class="grid grid-cols-[auto_1fr]  items-center">
@@ -323,17 +340,22 @@ defmodule SecopServiceWeb.DashboardComponents do
               </div>
           <% end %>
           <%= if @module.commands != [] do %>
-          <div class = "flex gap-2 mt-2 p-2 items-center rounded-lg bg-zinc-300/40 dark:bg-zinc-600/40">
-
-            <%= for command <- @module.commands do %>
-              <button class = "font-mono text-gray-300 font-semibold pr-4 pl-4 bg-zinc-600 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700">
-               {Util.display_name(command.name)}
-              </button>
-            <% end %>
-
-          </div>
+            <div class="flex gap-2 mt-2 p-2 items-center rounded-lg bg-zinc-300/40 dark:bg-zinc-600/40">
+              <%= for command <- @module.commands do %>
+                <.live_component
+                  module={CommandDisplay}
+                  id={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":" <> command.name}
+                  class=""
+                  host={@host}
+                  port={@port}
+                  location="module_dash"
+                  module_name={@module.name}
+                  command={command}
+                  id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":" <> command.name}
+                />
+              <% end %>
+            </div>
           <% end %>
-
         </:trigger>
         <:panel class="">
           <!-- Parameters -->
@@ -370,7 +392,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               <% end %>
             <% end %>
           </div>
-
+          
     <!-- Commands -->
           <%= if @module.commands != [] do %>
             <div class="border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-4 mt-4">
@@ -448,7 +470,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         >
           {@parameter.description}
         </.property>
-
+        
     <!-- Optional Properties -->
         <%= if @parameter.meaning do %>
           <.property prop_key="Meaning" key_class="text-gray-600 dark:text-gray-400 font-semibold">
@@ -461,7 +483,7 @@ defmodule SecopServiceWeb.DashboardComponents do
             {@parameter.checkable}
           </.property>
         <% end %>
-
+        
     <!-- Custom Properties -->
         <%= for {property_name, property_value} <- @parameter.custom_properties do %>
           <.property
@@ -492,7 +514,7 @@ defmodule SecopServiceWeb.DashboardComponents do
   def dash_command(assigns) do
     ~H"""
     <div class="mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
-
+      
     <!-- Parameter Name -->
       <div>
         <span class="text-xl font-bold text-gray-800 dark:text-white">
@@ -507,7 +529,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           >
             {@command.description}
           </.property>
-
+          
     <!-- Optional Properties -->
           <%= if @command.group do %>
             <.property prop_key="Group" key_class="text-gray-600 dark:text-gray-400 font-semibold">
@@ -535,7 +557,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               {@command.checkable}
             </.property>
           <% end %>
-
+          
     <!-- Custom Properties -->
           <%= for {property_name, property_value} <- @command.custom_properties do %>
             <.property

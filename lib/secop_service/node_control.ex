@@ -28,6 +28,17 @@ defmodule SecopService.NodeControl do
     SEC_Node_Statem.change(nodeid, module, parameter, value)
   end
 
+  def execute_command(unsigned_params) do
+    nodeid =
+      {String.to_charlist(unsigned_params["host"]), String.to_integer(unsigned_params["port"])}
+
+    module = unsigned_params["module"]
+    command = unsigned_params["command"]
+    value = unsigned_params["value"]
+
+    SEC_Node_Statem.execute_command(nodeid, module, command, value)
+  end
+
   def validate(unsigned_params, datainfo, set_form) do
     # Convert datainfo string keys to atoms
     atomized_datainfo = atomize_keys(datainfo)

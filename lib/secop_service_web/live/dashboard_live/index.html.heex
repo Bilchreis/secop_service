@@ -23,6 +23,7 @@
             uuid={node.uuid}
             current={node.uuid == @current_node.uuid}
             state={node.state}
+            connstate={node.active}
           />
         </li>
       <% end %>
@@ -34,7 +35,10 @@
         node_state={@active_nodes[SEC_Node.get_node_id(@current_node)].state}
         values={@values}
       />
-      <.dash_sec_node node={@current_node} />
+      <.dash_sec_node
+        node={@current_node}
+        state_map={@active_nodes[SEC_Node.get_node_id(@current_node)]}
+      />
     </div>
   <% else %>
     No nodes connected
