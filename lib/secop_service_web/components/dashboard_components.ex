@@ -97,7 +97,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                 |> Calendar.strftime("%d.%m.%Y %H:%M")}
               </.property>
             </ul>
-            <div class="absolute right-0 bottom-0  p-2 rounded-lg bg-gray-800">
+            <div class="absolute right-0 bottom-0  p-2 rounded-lg bg-gray-300 dark:bg-gray-800">
               <div class="mb-2 ">Async update Messages</div>
 
               <label class="inline-flex items-center justify-items-end cursor-pointer">
@@ -120,7 +120,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           </div>
         </div>
       </div>
-      
+
     <!--Modules -->
       <div class="mt-3 bg-gray-100 dark:bg-gray-700 rounded-lg  ">
         <%= for {group_name, modules} <- Enum.sort(@grouped_modules) do %>
@@ -225,7 +225,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               </span>
             <% end %>
           </div>
-          
+
     <!-- Module Properties -->
           <div class="flex">
             <div class="w-3/4 mr-2 border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-4">
@@ -243,7 +243,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                 >
                   {@module.interface_classes |> Enum.join(", ")}
                 </.property>
-                
+
     <!-- ...existing module properties... -->
                 <%= if @module.implementor do %>
                   <.property
@@ -392,7 +392,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               <% end %>
             <% end %>
           </div>
-          
+
     <!-- Commands -->
           <%= if @module.commands != [] do %>
             <div class="border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-4 mt-4">
@@ -470,7 +470,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         >
           {@parameter.description}
         </.property>
-        
+
     <!-- Optional Properties -->
         <%= if @parameter.meaning do %>
           <.property prop_key="Meaning" key_class="text-gray-600 dark:text-gray-400 font-semibold">
@@ -483,7 +483,7 @@ defmodule SecopServiceWeb.DashboardComponents do
             {@parameter.checkable}
           </.property>
         <% end %>
-        
+
     <!-- Custom Properties -->
         <%= for {property_name, property_value} <- @parameter.custom_properties do %>
           <.property
@@ -514,7 +514,7 @@ defmodule SecopServiceWeb.DashboardComponents do
   def dash_command(assigns) do
     ~H"""
     <div class="mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
-      
+
     <!-- Parameter Name -->
       <div>
         <span class="text-xl font-bold text-gray-800 dark:text-white">
@@ -529,7 +529,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           >
             {@command.description}
           </.property>
-          
+
     <!-- Optional Properties -->
           <%= if @command.group do %>
             <.property prop_key="Group" key_class="text-gray-600 dark:text-gray-400 font-semibold">
@@ -557,7 +557,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               {@command.checkable}
             </.property>
           <% end %>
-          
+
     <!-- Custom Properties -->
           <%= for {property_name, property_value} <- @command.custom_properties do %>
             <.property

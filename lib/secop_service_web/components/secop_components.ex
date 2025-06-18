@@ -36,10 +36,10 @@ defmodule SECoPComponents do
       <div class="text-xl font-sans">{Util.display_name(@equipment_id)}</div>
       <div class="text-sm text-white-400 opacity-60">{@pubsub_topic}</div>
       <div class="flex gap-2">
-        <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-300 dark:bg-zinc-600 font-mono">
+        <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-zinc-600 font-mono">
           {@state}
         </div>
-        <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-300 dark:bg-zinc-600 font-mono">
+        <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-zinc-600 font-mono">
           <%= if @connstate do %>
             <span class="text-green-500">active </span>
           <% else %>

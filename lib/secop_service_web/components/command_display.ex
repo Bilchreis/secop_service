@@ -146,7 +146,7 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
         <button
           phx-click="open_arg_modal"
           phx-target={@myself}
-          class="font-mono text-gray-300 font-semibold pr-4 pl-4 bg-zinc-600 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700"
+          class="font-mono font-semibold pr-4 pl-4 rounded-lg p-1  border border-stone-500 text-gray-700 dark:text-gray-300  hover:bg-zinc-400 dark:hover:bg-zinc-700 bg-zinc-300 dark:bg-zinc-800 command_item"
         >
           {Util.display_name(@command.name)}
         </button>
@@ -199,7 +199,7 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
               />
               <button
                 type="submit"
-                class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
+                class="font-mono font-semibold pr-4 pl-4 rounded-lg p-1  border border-stone-500 text-gray-700 dark:text-gray-300  hover:bg-zinc-400 dark:hover:bg-zinc-700 bg-zinc-300 dark:bg-zinc-800 command_item"
               >
                 Send
               </button>
@@ -230,7 +230,7 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
           <input type="hidden" name="value" value={nil} />
           <button
             type="submit"
-            class="font-mono font-semibold pr-4 pl-4 rounded-lg p-1 border border-stone-500 text-gray-300  hover:bg-zinc-700 dark:hover:bg-zinc-700 command_item active:bg-yellow "
+            class="font-mono font-semibold pr-4 pl-4 rounded-lg p-1  border border-stone-500 text-gray-700 dark:text-gray-300  hover:bg-zinc-400 dark:hover:bg-zinc-700 bg-zinc-300 dark:bg-zinc-800 command_item"
             mod-highlight={@command_success}
           >
             {Util.display_name(@command.name)}

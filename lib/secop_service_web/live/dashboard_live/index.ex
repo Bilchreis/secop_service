@@ -7,6 +7,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   alias SecopClient
   alias SEC_Node_Supervisor
   alias SEC_Node
+  alias SecopService.Sec_Nodes
   require Logger
 
   alias SEC_Node_Statem
