@@ -63,23 +63,49 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   def handle_info({:description_change, pubsub_topic, state}, socket) do
     Logger.info("node state change: #{pubsub_topic} #{state.state}")
 
+
+
     node_id = pubsubtopic_to_node_id(pubsub_topic)
     active_nodes = socket.assigns.active_nodes |> Map.put(node_id, state)
     current_node = socket.assigns.current_node
+    values       = socket.assigns.values
+
 
     socket =
       if state.node_id == SEC_Node.get_node_id(current_node) do
-        current_node =
+        {values,current_node} =
           if Sec_Nodes.node_exists?(state[:uuid]) do
-            Sec_Nodes.get_sec_node_by_uuid(state[:uuid])
-          else
-            Logger.warning(
-              "Node with UUID #{state[:uuid]} does not exist in the database"
+
+            # unsubscribe ffrom all subs (prevents double updates)
+            Phoenix.PubSub.unsubscribe(
+            :secop_client_pubsub,
+            SEC_Node.get_values_pubsub_topic(current_node)
             )
+
+
+            current_node = Sec_Nodes.get_sec_node_by_uuid(state[:uuid])
+            values = Model.get_val_map(current_node)
+
+            Phoenix.PubSub.subscribe(
+              :secop_client_pubsub,
+              SEC_Node.get_values_pubsub_topic(current_node)
+            )
+            {values,current_node}
+          else
+            Phoenix.PubSub.unsubscribe(
+            :secop_client_pubsub,
+            SEC_Node.get_values_pubsub_topic(current_node)
+            )
+
+            Logger.warning(
+              "Node with UUID #{state[:uuid]} does not exist in the database, unsubscribed from pubsub topic."
+            )
+            Process.send_after(self(), {:description_change, pubsub_topic, state}, 500)
+            {values,current_node}
           end
 
         Logger.info("Current node updated")
-        assign(socket, current_node: current_node)
+        assign(socket, current_node: current_node) |> assign(values: values)
       else
         Logger.info("Current node not updated")
         socket
