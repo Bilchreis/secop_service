@@ -118,7 +118,11 @@
 }
 
 .command_item { 
-  
+  background-color:  rgb(212, 212, 216);
+}
+
+.dark .command_item { 
+  background-color:  rgb(39, 39, 42);
 }
 
 .command_item[mod-highlight="error"] {

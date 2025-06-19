@@ -51,12 +51,13 @@ defmodule SecopServiceWeb.DashboardLive.Model do
   end
 
   def get_val_map(db_node) do
+    node_id = SEC_Node.get_node_id(db_node)
     Enum.reduce(db_node.modules, %{}, fn module, mod_acc ->
       parameter_map =
         Enum.reduce(module.parameters, %{}, fn parameter, param_acc ->
           param_val =
             case NodeTable.lookup(
-                   SEC_Node.get_node_id(db_node),
+                   node_id,
                    {:data_report, String.to_existing_atom(module.name),
                     String.to_existing_atom(parameter.name)}
                  ) do
