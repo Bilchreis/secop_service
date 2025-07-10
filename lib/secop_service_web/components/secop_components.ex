@@ -143,9 +143,10 @@ defmodule SECoPComponents do
 
 
     </div>
+    <div class = "mb-2">checked against SECoP v{@check_result["version"]}</div>
     <ul class="text-sm font-medium">
       <%= for diag <- Map.get(@check_result,"result") do %>
-        <li class={["p-1 m-1 border-4 rounded-lg","border-#{diag["col"]}"
+        <li class={["p-1 mb-1 border-4 rounded-lg","border-#{diag["col"]}"
       ]}>
           {diag["text"]}
         </li>
