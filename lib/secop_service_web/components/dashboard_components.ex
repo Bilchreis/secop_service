@@ -29,9 +29,11 @@ defmodule SecopServiceWeb.DashboardComponents do
       <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <span class="bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-4xl font-bold text-transparent">
-              {SEC_Node.display_equipment_id(@node)}
-            </span>
+            <.node_title
+              check_result = {@node.check_result}
+              equipment_id = {@node.equipment_id}
+            />
+
 
             <div class="grid grid-cols-2 gap-2 mt-2">
               <div>
@@ -79,6 +81,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                 </ul>
               </div>
             </div>
+
           </div>
           <div class="relative">
             <ul class="text-lg font-medium text-right">

@@ -11,10 +11,15 @@ defmodule SecopService.Repo.Migrations.CreateSecNodes do
       add :firmware, :string
       add :implementor, :string
       add :timeout, :integer
+
       # JSONB in PostgreSQL
       add :describe_message, :map
+      add :describe_message_raw, :text
       # JSONB in PostgreSQL
       add :custom_properties, :map
+
+      # JSONB in PostgreSQL
+      add :check_result, :map
 
       timestamps()
     end

@@ -23,9 +23,10 @@ defmodule SecopServiceWeb.BrowseComponents do
       <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <span class="bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-4xl font-bold text-transparent">
-              {SEC_Node.display_equipment_id(@node)}
-            </span>
+            <.node_title
+              check_result = {@node.check_result}
+              equipment_id = {@node.equipment_id}
+            />
 
             <div class="grid grid-cols-2 gap-4 mt-2">
               <div>
@@ -94,7 +95,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           </div>
         </div>
       </div>
-      
+
     <!--Modules -->
       <div class="mt-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
         <h2 class="text-2xl font-bold mb-4">Modules:</h2>
@@ -264,7 +265,7 @@ defmodule SecopServiceWeb.BrowseComponents do
               </span>
             <% end %>
           </div>
-          
+
     <!-- Module Properties -->
           <div class="border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-4">
             <ul class="text-sm text-gray-700 dark:text-gray-300 space-y-2">
@@ -281,7 +282,7 @@ defmodule SecopServiceWeb.BrowseComponents do
               >
                 {@module.interface_classes |> Enum.join(", ")}
               </.property>
-              
+
     <!-- ...existing module properties... -->
               <%= if @module.implementor do %>
                 <.property
@@ -347,7 +348,7 @@ defmodule SecopServiceWeb.BrowseComponents do
               <% end %>
             <% end %>
           </div>
-          
+
     <!-- Commands -->
           <%= if @module.commands != [] do %>
             <div class="border-4 border-zinc-300 dark:border-zinc-600 bg-white/50 dark:bg-gray-800/60 rounded-lg p-4 mt-4">
@@ -490,12 +491,12 @@ defmodule SecopServiceWeb.BrowseComponents do
         >
           {@parameter.description}
         </.property>
-        
+
     <!-- Readonly -->
         <.property prop_key="Readonly" key_class="text-gray-600 dark:text-gray-400 font-semibold">
           {@parameter.readonly}
         </.property>
-        
+
     <!-- Optional Properties -->
         <%= if @parameter.group do %>
           <.property prop_key="Group" key_class="text-gray-600 dark:text-gray-400 font-semibold">
@@ -529,7 +530,7 @@ defmodule SecopServiceWeb.BrowseComponents do
             <.enum enum={@parameter.datainfo} />
           </.property>
         <% end %>
-        
+
     <!-- Custom Properties -->
         <%= for {property_name, property_value} <- @parameter.custom_properties do %>
           <.property
@@ -577,7 +578,7 @@ defmodule SecopServiceWeb.BrowseComponents do
 
     ~H"""
     <div class="mb-4 bg-gray-300 dark:bg-gray-700 rounded-lg p-4 shadow-md">
-      
+
     <!-- Parameter Name -->
       <div>
         <span class="text-xl font-bold text-gray-800 dark:text-white">
@@ -592,7 +593,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           >
             {@command.description}
           </.property>
-          
+
     <!-- Optional Properties -->
           <%= if @command.group do %>
             <.property prop_key="Group" key_class="text-gray-600 dark:text-gray-400 font-semibold">
@@ -620,7 +621,7 @@ defmodule SecopServiceWeb.BrowseComponents do
               {@command.checkable}
             </.property>
           <% end %>
-          
+
     <!-- Custom Properties -->
           <%= for {property_name, property_value} <- @command.custom_properties do %>
             <.property
@@ -632,7 +633,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           <% end %>
         </ul>
       </div>
-      
+
     <!-- Datainfo -->
       <div>
         <.accordion

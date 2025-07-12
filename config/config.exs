@@ -66,6 +66,19 @@ config :phoenix, :json_library, Jason
 
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
+
+config :pythonx, :uv_init,
+  pyproject_toml: """
+  [project]
+  name = "secop_checker"
+  version = "0.0.1"
+  requires-python = "==3.13.*"
+  dependencies = [
+    "secop_check @ git+https://github.com/Bilchreis/secop_check.git"
+  ]
+  """
+
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

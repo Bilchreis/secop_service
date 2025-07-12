@@ -26,8 +26,11 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
 
     # JSONB full describe message
     field :describe_message, :map
+    field :describe_message_raw, :string
     # JSONB column for flexible properties
     field :custom_properties, :map
+
+    field :check_result, :map
 
     has_many :modules, SecopService.Sec_Nodes.Module, foreign_key: :sec_node_id
 
@@ -43,10 +46,12 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
       :port,
       :description,
       :describe_message,
+      :describe_message_raw,
       :custom_properties,
       :firmware,
       :implementor,
-      :timeout
+      :timeout,
+      :check_result
     ])
     |> validate_required([
       :uuid,
@@ -55,7 +60,9 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
       :port,
       :description,
       :describe_message,
-      :custom_properties
+      :describe_message_raw,
+      :custom_properties,
+      :check_result,
     ])
   end
 
