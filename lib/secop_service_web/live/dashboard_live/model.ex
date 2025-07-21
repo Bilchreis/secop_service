@@ -66,7 +66,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
               {:error, :notfound} ->
                 Logger.warning(
-                  "Data report for module #{module.name} and parameter #{parameter.name} not found in NodeTable for node #{SEC_Node.get_node_id(db_node)}."
+                  "Data report for module #{module.name} and parameter #{parameter.name} not found in NodeTable for node #{db_node.host}:#{db_node.port}."
                 )
 
                 nil
