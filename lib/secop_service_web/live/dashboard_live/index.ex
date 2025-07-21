@@ -54,8 +54,11 @@ defmodule SecopServiceWeb.DashboardLive.Index do
       |> assign(:values, model.values)
       |> assign(:show_connect_modal, false)
 
+
     {:ok, socket}
   end
+
+
 
   ### New Values Map Update
 
@@ -221,6 +224,8 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     new_model = model_from_socket(socket) |> Model.set_current_node(new_node_id)
     socket = model_to_socket(new_model, socket)
 
+
+
     Phoenix.PubSub.subscribe(
       :secop_client_pubsub,
       SEC_Node.get_values_pubsub_topic(new_model.current_node)
@@ -377,4 +382,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     "#{host}:#{port}:#{module}:#{parameter}"
   end
+
+
+
 end

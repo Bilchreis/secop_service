@@ -4,6 +4,7 @@ defmodule SecopService.Sec_Nodes do
   alias SecopService.Sec_Nodes.{SEC_Node, Module, Parameter, Command, ParameterValue}
   alias SecopService.Util
   require Logger
+  alias Jason
 
   # Parse and store a raw SECoP message
   def create_parameter_value_from_secop_message(parameter, secop_message) do
@@ -182,6 +183,55 @@ defmodule SecopService.Sec_Nodes do
     end)
   end
 
+  defp check_description(describe_str,version \\ "1.0",output \\ "json") do
+
+
+    {result, globals} =
+      Pythonx.eval(
+        """
+        from secop_check.checker import Checker
+
+        version_str = version.decode('utf-8') if isinstance(version, bytes) else str(version)
+        output_str = output.decode('utf-8') if isinstance(output, bytes) else str(output)
+
+
+
+        checker = Checker(version_str, [], output_str)
+
+        checker.check(descr)
+
+
+        diag_list = []
+
+        for diag in checker.get_diags():
+            step = f' [{diag.step}]' if diag.step else ''
+            ctx = ' / '.join(f'{ty} {name}'.strip()
+                             for ty, name in diag.ctx.path).strip()
+            if ctx:
+                ctx += ': '
+
+            diag_list.append({"severity": diag.severity.name,
+             "step": diag.step,
+             "message": diag.msg,
+             "ctx": [ list(node) for node in diag.ctx.path],
+             "text":f'{diag.severity.name}{step}: {ctx}{diag.msg}'
+            })
+
+        diag_list
+        """,
+        %{"descr" => describe_str,
+          "version" => version,
+          "output" => output}
+
+      )
+
+    result = Pythonx.decode(result)
+
+
+
+    %{"version" => version,"result" => result}
+  end
+
   # Create a SEC node from the active_nodes data
   defp create_sec_node_from_data(node_data) do
     properties = node_data.description.properties
@@ -196,6 +246,10 @@ defmodule SecopService.Sec_Nodes do
         end
       end)
 
+    describe_str = Jason.encode!(node_data.raw_description)
+    check_result = check_description(describe_str,"1.0","json")
+
+    IO.inspect(check_result, label: "Check Result")
     # Extract basic node attributes
     attrs = %{
       uuid: node_data.uuid,
@@ -208,8 +262,12 @@ defmodule SecopService.Sec_Nodes do
       implementor: Map.get(properties, :implementor),
       timeout: Map.get(properties, :timeout),
       custom_properties: custom_properties,
-      describe_message: node_data.raw_description
+      describe_message: node_data.raw_description,
+      describe_message_raw: describe_str,
+      check_result: check_result
     }
+
+
 
     # Check if node with this UUID already exists
     case get_sec_node_by_uuid(attrs.uuid) do

@@ -197,7 +197,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
               field={@set_form[:value]}
               placeholder="new value"
               phx-debounce="500"
-              id={"form:" <> to_string(@parameter.id)}
+              id={"form:" <> to_string(@parameter.id) <> @location}
               class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2 border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
             />
             <button

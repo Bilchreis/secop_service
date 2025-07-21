@@ -346,6 +346,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                 meta={table_data.meta}
                 on_sort={JS.push("sort", target: @myself)}
                 opts={table_opts()}
+                id = {"#{@id}-table"}
               >
                 <:col :let={parameter_value} label="Time" field={:timestamp}>
                   {parameter_value.timestamp

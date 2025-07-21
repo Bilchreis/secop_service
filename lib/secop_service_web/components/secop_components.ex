@@ -63,6 +63,99 @@ defmodule SECoPComponents do
     col
   end
 
+  attr :check_result, :map, required: true
+  attr :equipment_id, :string, required: true
+
+  def node_title(assigns) do
+    assigns = assign(assigns, :equipment_id, Util.display_name(assigns.equipment_id))
+
+    check_result = assigns.check_result
+
+    result_list = Map.get(check_result, "result", [])
+
+    assigns = if result_list == [] do
+      assign(assigns, :highest_error_class, "PASS")
+    else
+      highest_error_class =
+        result_list
+        |> Enum.map(fn  x -> x["severity"] end)
+        |> Enum.max_by(fn severity ->
+          case severity do
+            "CATASTROPHIC" -> 4
+            "ERROR" -> 3
+            "WARNING" -> 2
+            "HINT" -> 1
+            "PASS" -> 0
+            _ -> 5
+          end
+        end)
+
+      assigns = assign(assigns, :highest_error_class, highest_error_class)
+
+      new_result_list = Enum.map(result_list, fn diag ->
+        col = case diag["severity"] do
+          "CATASTROPHIC" -> "red-500"
+          "ERROR" -> "red-500"
+          "WARNING" -> "orange-500"
+          "HINT" -> "yellow-500"
+          "PASS" -> "green-500"
+          _ -> "gray-500"
+        end
+
+        Map.put(diag, "col", col)
+      end)
+
+      assign(assigns, :check_result, Map.put(check_result, "result", new_result_list))
+
+
+
+    end
+
+
+
+
+    ~H"""
+    <div class="flex items-center mb-2 gap-2">
+
+      <div>
+        <%= case @highest_error_class do %>
+        <% "PASS" -> %>
+          <.icon name="hero-check-badge-solid" class="bg-green-500 h-50 w-50" />
+        <% "HINT" -> %>
+          <.icon name="hero-check-badge-solid" class="bg-yellow-500 h-50 w-50" />
+        <% "WARNING" -> %>
+          <.icon name="hero-exclamation-triangle-solid" class="bg-orange-500 h-50 w-50" />
+        <% "ERROR" -> %>
+          <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-50 w-50" />
+        <% "CATASTROPHIC" -> %>
+          <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-50 w-50" />
+        <% _ -> %>
+          <.icon name="hero-question-mark-circle-solid" class="bg-gray-500 h-50 w-50" />
+        <% end %>
+      </div>
+
+      <div class="bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-4xl font-bold text-transparent">
+        {Util.display_name(@equipment_id)}
+      </div>
+
+
+
+
+
+    </div>
+    <div class = "mb-2">checked against SECoP v{@check_result["version"]}</div>
+    <ul class="text-sm font-medium">
+      <%= for diag <- Map.get(@check_result,"result") do %>
+        <li class={["p-1 mb-1 border-4 rounded-lg","border-#{diag["col"]}"
+      ]}>
+          {diag["text"]}
+        </li>
+      <% end %>
+    </ul>
+    """
+  end
+
+
   attr :parameter, :string, required: true
   attr :parameter_name, :string, required: true
 

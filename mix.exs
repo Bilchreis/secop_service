@@ -65,7 +65,8 @@ defmodule SecopService.MixProject do
       {:tzdata, "~> 1.1"},
       {:flop, "~> 0.26.1"},
       {:flop_phoenix, "~> 0.24.1"},
-      {:exprintf, "~> 0.2.1"}
+      {:exprintf, "~> 0.2.1"},
+      {:pythonx, "~> 0.4.4"}
       # {:ecto_psql_extras, "~> 0.6"},
     ]
   end
