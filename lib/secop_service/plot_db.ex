@@ -2,6 +2,70 @@ defmodule SecopService.PlotDB do
   alias SecopService.Util
   alias SecopService.Sec_Nodes
 
+  @layout
+
+
+  def get_layout(plot_map) do
+    %{
+      xaxis: %{
+        title: %{text: "Time"},
+        type: "date",
+        rangeselector: %{
+          buttons: [
+            %{count: 1, label: "1m", step: "minute", stepmode: "backward"},
+            %{count: 10, label: "10m", step: "minute", stepmode: "backward"},
+            %{count: 30, label: "30m", step: "minute", stepmode: "backward"},
+            %{count: 1, label: "1h", step: "hour", stepmode: "backward"},
+            %{count: 1, label: "1d", step: "day", stepmode: "backward"},
+            %{step: "all", label: "All"},
+          ],
+          x: 0,
+          y: 1.02,
+          xanchor: "left",
+          yanchor: "bottom"
+        },
+        rangeslider: %{visible: false}
+      },
+      yaxis: %{title: %{text: "#{plot_map.unit}"}},
+      margin: %{t: 10, b: 40, l: 50, r: 20},
+      # background color of the chart container space,
+      paper_bgcolor: "rgba(0,0,0,0",
+      ## background color of plot area
+      plot_bgcolor: "rgba(0,0,0,0)",
+
+
+      autosize: true,
+      height: 310,
+
+       # Add range slider toggle buttons positioned next to rangeselector
+updatemenus: [
+  %{
+    type: "buttons",
+    direction: "left",
+    buttons: [
+      %{
+        args: [%{"xaxis.rangeslider.visible" => false}],
+        args2: [%{"xaxis.rangeslider.visible" => true}],
+        label: "Range Selector",
+        method: "relayout"
+      }
+    ],
+    pad: %{r: 0, t: 0, l: 0, b: 0},
+    showactive: false,
+    x: 0.24 ,
+    xanchor: "left",
+    y: 0.99,
+    yanchor: "bottom",
+    bgcolor: "rgba(200,200,200,1)",  # Transparent background
+    font: %{size: 12}
+  }
+]
+
+
+
+    }
+  end
+
   def plottable?(parameter) do
     case parameter.datainfo["type"] do
       numeric when numeric in ["double", "int", "scaled"] -> true
@@ -111,15 +175,7 @@ defmodule SecopService.PlotDB do
         }
       ]
 
-      layout = %{
-        xaxis: %{title: %{text: "Time"}, type: "date"},
-        yaxis: %{title: %{text: "#{plot_map.unit}"}},
-        margin: %{t: 30, b: 50, l: 50, r: 20},
-        # background color of the chart container space,
-        paper_bgcolor: "rgba(0,0,0,0",
-        ## background color of plot area
-        plot_bgcolor: "rgba(0,0,0,0)"
-      }
+      layout = get_layout(plot_map)
 
       config =
         %{
@@ -161,15 +217,7 @@ defmodule SecopService.PlotDB do
           }
         ]
 
-        layout = %{
-          xaxis: %{title: %{text: "Time"}, type: "date"},
-          yaxis: %{title: %{text: "#{plot_map.unit}"}},
-          margin: %{t: 30, b: 50, l: 50, r: 20},
-          # background color of the chart container space,
-          paper_bgcolor: "rgba(0,0,0,0",
-          ## background color of plot area
-          plot_bgcolor: "rgba(0,0,0,0)"
-        }
+        layout = get_layout(plot_map)
 
         config =
           %{
@@ -212,15 +260,7 @@ defmodule SecopService.PlotDB do
           }
         ]
 
-        layout = %{
-          xaxis: %{title: %{text: "Time"}, type: "date"},
-          yaxis: %{title: %{text: "#{plot_map.unit}"}},
-          margin: %{t: 30, b: 50, l: 50, r: 20},
-          # background color of the chart container space,
-          paper_bgcolor: "rgba(0,0,0,0",
-          ## background color of plot area
-          plot_bgcolor: "rgba(0,0,0,0)"
-        }
+        layout = get_layout(plot_map)
 
         config =
           %{

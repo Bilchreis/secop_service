@@ -27,6 +27,8 @@ import Plotly from 'plotly.js-dist-min';
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
+const maxPoints = 20000; // Default max points for extendTraces
+
 // Add this to your Hooks object
 let Hooks = {}
 
@@ -74,7 +76,72 @@ Hooks.PlotlyChart = {
           Plotly.extendTraces(this.el, {
             x: x,  // Array of x arrays
             y: y   // Array of y arrays
-          }, traceIndices || [0]);
+          },
+          traceIndices || [0],maxPoints= maxPoints);
+
+          const now = new Date();
+          const layout = this.el.layout;
+          const currentXRange = layout.xaxis.range;
+          
+          // Check if we should update the range
+          let shouldUpdateRange = false;
+          let newRange = null;
+
+          // Get the active range selector button (if any)
+          const rangeSelector = layout.xaxis.rangeselector;
+          const activeButton = rangeSelector ? rangeSelector.activebutton : null;
+          
+          if (activeButton !== null && activeButton !== undefined) {
+            // A range selector button is active - calculate new range based on button
+            const button = rangeSelector.buttons[activeButton];
+            
+            if (button.step === "all") {
+              // "All" button is selected - don't update range, show all data
+              shouldUpdateRange = false;
+            } else {
+              // Calculate range based on the active button
+              let startTime;
+              if (button.step === "minute") {
+                startTime = new Date(now.getTime() - button.count * 60 * 1000);
+              } else if (button.step === "hour") {
+                startTime = new Date(now.getTime() - button.count * 60 * 60 * 1000);
+              } else if (button.step === "day") {
+                startTime = new Date(now.getTime() - button.count * 24 * 60 * 60 * 1000);
+              }
+              
+              if (startTime) {
+                newRange = [startTime, now];
+                shouldUpdateRange = true;
+              }
+            }
+          } else if (currentXRange && currentXRange.length === 2) {
+            // Custom range is set - check if the right edge is at the most recent data
+            const rightEdge = new Date(currentXRange[1]);
+            const timeDiff = Math.abs(rightEdge.getTime() - now.getTime());
+            
+            // If the right edge is within 1 minute of the most recent data,
+            // consider it to be tracking live data and update the window
+            if (timeDiff < 60000) { // 1 minute tolerance
+              const windowSize = rightEdge.getTime() - new Date(currentXRange[0]).getTime();
+              const newStartTime = new Date(now.getTime() - windowSize);
+              newRange = [newStartTime, now];
+              shouldUpdateRange = true;
+            }
+            // If custom range doesn't include the most recent data, leave it alone
+          } else {
+            // No specific range set, default to 10-minute sliding window
+            const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
+            newRange = [tenMinutesAgo, now];
+            shouldUpdateRange = true;
+          }
+
+          // Update the range if needed
+          if (shouldUpdateRange && newRange) {
+            Plotly.relayout(this.el, {
+              'xaxis.range': newRange
+            });
+          }
+
         } else {
           console.warn("Plotly chart is not initialized yet.");
         }
