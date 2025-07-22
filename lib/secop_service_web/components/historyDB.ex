@@ -268,7 +268,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
             @display_mode != :table &&
               "bg-stone-300 dark:bg-stone-600 dark:text-white hover:bg-stone-400 dark:hover:bg-stone-700"
           ]}
-          phx-click={JS.push("get-csv", value: %{get: "csv", parameter: "value"}, target: @myself)}
+          phx-click={JS.push("get-csv", value: %{get: "csv"}, target: @myself)}
         >
           <div class="flex items-center">
             <.icon name="hero-arrow-down-tray" class="h-5 w-5 flex-none mr-1" /> CSV
