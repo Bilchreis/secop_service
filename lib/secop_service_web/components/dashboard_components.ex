@@ -211,14 +211,14 @@ defmodule SecopServiceWeb.DashboardComponents do
       |> assign_new(:node_id_str, fn -> "#{to_string(assigns.host)}:#{assigns.port}" end)
 
     ~H"""
-    <div class="flex  items-start">
+    <div class="flex mt-3 items-start">
       <.accordion
         id={@module.name <> to_string(@module.id)}
-        class={"w-3/4  flex-1 h-auto mt-3 p-2 #{@styles.bg} rounded-lg shadow-md hover:shadow-lg border-l-4 #{@styles.border}"}
+        class={"w-3/4  flex-1 h-auto p-2 #{@styles.bg} rounded-lg shadow-md hover:shadow-lg border-l-4 #{@styles.border}"}
       >
         <:trigger class="text-left">
           <!-- Module Name with Interface Class Icon -->
-          <div class="mb-4 flex items-center">
+          <div class="mb-2 flex items-center">
             <span class="text-2xl font-bold text-gray-800 dark:text-white">
               {Module.display_name(@module)}
             </span>
@@ -428,7 +428,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           module={SecopServiceWeb.Components.HistoryDB}
           id={"module-plot:" <> to_string(@module.name)}
           secop_obj={@module}
-          class="w-3/5 p-4 hidden xl:block"
+          class="w-3/5 hidden xl:block"
         />
       <% end %>
     </div>

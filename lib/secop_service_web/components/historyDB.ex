@@ -228,9 +228,8 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   def render(assigns) do
     ~H"""
     <div class={["h-full", assigns[:class]]}>
-      <!-- Main content area - plot -->
-          <!-- Button sidebar on the right -->
-      <div class=" flex  gap-2 h-full mb-2">
+      <div class = "flex h-full">
+       <div class="flex flex-col space-y-2 pl-2 pr-2">
         <button
           class={[
             "px-4 py-2 rounded-lg focus:outline-none",
@@ -260,9 +259,40 @@ defmodule SecopServiceWeb.Components.HistoryDB do
             <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
           </div>
         </button>
+
+        <button
+          class={[
+            "px-4 py-2 rounded-lg focus:outline-none",
+            @display_mode == :table &&
+              "bg-stone-500 text-white hover:bg-stone-600 dark:bg-purple-700 dark:hover:bg-stone-800",
+            @display_mode != :table &&
+              "bg-stone-300 dark:bg-stone-600 dark:text-white hover:bg-stone-400 dark:hover:bg-stone-700"
+          ]}
+          phx-click={JS.push("get-csv", value: %{get: "csv"}, target: @myself)}
+        >
+          <div class="flex items-center">
+            <.icon name="hero-arrow-down-tray" class="h-5 w-5 flex-none mr-1" /> CSV
+          </div>
+        </button>
+        <!--
+        <button
+          class={[
+            "px-4 py-2 rounded-lg focus:outline-none",
+            @display_mode == :table &&
+              "bg-stone-500 text-white hover:bg-stone-600 dark:bg-purple-700 dark:hover:bg-stone-800",
+            @display_mode != :table &&
+              "bg-stone-300 dark:bg-stone-600 dark:text-white hover:bg-stone-400 dark:hover:bg-stone-700"
+          ]}
+          phx-click={JS.push("get-nexus", value: %{get: "nexus"}, target: @myself)}
+        >
+          <div class="flex items-center">
+            <img src="/images/nexus-fav.svg"  class="h-5 w-5 flex-none mr-1" alt="CSV" /> NeXus
+          </div>
+        </button>
+        -->
       </div>
 
-      <div class="h-full">
+      <div class="flex-1">
         <%= case @display_mode do %>
           <% :graph -> %>
             <%= if @plottable do %>
@@ -270,7 +300,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                 <:loading>
                   <div
                     class="animate-pulse flex items-center justify-center h-full text-center bg-gray-300 p-4 rounded-lg"
-                    style="min-height: 400px;"
+
                   >
                     <span class="text-gray-700">Fetching Plot Data</span>
                   </div>
@@ -279,7 +309,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                   ERROR
                 </:failed>
 
-                <div class="bg-gray-300 p-4 rounded-lg h-full relative" style="min-height: 400px;">
+                <div class="bg-gray-300 p-1 rounded-lg h-full relative" >
                   <!-- Loading overlay - will be hidden by the JS hook when Plotly is ready -->
                   <div
                     id={"#{@id}-loading"}
@@ -292,7 +322,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
 
                   <div
                     id={@id}
-                    class="w-full h-full"
+                    class=""
                     phx-hook="PlotlyChart"
                     phx-update="ignore"
                     data-loading-id={"#{@id}-loading"}
@@ -304,7 +334,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
             <% else %>
               <div
                 class="flex items-center justify-center h-full text-center bg-gray-300 p-4 rounded-lg"
-                style="min-height: 400px;"
+
               >
                 <span class="text-gray-800">Data not plottable</span>
               </div>
@@ -369,6 +399,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               />
             </.async_result>
         <% end %>
+      </div>
       </div>
     </div>
     """
