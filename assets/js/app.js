@@ -77,7 +77,7 @@ Hooks.PlotlyChart = {
             x: x,  // Array of x arrays
             y: y   // Array of y arrays
           },
-          traceIndices || [0],maxPoints= maxPoints);
+          traceIndices || [0], maxPoints);
 
           const now = new Date();
           const layout = this.el.layout;

@@ -274,7 +274,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
             <.icon name="hero-arrow-down-tray" class="h-5 w-5 flex-none mr-1" /> CSV
           </div>
         </button>
-
+        <!--
         <button
           class={[
             "px-4 py-2 rounded-lg focus:outline-none",
@@ -289,6 +289,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
             <img src="/images/nexus-fav.svg"  class="h-5 w-5 flex-none mr-1" alt="CSV" /> NeXus
           </div>
         </button>
+        -->
       </div>
 
       <div class="flex-1">

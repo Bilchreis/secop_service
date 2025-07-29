@@ -17,8 +17,9 @@ defmodule SecopService.PlotDB do
             %{count: 30, label: "30m", step: "minute", stepmode: "backward"},
             %{count: 1, label: "1h", step: "hour", stepmode: "backward"},
             %{count: 1, label: "1d", step: "day", stepmode: "backward"},
-            %{step: "all", label: "All"},
+            %{step: "all", label: "all"}
           ],
+          active: 5,
           x: 0,
           y: 1.02,
           xanchor: "left",
@@ -38,28 +39,28 @@ defmodule SecopService.PlotDB do
       height: 310,
 
        # Add range slider toggle buttons positioned next to rangeselector
-updatemenus: [
-  %{
-    type: "buttons",
-    direction: "left",
-    buttons: [
-      %{
-        args: [%{"xaxis.rangeslider.visible" => false}],
-        args2: [%{"xaxis.rangeslider.visible" => true}],
-        label: "Range Selector",
-        method: "relayout"
-      }
-    ],
-    pad: %{r: 0, t: 0, l: 0, b: 0},
-    showactive: false,
-    x: 0.24 ,
-    xanchor: "left",
-    y: 0.99,
-    yanchor: "bottom",
-    bgcolor: "rgba(200,200,200,1)",  # Transparent background
-    font: %{size: 12}
-  }
-]
+      updatemenus: [
+        %{
+          type: "buttons",
+          direction: "left",
+          buttons: [
+            %{
+              args: [%{"xaxis.rangeslider.visible" => false}],
+              args2: [%{"xaxis.rangeslider.visible" => true}],
+              label: "Range Selector",
+              method: "relayout"
+            }
+          ],
+          pad: %{r: 0, t: 0, l: 0, b: 0},
+          showactive: false,
+          x: 0.28 ,
+          xanchor: "left",
+          y: 0.99,
+          yanchor: "bottom",
+          bgcolor: "rgba(200,200,200,1)",  # Transparent background
+          font: %{size: 11}
+        }
+      ]
 
 
 
