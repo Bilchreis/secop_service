@@ -180,7 +180,6 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   def display_parameter(assigns) do
 
-
     ~H"""
     <%= case @datainfo["type"] do %>
     <% "struct" -> %>
@@ -189,7 +188,10 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         datainfo={@datainfo}
       />
     <% "tuple" -> %>
-      tuple
+      <.display_tuple
+        parameter_value={@parameter_value}
+        datainfo={@datainfo}
+      />
 
     <% type when type in ["double", "int", "scaled"] -> %>
       <.display_numeric
@@ -309,6 +311,8 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         _ -> false
       end)
 
+
+
     # Get color based on parameter value using modulo to cycle through colors
     color_index = rem(assigns.parameter_value, length(color_lut))
     color_classes = Enum.at(color_lut, color_index)
@@ -348,17 +352,43 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
     """
   end
 
+  attr :datainfo, :map, required: true
+  attr :parameter_value, :map, required: true
+  def display_tuple(assigns) do
+
+    ~H"""
+    <div class="flex items-center">
+      (
+      <%= for element <- Enum.intersperse(Enum.with_index(@datainfo["members"]), :comma) do %>
+        <%= if element == :comma do %>
+          <span >,</span>
+        <% else %>
+          <% {member_info, member_index} = element %>
+          <div>
+            <.display_parameter
+              parameter_value={Enum.at(@parameter_value, elem(element,1))}
+              datainfo={elem(element,0)}
+            />
+          </div>
+        <% end %>
+      <% end %>
+      )
+      </div>
+    """
+  end
+
+
 
 
   attr :datainfo, :map, required: true
   attr :parameter_value, :map, required: true
   def display_array(assigns) do
     ~H"""
-    <div class="flex items-center">
+    <div class="flex flex-wrap items-center">
       [
       <%= for element <- Enum.intersperse(@parameter_value, :comma) do %>
         <%= if element == :comma do %>
-          <span class="mx-1">,</span>
+          <span >,</span>
         <% else %>
           <div>
             <.display_parameter

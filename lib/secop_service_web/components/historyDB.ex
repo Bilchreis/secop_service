@@ -53,7 +53,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
           |> assign(:plot, nil)
 
         socket =
-          if PlotDB.get_parameter(secop_obj) |> PlotDB.plottable?() do
+          if PlotDB.plottable?(secop_obj) do
             assign(socket, :display_mode, :graph)
             |> assign(:plottable, true)
             |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)

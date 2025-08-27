@@ -167,7 +167,7 @@ defmodule SecopServiceWeb.DashboardComponents do
       end)
 
     ~H"""
-    <div class="flex-none  p-3  mt-4  bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
+    <div class="sticky top-0 flex-none  p-3  mt-4  bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg">
       <span class="text-lg font-bold  text-black dark:text-white ">Module Status:</span>
       <ul class="mt-1 space-y space-y-2 text-sm font-medium">
         <%= for module <- @node.modules do %>
@@ -266,7 +266,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                   </.property>
                 <% end %>
 
-                <%= for {property_name, property_value} <- @module.custom_properties do %>
+                <%= for {property_name, property_value} <- @module.custom_properties, property_name != "_plotly" do %>
                   <.property
                     prop_key={String.replace_prefix(property_name, "_", "")}
                     key_class="text-gray-600 dark:text-gray-400 font-semibold"
