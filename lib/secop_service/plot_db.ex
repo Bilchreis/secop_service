@@ -129,7 +129,10 @@ defmodule SecopService.PlotDB do
 
     case path do
       [] -> value
-      [key | tail] when is_binary(key) -> get_element(Map.get(value, key, %{}), tail)
+      [key | tail] when is_binary(key) ->
+        # Handle both string and atom keys
+        result = Map.get(value, key) || Map.get(value, String.to_atom(key))
+        get_element(result, tail)
       [index | tail] when is_integer(index) -> get_element(Enum.at(value, index), tail)
     end
 
@@ -141,9 +144,12 @@ defmodule SecopService.PlotDB do
     indices = Map.get(plotly_specifier, "indices", "all")
 
 
+
     data = raw_data
       |> Map.get(parameter, [])
       |> Map.get(type, [])
+
+
 
 
     extracted_data = case indices do
@@ -158,6 +164,7 @@ defmodule SecopService.PlotDB do
 
   end
 
+
   # drivable with plotly specification
   def get_data(%{plotly: plotly}=plot_map,value_ts, value_val, target_ts, target_val) do
     raw_data = %{
@@ -167,8 +174,9 @@ defmodule SecopService.PlotDB do
 
     data = Map.get(plotly, "data", [])
 
-    data = Enum.reduce(data, [], fn trace, acc ->
+    data = Enum.reduce(data, [], fn trace, data_acc ->
       new_data = Enum.reduce(trace, %{}, fn {key, value}, acc ->
+        acc = Map.put(acc, key, value)
         case value do
           # Plotly path and parameter
           %{"path" => path, "parameter" => parameter} -> Map.put(acc, key, process_plot_data(raw_data, value))
@@ -177,18 +185,114 @@ defmodule SecopService.PlotDB do
         end
 
       end)
-      [new_data | acc]
+
+      [new_data | data_acc]
+
     end)
 
+
+    data = Enum.reverse(data)
     Map.put(plot_map, :data, data)
   end
 
   # readable/single parameter with plotly specification
-  def get_data(%{plotly: _}=plot_map,value_ts, value_val) do
-    plot_map
+  def get_data(%{plotly: plotly}=plot_map,value_ts, value_val) do
+    raw_data = %{
+      "value" => %{"timestamp" => value_ts, "value" => value_val}
+    }
+
+    data = Map.get(plotly, "data", [])
+
+    data = Enum.reduce(data, [], fn trace, data_acc ->
+      new_data = Enum.reduce(trace, %{}, fn {key, value}, acc ->
+        acc = Map.put(acc, key, value)
+        case value do
+          # Plotly path and parameter
+          %{"path" => path, "parameter" => parameter} -> Map.put(acc, key, process_plot_data(raw_data, value))
+          # Standard plotly specifier
+          _ -> Map.put(acc, key, value)
+        end
+
+      end)
+
+      [new_data | data_acc]
+
+    end)
+
+
+    data = Enum.reverse(data)
+    Map.put(plot_map, :data, data)
   end
 
 
+    def get_trace_updates(%{plotly: nil}=plot_map,value,timestamp,parameter) do
+    trace_index =
+      Enum.find_index(plot_map.data, fn trace ->
+        trace[:name] == parameter
+      end) || 0
+
+    # Format data for the extend-traces event
+    # The event expects arrays of arrays (one per trace)
+    update_data = %{
+      # Add one timestamp to the specified trace
+      x: [[timestamp]],
+      # Add one value to the specified trace
+      y: [[value]],
+      traceIndices: [trace_index]
+    }
+  end
+
+
+  # Get the updates for an incoming datareport with plotly specification
+  def get_trace_updates(%{plotly: plotly}=plot_map, value, timestamp, parameter) do
+    raw_data = %{
+      parameter => %{"timestamp" => [timestamp], "value" => [value]}
+    }
+
+
+    # Only collect traces that match the parameter
+    matching_traces = plotly["data"]
+      |> Enum.with_index()
+      |> Enum.filter(fn {trace, _index} ->
+          Map.get(trace, "parameter", "") == parameter
+      end)
+
+    # If no matching traces, return empty update
+    if Enum.empty?(matching_traces) do
+      %{x: [], y: [], traceIndices: []}
+    else
+      # Process only the matching traces
+      Enum.reduce(matching_traces, %{x: [], y: [], traceIndices: []}, fn {trace, index}, acc ->
+        {x, y, trace_indices} = get_extension(trace, index, raw_data)
+        %{
+          x: acc.x ++ [x],
+          y: acc.y ++ [y],
+          traceIndices: acc.traceIndices ++ trace_indices
+        }
+      end)
+    end
+  end
+
+
+
+  def get_extension(trace,trace_index,raw_data) do
+    xdata =if Map.has_key?(trace,"x") do
+      process_plot_data(raw_data, trace["x"])
+    else
+      [nil]
+    end
+
+
+
+    ydata = if Map.has_key?(trace,"y") do
+      process_plot_data(raw_data, trace["y"])
+    else
+      [nil]
+    end
+
+
+    {xdata, ydata, [trace_index]}
+  end
 
   def plottable?(%SecopService.Sec_Nodes.Parameter{} = parameter) do
     has_plotly_property = Map.has_key?(parameter.custom_properties || %{}, "_plotly")

@@ -308,7 +308,7 @@ defmodule SecopServiceWeb.BrowseComponents do
                 </.property>
               <% end %>
 
-              <%= for {property_name, property_value} <- @module.custom_properties do %>
+              <%= for {property_name, property_value} <- @module.custom_properties, property_name != "_plotly"  do %>
                 <.property
                   prop_key={String.replace_prefix(property_name, "_", "")}
                   key_class="text-gray-600 dark:text-gray-400 font-semibold"
