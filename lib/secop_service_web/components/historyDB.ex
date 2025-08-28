@@ -53,7 +53,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
           |> assign(:plot, nil)
 
         socket =
-          if PlotDB.get_parameter(secop_obj) |> PlotDB.plottable?() do
+          if PlotDB.plottable?(secop_obj) do
             assign(socket, :display_mode, :graph)
             |> assign(:plottable, true)
             |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
@@ -101,26 +101,19 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               timestamp = trunc(timestamp * 1000)
               # Find the trace index based on the parameter name
               # This assumes traces are ordered by parameter name in plot.data
-              trace_index =
-                Enum.find_index(socket.assigns.plot.result.data, fn trace ->
-                  trace[:name] == parameter
-                end) || 0
+
 
               # Format data for the extend-traces event
               # The event expects arrays of arrays (one per trace)
-              update_data = %{
-                # Add one timestamp to the specified trace
-                x: [[timestamp]],
-                # Add one value to the specified trace
-                y: [[value]],
-                traceIndices: [trace_index]
-              }
+              update_data = PlotDB.get_trace_updates(socket.assigns.plot.result, value, timestamp, parameter)
+
+
 
               # Push the event to the client
               push_event(socket, "extend-traces-#{socket.assigns.id}", update_data)
 
-            _ ->
-              socket
+            _ -> Logger.warning("Received Datareport without timestamp qualifier #{inspect(qualifiers)}, Data: #{inspect(value)}")
+             socket
           end
 
         socket

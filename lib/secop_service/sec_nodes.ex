@@ -249,7 +249,7 @@ defmodule SecopService.Sec_Nodes do
     describe_str = Jason.encode!(node_data.raw_description)
     check_result = check_description(describe_str,"1.0","json")
 
-    IO.inspect(check_result, label: "Check Result")
+
     # Extract basic node attributes
     attrs = %{
       uuid: node_data.uuid,
