@@ -186,7 +186,7 @@ defmodule SecopService.Sec_Nodes do
   defp check_description(describe_str,version \\ "1.0",output \\ "json") do
 
 
-    {result, globals} =
+    {result, _globals} =
       Pythonx.eval(
         """
         from secop_check.checker import Checker
@@ -247,7 +247,7 @@ defmodule SecopService.Sec_Nodes do
       end)
 
     describe_str = Jason.encode!(node_data.raw_description)
-    check_result = check_description(describe_str,"1.0","json")
+    check_result = check_description(describe_str)
 
 
     # Extract basic node attributes

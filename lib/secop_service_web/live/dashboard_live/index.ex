@@ -3,7 +3,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   use SecopServiceWeb, :live_view
 
   alias SecopServiceWeb.DashboardLive.Model, as: Model
-  alias SecopService.NodeControl
   alias SecopClient
   alias SEC_Node_Supervisor
   alias SEC_Node
@@ -369,10 +368,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     )
   end
 
-  defp remove_last_segment(topic) do
-    parts = String.split(topic, ":")
-    parts |> Enum.drop(-1) |> Enum.join(":")
-  end
+  #defp remove_last_segment(topic) do
+  #  parts = String.split(topic, ":")
+  #  parts |> Enum.drop(-1) |> Enum.join(":")
+  #end
 
   defp path_from_unsigned_params(unsigned_params) do
     host = unsigned_params["host"]

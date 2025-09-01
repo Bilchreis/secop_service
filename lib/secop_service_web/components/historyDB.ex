@@ -2,7 +2,6 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   use Phoenix.LiveComponent
   import SecopServiceWeb.CoreComponents
   require Logger
-  alias PlotPublisher
   alias SecopService.PlotDB
   alias SecopService.Sec_Nodes
   alias SecopService.Sec_Nodes.ParameterValue

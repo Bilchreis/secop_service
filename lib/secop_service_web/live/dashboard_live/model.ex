@@ -105,9 +105,6 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     model
   end
 
-  def set_state(model, state) do
-    model
-  end
 
   def process_data_report("status", data_report, datainfo) do
     if data_report != nil do
@@ -157,13 +154,8 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     end
   end
 
-  def init_node(node) do
-    node
-  end
 
-  def add_node(model, node) do
-    model
-  end
+
 
   def stat_code_lookup(stat_code, status_datainfo) do
     status_datainfo["members"]

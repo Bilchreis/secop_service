@@ -123,7 +123,7 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
   # Helpers for working with stored values
 
   # Get the raw value with appropriate type handling
-  def get_raw_value(parameter_value, parameter) do
+  def get_raw_value(parameter_value, _parameter) do
     case parameter_value.value do
       # Handle different map structures
       %{"value" => v} ->

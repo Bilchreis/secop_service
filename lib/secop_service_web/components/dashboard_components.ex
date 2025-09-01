@@ -12,7 +12,7 @@ defmodule SecopServiceWeb.DashboardComponents do
 
   import SECoPComponents
   import SecopServiceWeb.BrowseComponents
-  import SecopServiceWeb.CoreComponents
+
 
   attr :node, :map, required: true
   attr :state_map, :map, required: true

@@ -4,7 +4,6 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
   require Logger
 
   alias SecopServiceWeb.DashboardLive.Model
-  alias SecopService.Sec_Nodes.ParameterValue
   alias SecopService.NodeControl
   alias NodeTable
   import SecopServiceWeb.CoreComponents
@@ -32,7 +31,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
     end
   end
 
-  def get_display_value(raw_value, datainfo, depth) do
+  def get_display_value(raw_value, datainfo, _depth) do
     unit = datainfo["unit"] || ""
 
     case datainfo["type"] do
@@ -129,12 +128,12 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   @impl true
   def update(%{value_update: data_report} = _assigns, socket) do
-    parameter = socket.assigns.parameter
+    #parameter = socket.assigns.parameter
 
     parameter_value =
       case data_report do
         nil -> "Waiting for data..."
-        val_map -> Enum.at(data_report, 0)
+        [value,_qualifiers] -> value
       end
 
     {:ok, assign(socket, :parameter_value, parameter_value)}
@@ -363,7 +362,6 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         <%= if element == :comma do %>
           <span >,</span>
         <% else %>
-          <% {member_info, member_index} = element %>
           <div>
             <.display_parameter
               parameter_value={Enum.at(@parameter_value, elem(element,1))}
