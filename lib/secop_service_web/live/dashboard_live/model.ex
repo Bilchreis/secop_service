@@ -52,6 +52,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
   def get_val_map(db_node) do
     node_id = SEC_Node.get_node_id(db_node)
+
     Enum.reduce(db_node.modules, %{}, fn module, mod_acc ->
       parameter_map =
         Enum.reduce(module.parameters, %{}, fn parameter, param_acc ->
@@ -105,10 +106,6 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     model
   end
 
-  def set_state(model, state) do
-    model
-  end
-
   def process_data_report("status", data_report, datainfo) do
     if data_report != nil do
       [value, _qualifiers] = data_report
@@ -155,14 +152,6 @@ defmodule SecopServiceWeb.DashboardLive.Model do
           {:ok, :updated, put_in(values, [module, accessible], merged_param_val)}
         end
     end
-  end
-
-  def init_node(node) do
-    node
-  end
-
-  def add_node(model, node) do
-    model
   end
 
   def stat_code_lookup(stat_code, status_datainfo) do

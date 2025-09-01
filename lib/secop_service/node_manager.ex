@@ -2,8 +2,6 @@ defmodule SecopService.NodeManager do
   use GenServer
   require Logger
   alias SecopService.Sec_Nodes
-  alias SecopService.Repo
-  alias Phoenix.PubSub
   alias SEC_Node_Supervisor
   alias SecopService.NodeDBWriterSupervisor
 
@@ -62,6 +60,25 @@ defmodule SecopService.NodeManager do
     handle_cast(:sync_nodes, state)
   end
 
+  def handle_info({:conn_state, _pubsub_topic, _active}, state) do
+    # TODO
+
+    {:noreply, state}
+  end
+
+  def handle_info({:state_change, pubsub_topic, _node_state}, state) do
+    Logger.info("new node status: #{pubsub_topic} #{state.state}")
+
+    {:noreply, state}
+  end
+
+  def handle_info({:new_node, _pubsub_topic, node_state}, state) do
+    Logger.info("New node: #{node_state.equipment_id} #{node_state.host} (#{node_state.port})")
+
+    handle_cast(:sync_nodes, state)
+    {:noreply, state}
+  end
+
   def handle_info({:description_change, _pubsub_topic, node_state}, state) do
     # Handle node description changes
     Logger.info("Description Change for node: #{node_state.equipment_id}")
@@ -97,25 +114,6 @@ defmodule SecopService.NodeManager do
       nil -> nil
       node -> node.uuid
     end
-  end
-
-  def handle_info({:conn_state, _pubsub_topic, active}, state) do
-    # TODO
-
-    {:noreply, state}
-  end
-
-  def handle_info({:state_change, pubsub_topic, _node_state}, state) do
-    Logger.info("new node status: #{pubsub_topic} #{state.state}")
-
-    {:noreply, state}
-  end
-
-  def handle_info({:new_node, _pubsub_topic, node_state}, state) do
-    Logger.info("New node: #{node_state.equipment_id} #{node_state.host} (#{node_state.port})")
-
-    handle_cast(:sync_nodes, state)
-    {:noreply, state}
   end
 
   # Private functions
@@ -170,7 +168,7 @@ defmodule SecopService.NodeManager do
 
     # Update statenode
     merged_nodes =
-      Map.merge(old_nodes, result, fn _key, new_node, old_node -> new_node end)
+      Map.merge(old_nodes, result, fn _key, new_node, _old_node -> new_node end)
       |> keep_common_keys(active_nodes)
 
     %{state | nodes: merged_nodes}

@@ -17,7 +17,7 @@ defmodule SecopServiceWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import SecopServiceWeb.Gettext
+  use Gettext, backend: SecopServiceWeb.Gettext
 
   @doc """
   Renders a modal.

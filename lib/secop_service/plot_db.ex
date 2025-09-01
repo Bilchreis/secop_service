@@ -2,9 +2,9 @@ defmodule SecopService.PlotDB do
   alias SecopService.Util
   alias SecopService.Sec_Nodes
 
-  @layout
   @max_retries 3
-  @retry_delay 4000  # milliseconds
+  # milliseconds
+  @retry_delay 4000
 
   defp get_values_with_retry(param_id, retries \\ 0) do
     values = Sec_Nodes.get_values(param_id)
@@ -13,12 +13,13 @@ defmodule SecopService.PlotDB do
       [] when retries < @max_retries ->
         :timer.sleep(@retry_delay)
         get_values_with_retry(param_id, retries + 1)
+
       _ ->
         values
     end
   end
 
-  def get_layout(%{plotly: nil}=plot_map) do
+  def get_layout(%{plotly: nil} = plot_map) do
     layout = %{
       xaxis: %{
         title: %{text: "Time"},
@@ -46,12 +47,10 @@ defmodule SecopService.PlotDB do
       paper_bgcolor: "rgba(0,0,0,0",
       ## background color of plot area
       plot_bgcolor: "rgba(0,0,0,0)",
-
-
       autosize: true,
       height: 310,
 
-       # Add range slider toggle buttons positioned next to rangeselector
+      # Add range slider toggle buttons positioned next to rangeselector
       updatemenus: [
         %{
           type: "buttons",
@@ -66,32 +65,62 @@ defmodule SecopService.PlotDB do
           ],
           pad: %{r: 0, t: 0, l: 0, b: 0},
           showactive: false,
-          x: 0.28 ,
+          x: 0.28,
           xanchor: "left",
           y: 0.99,
           yanchor: "bottom",
-          bgcolor: "rgba(200,200,200,1)",  # Transparent background
+          # Transparent background
+          bgcolor: "rgba(200,200,200,1)",
           font: %{size: 11}
         }
       ]
-
-
-
     }
 
     Map.put(plot_map, :layout, layout)
   end
 
-  def get_layout(%{plotly: plotly}=plot_map) do
+  def get_layout(%{plotly: plotly} = plot_map) do
     layout = Map.get(plotly, "layout", [])
 
     Map.put(plot_map, :layout, layout)
-
   end
 
+  defp get_element(value, path) do
+    case path do
+      [] ->
+        value
+
+      [key | tail] when is_binary(key) ->
+        # Handle both string and atom keys
+        result = Map.get(value, key) || Map.get(value, String.to_atom(key))
+        get_element(result, tail)
+
+      [index | tail] when is_integer(index) ->
+        get_element(Enum.at(value, index), tail)
+    end
+  end
+
+  defp process_plot_data(raw_data, plotly_specifier) do
+    {type, path} = Map.get(plotly_specifier, "path", []) |> List.pop_at(0)
+    parameter = Map.get(plotly_specifier, "parameter", "")
+    indices = Map.get(plotly_specifier, "indices", "all")
+
+    data =
+      raw_data
+      |> Map.get(parameter, [])
+      |> Map.get(type, [])
+
+    extracted_data =
+      case indices do
+        "all" -> Enum.reduce(data, [], fn value, acc -> acc ++ [get_element(value, path)] end)
+        0 -> Enum.at(data, 0) |> get_element(path)
+      end
+
+    extracted_data
+  end
 
   # single parameter/readable with scalar data
-  def get_data(%{plotly: nil}=plot_map, value_ts, value_val) do
+  def get_data(%{plotly: nil} = plot_map, value_ts, value_val) do
     data = [
       %{
         x: value_ts,
@@ -101,11 +130,44 @@ defmodule SecopService.PlotDB do
         name: "value"
       }
     ]
+
+    Map.put(plot_map, :data, data)
+  end
+
+  # readable/single parameter with plotly specification
+  def get_data(%{plotly: plotly} = plot_map, value_ts, value_val) do
+    raw_data = %{
+      "value" => %{"timestamp" => value_ts, "value" => value_val}
+    }
+
+    data = Map.get(plotly, "data", [])
+
+    data =
+      Enum.reduce(data, [], fn trace, data_acc ->
+        new_data =
+          Enum.reduce(trace, %{}, fn {key, value}, acc ->
+            acc = Map.put(acc, key, value)
+
+            case value do
+              # Plotly path and parameter
+              %{"path" => _path, "parameter" => _parameter} ->
+                Map.put(acc, key, process_plot_data(raw_data, value))
+
+              # Standard plotly specifier
+              _ ->
+                Map.put(acc, key, value)
+            end
+          end)
+
+        [new_data | data_acc]
+      end)
+
+    data = Enum.reverse(data)
     Map.put(plot_map, :data, data)
   end
 
   # drivable with scalar data
-  def get_data(%{plotly: nil}=plot_map, value_ts, value_val, target_ts, target_val) do
+  def get_data(%{plotly: nil} = plot_map, value_ts, value_val, target_ts, target_val) do
     data = [
       %{
         x: value_ts,
@@ -122,51 +184,12 @@ defmodule SecopService.PlotDB do
         name: "target"
       }
     ]
+
     Map.put(plot_map, :data, data)
   end
 
-  defp get_element(value,path) do
-
-    case path do
-      [] -> value
-      [key | tail] when is_binary(key) ->
-        # Handle both string and atom keys
-        result = Map.get(value, key) || Map.get(value, String.to_atom(key))
-        get_element(result, tail)
-      [index | tail] when is_integer(index) -> get_element(Enum.at(value, index), tail)
-    end
-
-  end
-
-  defp process_plot_data(raw_data, plotly_specifier) do
-    {type,path} = Map.get(plotly_specifier, "path", []) |> List.pop_at(0)
-    parameter = Map.get(plotly_specifier, "parameter", "")
-    indices = Map.get(plotly_specifier, "indices", "all")
-
-
-
-    data = raw_data
-      |> Map.get(parameter, [])
-      |> Map.get(type, [])
-
-
-
-
-    extracted_data = case indices do
-      "all" -> Enum.reduce(data, [], fn value, acc -> acc ++ [get_element(value, path)]    end)
-      0 -> Enum.at(data,0) |> get_element(path)
-
-
-    end
-
-
-    extracted_data
-
-  end
-
-
   # drivable with plotly specification
-  def get_data(%{plotly: plotly}=plot_map,value_ts, value_val, target_ts, target_val) do
+  def get_data(%{plotly: plotly} = plot_map, value_ts, value_val, target_ts, target_val) do
     raw_data = %{
       "value" => %{"timestamp" => value_ts, "value" => value_val},
       "target" => %{"timestamp" => target_ts, "value" => target_val}
@@ -174,58 +197,31 @@ defmodule SecopService.PlotDB do
 
     data = Map.get(plotly, "data", [])
 
-    data = Enum.reduce(data, [], fn trace, data_acc ->
-      new_data = Enum.reduce(trace, %{}, fn {key, value}, acc ->
-        acc = Map.put(acc, key, value)
-        case value do
-          # Plotly path and parameter
-          %{"path" => path, "parameter" => parameter} -> Map.put(acc, key, process_plot_data(raw_data, value))
-          # Standard plotly specifier
-          _ -> Map.put(acc, key, value)
-        end
+    data =
+      Enum.reduce(data, [], fn trace, data_acc ->
+        new_data =
+          Enum.reduce(trace, %{}, fn {key, value}, acc ->
+            acc = Map.put(acc, key, value)
 
+            case value do
+              # Plotly path and parameter
+              %{"path" => _path, "parameter" => _parameter} ->
+                Map.put(acc, key, process_plot_data(raw_data, value))
+
+              # Standard plotly specifier
+              _ ->
+                Map.put(acc, key, value)
+            end
+          end)
+
+        [new_data | data_acc]
       end)
-
-      [new_data | data_acc]
-
-    end)
-
 
     data = Enum.reverse(data)
     Map.put(plot_map, :data, data)
   end
 
-  # readable/single parameter with plotly specification
-  def get_data(%{plotly: plotly}=plot_map,value_ts, value_val) do
-    raw_data = %{
-      "value" => %{"timestamp" => value_ts, "value" => value_val}
-    }
-
-    data = Map.get(plotly, "data", [])
-
-    data = Enum.reduce(data, [], fn trace, data_acc ->
-      new_data = Enum.reduce(trace, %{}, fn {key, value}, acc ->
-        acc = Map.put(acc, key, value)
-        case value do
-          # Plotly path and parameter
-          %{"path" => path, "parameter" => parameter} -> Map.put(acc, key, process_plot_data(raw_data, value))
-          # Standard plotly specifier
-          _ -> Map.put(acc, key, value)
-        end
-
-      end)
-
-      [new_data | data_acc]
-
-    end)
-
-
-    data = Enum.reverse(data)
-    Map.put(plot_map, :data, data)
-  end
-
-
-    def get_trace_updates(%{plotly: nil}=plot_map,value,timestamp,parameter) do
+  def get_trace_updates(%{plotly: nil} = plot_map, value, timestamp, parameter) do
     trace_index =
       Enum.find_index(plot_map.data, fn trace ->
         trace[:name] == parameter
@@ -233,7 +229,7 @@ defmodule SecopService.PlotDB do
 
     # Format data for the extend-traces event
     # The event expects arrays of arrays (one per trace)
-    update_data = %{
+    %{
       # Add one timestamp to the specified trace
       x: [[timestamp]],
       # Add one value to the specified trace
@@ -242,19 +238,18 @@ defmodule SecopService.PlotDB do
     }
   end
 
-
   # Get the updates for an incoming datareport with plotly specification
-  def get_trace_updates(%{plotly: plotly}=plot_map, value, timestamp, parameter) do
+  def get_trace_updates(%{plotly: plotly} = _plot_map, value, timestamp, parameter) do
     raw_data = %{
       parameter => %{"timestamp" => [timestamp], "value" => [value]}
     }
 
-
     # Only collect traces that match the parameter
-    matching_traces = plotly["data"]
+    matching_traces =
+      plotly["data"]
       |> Enum.with_index()
       |> Enum.filter(fn {trace, _index} ->
-          Map.get(trace, "parameter", "") == parameter
+        Map.get(trace, "parameter", "") == parameter
       end)
 
     # If no matching traces, return empty update
@@ -264,6 +259,7 @@ defmodule SecopService.PlotDB do
       # Process only the matching traces
       Enum.reduce(matching_traces, %{x: [], y: [], traceIndices: []}, fn {trace, index}, acc ->
         {x, y, trace_indices} = get_extension(trace, index, raw_data)
+
         %{
           x: acc.x ++ [x],
           y: acc.y ++ [y],
@@ -273,23 +269,20 @@ defmodule SecopService.PlotDB do
     end
   end
 
+  def get_extension(trace, trace_index, raw_data) do
+    xdata =
+      if Map.has_key?(trace, "x") do
+        process_plot_data(raw_data, trace["x"])
+      else
+        [nil]
+      end
 
-
-  def get_extension(trace,trace_index,raw_data) do
-    xdata =if Map.has_key?(trace,"x") do
-      process_plot_data(raw_data, trace["x"])
-    else
-      [nil]
-    end
-
-
-
-    ydata = if Map.has_key?(trace,"y") do
-      process_plot_data(raw_data, trace["y"])
-    else
-      [nil]
-    end
-
+    ydata =
+      if Map.has_key?(trace, "y") do
+        process_plot_data(raw_data, trace["y"])
+      else
+        [nil]
+      end
 
     {xdata, ydata, [trace_index]}
   end
@@ -385,7 +378,6 @@ defmodule SecopService.PlotDB do
     target_param = Enum.find(module.parameters, fn param -> param.name == "target" end)
 
     if plottable?(value_param) or Map.has_key?(module.custom_properties, "_plotly") do
-
       plot_map =
         Map.put(plot_map, :plottable, true)
         |> get_unit(value_param)
@@ -399,14 +391,10 @@ defmodule SecopService.PlotDB do
 
       plot_map = plot_available(plot_map, value_val)
 
-
-
-
-      plot_map = plot_map
+      plot_map =
+        plot_map
         |> get_data(value_ts, value_val, target_ts, target_val)
         |> get_layout()
-
-
 
       config =
         %{
@@ -414,8 +402,7 @@ defmodule SecopService.PlotDB do
           displayModeBar: false
         }
 
-
-      Map.put(plot_map,:config, config)
+      Map.put(plot_map, :config, config)
     else
       not_plottable()
     end
@@ -438,8 +425,8 @@ defmodule SecopService.PlotDB do
 
         plot_map = plot_available(plot_map, value_val)
 
-
-        plot_map = plot_map
+        plot_map =
+          plot_map
           |> get_data(value_ts, value_val)
           |> get_layout()
 
@@ -449,8 +436,7 @@ defmodule SecopService.PlotDB do
             displayModeBar: false
           }
 
-
-        Map.put(plot_map,:config, config)
+        Map.put(plot_map, :config, config)
       else
         not_plottable()
       end
@@ -474,7 +460,8 @@ defmodule SecopService.PlotDB do
 
         plot_map = plot_available(plot_map, value_val)
 
-        plot_map = plot_map
+        plot_map =
+          plot_map
           |> get_data(value_ts, value_val)
           |> get_layout()
 
@@ -484,9 +471,7 @@ defmodule SecopService.PlotDB do
             displayModeBar: false
           }
 
-
-
-        Map.put(plot_map,:config, config)
+        Map.put(plot_map, :config, config)
       else
         not_plottable()
       end

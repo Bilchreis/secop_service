@@ -3,7 +3,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   use SecopServiceWeb, :live_view
 
   alias SecopServiceWeb.DashboardLive.Model, as: Model
-  alias SecopService.NodeControl
   alias SecopClient
   alias SEC_Node_Supervisor
   alias SEC_Node
@@ -54,11 +53,8 @@ defmodule SecopServiceWeb.DashboardLive.Index do
       |> assign(:values, model.values)
       |> assign(:show_connect_modal, false)
 
-
     {:ok, socket}
   end
-
-
 
   ### New Values Map Update
 
@@ -66,25 +62,20 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   def handle_info({:description_change, pubsub_topic, state}, socket) do
     Logger.info("node state change: #{pubsub_topic} #{state.state}")
 
-
-
     node_id = pubsubtopic_to_node_id(pubsub_topic)
     active_nodes = socket.assigns.active_nodes |> Map.put(node_id, state)
     current_node = socket.assigns.current_node
-    values       = socket.assigns.values
-
+    values = socket.assigns.values
 
     socket =
       if state.node_id == SEC_Node.get_node_id(current_node) do
-        {values,current_node} =
+        {values, current_node} =
           if Sec_Nodes.node_exists?(state[:uuid]) do
-
             # unsubscribe ffrom all subs (prevents double updates)
             Phoenix.PubSub.unsubscribe(
-            :secop_client_pubsub,
-            SEC_Node.get_values_pubsub_topic(current_node)
+              :secop_client_pubsub,
+              SEC_Node.get_values_pubsub_topic(current_node)
             )
-
 
             current_node = Sec_Nodes.get_sec_node_by_uuid(state[:uuid])
             values = Model.get_val_map(current_node)
@@ -93,18 +84,20 @@ defmodule SecopServiceWeb.DashboardLive.Index do
               :secop_client_pubsub,
               SEC_Node.get_values_pubsub_topic(current_node)
             )
-            {values,current_node}
+
+            {values, current_node}
           else
             Phoenix.PubSub.unsubscribe(
-            :secop_client_pubsub,
-            SEC_Node.get_values_pubsub_topic(current_node)
+              :secop_client_pubsub,
+              SEC_Node.get_values_pubsub_topic(current_node)
             )
 
             Logger.warning(
               "Node with UUID #{state[:uuid]} does not exist in the database, unsubscribed from pubsub topic."
             )
+
             Process.send_after(self(), {:description_change, pubsub_topic, state}, 500)
-            {values,current_node}
+            {values, current_node}
           end
 
         Logger.info("Current node updated")
@@ -223,8 +216,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
     new_model = model_from_socket(socket) |> Model.set_current_node(new_node_id)
     socket = model_to_socket(new_model, socket)
-
-
 
     Phoenix.PubSub.subscribe(
       :secop_client_pubsub,
@@ -369,10 +360,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     )
   end
 
-  defp remove_last_segment(topic) do
-    parts = String.split(topic, ":")
-    parts |> Enum.drop(-1) |> Enum.join(":")
-  end
+  # defp remove_last_segment(topic) do
+  #  parts = String.split(topic, ":")
+  #  parts |> Enum.drop(-1) |> Enum.join(":")
+  # end
 
   defp path_from_unsigned_params(unsigned_params) do
     host = unsigned_params["host"]
@@ -382,7 +373,4 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     "#{host}:#{port}:#{module}:#{parameter}"
   end
-
-
-
 end
