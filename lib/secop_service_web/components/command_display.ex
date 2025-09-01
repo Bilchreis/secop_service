@@ -3,7 +3,6 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
 
   require Logger
 
-
   alias SecopService.NodeControl
   alias NodeTable
   import SecopServiceWeb.CoreComponents

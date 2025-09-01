@@ -116,10 +116,6 @@ defmodule SecopService.NodeManager do
     end
   end
 
-
-
-
-
   # Private functions
 
   defp schedule_sync do

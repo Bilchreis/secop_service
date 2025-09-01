@@ -36,29 +36,39 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
     case datainfo["type"] do
       "double" ->
-        formatted = case raw_value do
-          val when val == 0.0  -> "0.0"
-          val when abs(val) >= 1000 or abs(val) < 0.001 ->
-            # Use scientific notation for very large or very small numbers
-            :io_lib.format("~.3e", [val]) |> to_string()
-          val ->
-            # Use regular decimal notation with up to 6 decimal places, removing trailing zeros
-            :io_lib.format("~.6f", [val])
-            |> to_string()
-            |> String.replace(~r/\.?0+$/, "")
-        end
+        formatted =
+          case raw_value do
+            val when val == 0.0 ->
+              "0.0"
+
+            val when abs(val) >= 1000 or abs(val) < 0.001 ->
+              # Use scientific notation for very large or very small numbers
+              :io_lib.format("~.3e", [val]) |> to_string()
+
+            val ->
+              # Use regular decimal notation with up to 6 decimal places, removing trailing zeros
+              :io_lib.format("~.6f", [val])
+              |> to_string()
+              |> String.replace(~r/\.?0+$/, "")
+          end
+
         "#{formatted} #{unit}" |> String.trim()
 
       "scaled" ->
-        formatted = case raw_value do
-          val when val == 0.0 -> "0"
-          val when abs(val) >= 1000 or abs(val) < 0.001 ->
-            :io_lib.format("~.3e", [val]) |> to_string()
-          val ->
-            :io_lib.format("~.6f", [val])
-            |> to_string()
-            |> String.replace(~r/\.?0+$/, "")
-        end
+        formatted =
+          case raw_value do
+            val when val == 0.0 ->
+              "0"
+
+            val when abs(val) >= 1000 or abs(val) < 0.001 ->
+              :io_lib.format("~.3e", [val]) |> to_string()
+
+            val ->
+              :io_lib.format("~.6f", [val])
+              |> to_string()
+              |> String.replace(~r/\.?0+$/, "")
+          end
+
         "#{formatted} #{unit}" |> String.trim()
 
       "enum" ->
@@ -128,12 +138,12 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   @impl true
   def update(%{value_update: data_report} = _assigns, socket) do
-    #parameter = socket.assigns.parameter
+    # parameter = socket.assigns.parameter
 
     parameter_value =
       case data_report do
         nil -> "Waiting for data..."
-        [value,_qualifiers] -> value
+        [value, _qualifiers] -> value
       end
 
     {:ok, assign(socket, :parameter_value, parameter_value)}
@@ -172,111 +182,89 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
     {:ok, assign(socket, :set_form, updated_set_form)}
   end
 
-
   attr :parameter_value, :any, required: true
   attr :datainfo, :map, required: true
   attr :depth, :integer, default: 0
 
   def display_parameter(assigns) do
-
     ~H"""
     <%= case @datainfo["type"] do %>
-    <% "struct" -> %>
-      <.display_struct
-        parameter_value={@parameter_value}
-        datainfo={@datainfo}
-      />
-    <% "tuple" -> %>
-      <.display_tuple
-        parameter_value={@parameter_value}
-        datainfo={@datainfo}
-      />
-
-    <% type when type in ["double", "int", "scaled"] -> %>
-      <.display_numeric
-        parameter_value={@parameter_value}
-        datainfo={@datainfo}
-      />
-
-    <% "bool" -> %>
-      <.display_bool
-        parameter_value={@parameter_value}
-        datainfo={@datainfo}
-      />
-    <% "enum" -> %>
-      <.display_enum
-        parameter_value={@parameter_value}
-        datainfo={@datainfo}
-      />
-    <% "array" -> %>
-      <.display_array
-        parameter_value={@parameter_value}
-        datainfo={@datainfo}
-      />
-    <% "string" -> %>
-      <.display_string
-        parameter_value={@parameter_value}
-        datainfo={@datainfo}
-      />
-    <% "blob" -> %>
-      blob
-    <% "matrix" -> %>
-      matrix
-    <% _ -> %>
-      unknown type
+      <% "struct" -> %>
+        <.display_struct parameter_value={@parameter_value} datainfo={@datainfo} />
+      <% "tuple" -> %>
+        <.display_tuple parameter_value={@parameter_value} datainfo={@datainfo} />
+      <% type when type in ["double", "int", "scaled"] -> %>
+        <.display_numeric parameter_value={@parameter_value} datainfo={@datainfo} />
+      <% "bool" -> %>
+        <.display_bool parameter_value={@parameter_value} datainfo={@datainfo} />
+      <% "enum" -> %>
+        <.display_enum parameter_value={@parameter_value} datainfo={@datainfo} />
+      <% "array" -> %>
+        <.display_array parameter_value={@parameter_value} datainfo={@datainfo} />
+      <% "string" -> %>
+        <.display_string parameter_value={@parameter_value} datainfo={@datainfo} />
+      <% "blob" -> %>
+        blob
+      <% "matrix" -> %>
+        matrix
+      <% _ -> %>
+        unknown type
     <% end %>
     """
   end
 
   attr :datainfo, :map, required: true
   attr :parameter_value, :any, required: true
+
   def display_numeric(assigns) do
     assigns =
-    assigns |> assign(:str_value, get_display_value(assigns.parameter_value, assigns.datainfo, 0))
+      assigns
+      |> assign(:str_value, get_display_value(assigns.parameter_value, assigns.datainfo, 0))
 
     ~H"""
-      <%= @str_value %>
+    {@str_value}
     """
-
   end
 
   attr :datainfo, :map, required: true
   attr :parameter_value, :any, required: true
+
   def display_string(assigns) do
     assigns =
-    assigns |> assign(:str_value, get_display_value(assigns.parameter_value, assigns.datainfo, 0))
+      assigns
+      |> assign(:str_value, get_display_value(assigns.parameter_value, assigns.datainfo, 0))
 
     ~H"""
-      <%= @str_value %>
+    {@str_value}
     """
-
   end
 
   attr :datainfo, :map, required: true
   attr :parameter_value, :boolean, required: true
+
   def display_bool(assigns) do
+    badge_color =
+      case assigns.parameter_value do
+        true -> "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200"
+        false -> "bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-200"
+        _ -> "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+      end
 
-    badge_color = case assigns.parameter_value do
-      true -> "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200"
-      false -> "bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-200"
-      _ -> "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-    end
-
-    assigns = assigns
-    |> assign(:str_value, get_display_value(assigns.parameter_value, assigns.datainfo, 0))
-    |> assign(:badge_color, badge_color)
+    assigns =
+      assigns
+      |> assign(:str_value, get_display_value(assigns.parameter_value, assigns.datainfo, 0))
+      |> assign(:badge_color, badge_color)
 
     ~H"""
     <div class={"w-fit  px-3 py-1.5 rounded-md border #{@badge_color}"}>
       <span>{"#{@parameter_value}"}</span>
-
     </div>
     """
-
   end
 
   attr :datainfo, :map, required: true
   attr :parameter_value, :integer, required: true
+
   def display_enum(assigns) do
     # Color lookup table with 20 different color combinations - muted dark mode colors
     color_lut = [
@@ -310,15 +298,14 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         _ -> false
       end)
 
-
-
     # Get color based on parameter value using modulo to cycle through colors
     color_index = rem(assigns.parameter_value, length(color_lut))
     color_classes = Enum.at(color_lut, color_index)
 
-    assigns = assigns
-    |> assign(:member_name, name)
-    |> assign(:color_classes, color_classes)
+    assigns =
+      assigns
+      |> assign(:member_name, name)
+      |> assign(:color_classes, color_classes)
 
     ~H"""
     <div class={"w-fit flex items-center px-3 py-1.5 rounded-md border #{@color_classes}"}>
@@ -332,67 +319,62 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   attr :datainfo, :map, required: true
   attr :parameter_value, :map, required: true
-  def display_struct(assigns) do
 
+  def display_struct(assigns) do
     ~H"""
     <div class="grid grid-cols-[auto_1fr] gap-x-2 gap-y-2 items-center">
-    <%= for {member_name, member_info} <- @datainfo["members"] do %>
-      <div class="font-semibold text-gray-700 dark:text-gray-300 text-right">
-        {member_name}:
-      </div>
-      <div>
-        <.display_parameter
-          parameter_value={Map.get(@parameter_value, String.to_existing_atom(member_name))}
-          datainfo={member_info}
-        />
-      </div>
-    <% end %>
+      <%= for {member_name, member_info} <- @datainfo["members"] do %>
+        <div class="font-semibold text-gray-700 dark:text-gray-300 text-right">
+          {member_name}:
+        </div>
+        <div>
+          <.display_parameter
+            parameter_value={Map.get(@parameter_value, String.to_existing_atom(member_name))}
+            datainfo={member_info}
+          />
+        </div>
+      <% end %>
     </div>
     """
   end
 
   attr :datainfo, :map, required: true
   attr :parameter_value, :map, required: true
-  def display_tuple(assigns) do
 
+  def display_tuple(assigns) do
     ~H"""
     <div class="flex items-center">
       (
       <%= for element <- Enum.intersperse(Enum.with_index(@datainfo["members"]), :comma) do %>
         <%= if element == :comma do %>
-          <span >,</span>
+          <span>,</span>
         <% else %>
           <div>
             <.display_parameter
-              parameter_value={Enum.at(@parameter_value, elem(element,1))}
-              datainfo={elem(element,0)}
+              parameter_value={Enum.at(@parameter_value, elem(element, 1))}
+              datainfo={elem(element, 0)}
             />
           </div>
         <% end %>
       <% end %>
       )
-      </div>
+    </div>
     """
   end
 
-
-
-
   attr :datainfo, :map, required: true
   attr :parameter_value, :map, required: true
+
   def display_array(assigns) do
     ~H"""
     <div class="flex flex-wrap items-center">
       [
       <%= for element <- Enum.intersperse(@parameter_value, :comma) do %>
         <%= if element == :comma do %>
-          <span >,</span>
+          <span>,</span>
         <% else %>
           <div>
-            <.display_parameter
-              parameter_value={element}
-              datainfo={@datainfo["members"]}
-            />
+            <.display_parameter parameter_value={element} datainfo={@datainfo["members"]} />
           </div>
         <% end %>
       <% end %>
@@ -410,10 +392,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         @class
       ]}>
         <div class="font-mono text-gray-900 dark:text-gray-200 opacity-100">
-          <.display_parameter
-            parameter_value={@parameter_value}
-            datainfo={@parameter.datainfo}
-          />
+          <.display_parameter parameter_value={@parameter_value} datainfo={@parameter.datainfo} />
         </div>
       </div>
       <%= if not @parameter.readonly do %>

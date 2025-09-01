@@ -183,9 +183,7 @@ defmodule SecopService.Sec_Nodes do
     end)
   end
 
-  defp check_description(describe_str,version \\ "1.0",output \\ "json") do
-
-
+  defp check_description(describe_str, version \\ "1.0", output \\ "json") do
     {result, _globals} =
       Pythonx.eval(
         """
@@ -219,17 +217,12 @@ defmodule SecopService.Sec_Nodes do
 
         diag_list
         """,
-        %{"descr" => describe_str,
-          "version" => version,
-          "output" => output}
-
+        %{"descr" => describe_str, "version" => version, "output" => output}
       )
 
     result = Pythonx.decode(result)
 
-
-
-    %{"version" => version,"result" => result}
+    %{"version" => version, "result" => result}
   end
 
   # Create a SEC node from the active_nodes data
@@ -249,7 +242,6 @@ defmodule SecopService.Sec_Nodes do
     describe_str = Jason.encode!(node_data.raw_description)
     check_result = check_description(describe_str)
 
-
     # Extract basic node attributes
     attrs = %{
       uuid: node_data.uuid,
@@ -266,8 +258,6 @@ defmodule SecopService.Sec_Nodes do
       describe_message_raw: describe_str,
       check_result: check_result
     }
-
-
 
     # Check if node with this UUID already exists
     case get_sec_node_by_uuid(attrs.uuid) do

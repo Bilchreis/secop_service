@@ -62,7 +62,7 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
       :describe_message,
       :describe_message_raw,
       :custom_properties,
-      :check_result,
+      :check_result
     ])
   end
 

@@ -52,6 +52,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
 
   def get_val_map(db_node) do
     node_id = SEC_Node.get_node_id(db_node)
+
     Enum.reduce(db_node.modules, %{}, fn module, mod_acc ->
       parameter_map =
         Enum.reduce(module.parameters, %{}, fn parameter, param_acc ->
@@ -105,7 +106,6 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     model
   end
 
-
   def process_data_report("status", data_report, datainfo) do
     if data_report != nil do
       [value, _qualifiers] = data_report
@@ -153,9 +153,6 @@ defmodule SecopServiceWeb.DashboardLive.Model do
         end
     end
   end
-
-
-
 
   def stat_code_lookup(stat_code, status_datainfo) do
     status_datainfo["members"]
