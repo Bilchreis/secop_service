@@ -1,6 +1,7 @@
 defmodule SecopService.PlotDB do
   alias SecopService.Util
   alias SecopService.Sec_Nodes
+  require Logger
 
   @max_retries 3
   # milliseconds
@@ -100,20 +101,47 @@ defmodule SecopService.PlotDB do
     end
   end
 
+
+  defp map_to(key,nil), do: key
+
+  defp map_to(key,map) do
+    str_key = to_string(key)
+    case Map.get(map, str_key,:not_found) do
+      :not_found ->
+        Logger.warning("Key #{inspect(str_key)} not found in map")
+        nil
+      value -> value
+    end
+  end
+
+  defp default(value,nil) do
+    value
+  end
+
+  defp default(value,default) do
+    default
+  end
+
+
   defp process_plot_data(raw_data, plotly_specifier) do
     {type, path} = Map.get(plotly_specifier, "path", []) |> List.pop_at(0)
     parameter = Map.get(plotly_specifier, "parameter", "")
     indices = Map.get(plotly_specifier, "indices", "all")
+    mapping = Map.get(plotly_specifier, "map_to", nil)
+    default = Map.get(plotly_specifier, "default", nil)
+
+
 
     data =
       raw_data
       |> Map.get(parameter, [])
       |> Map.get(type, [])
 
+
     extracted_data =
       case indices do
-        "all" -> Enum.reduce(data, [], fn value, acc -> acc ++ [get_element(value, path)] end)
-        0 -> Enum.at(data, 0) |> get_element(path)
+        "all" -> Enum.reduce(data, [], fn value, acc -> acc ++ [get_element(value, path) |> map_to(mapping) |> default(default)] end)
+        0 -> Enum.at(data, 0) |> get_element(path) |> map_to(mapping) |> default(default)
       end
 
     extracted_data
@@ -252,8 +280,9 @@ defmodule SecopService.PlotDB do
         Map.get(trace, "parameter", "") == parameter
       end)
 
+
     # If no matching traces, return empty update
-    if Enum.empty?(matching_traces) do
+    update = if Enum.empty?(matching_traces) do
       %{x: [], y: [], traceIndices: []}
     else
       # Process only the matching traces
@@ -267,6 +296,8 @@ defmodule SecopService.PlotDB do
         }
       end)
     end
+
+    update
   end
 
   def get_extension(trace, trace_index, raw_data) do
