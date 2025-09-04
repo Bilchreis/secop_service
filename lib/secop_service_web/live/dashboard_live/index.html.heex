@@ -34,7 +34,7 @@
         node={@current_node}
         node_state={@active_nodes[SEC_Node.get_node_id(@current_node)].state}
         values={@values}
-        node_id_str={@current_node.equipment_id}
+        node_id_str={SEC_Node.get_id_str(@current_node)}
       />
       <.dash_sec_node
         node={@current_node}

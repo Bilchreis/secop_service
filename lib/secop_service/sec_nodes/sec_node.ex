@@ -81,6 +81,10 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
     {String.to_charlist(sec_node.host), sec_node.port}
   end
 
+  def get_id_str(sec_node) do
+    "#{sec_node.host}:#{sec_node.port}"
+  end
+
   def get_values_pubsub_topic(sec_node) do
     "value_update:#{sec_node.host}:#{sec_node.port}"
   end
