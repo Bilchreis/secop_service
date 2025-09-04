@@ -165,19 +165,30 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
   end
 
   def update(%{control: :set_parameter, unsigned_params: unsigned_params} = _assigns, socket) do
-    Logger.info(
-      "Setting parameter #{unsigned_params["parameter"]} to #{unsigned_params["value"]}"
-    )
 
     ret = NodeControl.change(unsigned_params)
-    Logger.info("NodeControl.change returned: #{inspect(ret)}")
 
-    updated_set_form =
-      NodeControl.validate(
-        unsigned_params,
-        socket.assigns.parameter.datainfo,
-        socket.assigns.set_form
-      )
+
+    updated_set_form = case ret do
+      {:changed, module, parameter, [value, qualifiers]} ->
+
+        {:ok, str_value} = Jason.encode(value)
+
+        unsigned_params = Map.put(unsigned_params, "value", str_value)
+
+        NodeControl.validate(
+          unsigned_params,
+          socket.assigns.parameter.datainfo,
+          socket.assigns.set_form
+        )
+      {:error, message_type, specifier, error_class, error_message,_} ->
+        Logger.error(
+          "Error setting parameter #{unsigned_params["parameter"]}: #{message_type}, #{specifier}, #{error_class}, #{error_message}"
+        )
+        %{socket.assigns.set_form | errors: [value: {"#{error_class}, #{error_message}", []}]}
+
+
+    end
 
     {:ok, assign(socket, :set_form, updated_set_form)}
   end

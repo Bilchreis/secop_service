@@ -118,7 +118,7 @@ defmodule SecopService.PlotDB do
     value
   end
 
-  defp default(value,default) do
+  defp default(_value,default) do
     default
   end
 
