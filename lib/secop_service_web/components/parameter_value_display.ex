@@ -165,7 +165,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         "port" => Integer.to_string(port),
         "parameter" => parameter.name,
         "module" => module_name,
-        "value" => Jason.encode!(parameter_value)
+        "value" => Jason.encode!(parameter_value, pretty: true)
       }
 
     set_form =
@@ -521,7 +521,9 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
               class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
             >
               Set
-             </button>
+            </button>
+
+
 
           </.form>
 
@@ -572,6 +574,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
           </.form>
           <button
+
             phx-click="open_parameter_value_modal"
             phx-target={@myself}
             class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
@@ -580,13 +583,15 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
           </button>
 
 
+
+
         </div>
 
 
       <.modal
         :if={@show_parameter_value_modal}
         id="parameter-value-modal"
-        title=""
+        title="Change Request Editor"
         show={@show_parameter_value_modal}
         on_cancel={JS.push("close_parameter_value_modal",target: @myself)}
       >
@@ -594,7 +599,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
             for={@modal_form}
             phx-submit="set_parameter"
             phx-change="validate_parameter"
-            class="flex gap-2"
+            class=""
           >
             <input type="hidden" name="port" value={Phoenix.HTML.Form.input_value(@modal_form, :port)} />
             <input type="hidden" name="host" value={Phoenix.HTML.Form.input_value(@modal_form, :host)} />
@@ -612,32 +617,43 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
             <.input_parameter
               datainfo={@parameter.datainfo}
               modal_form={@modal_form}
+              parameter_id={to_string(@parameter.id)}
+              location={@location}
             />
 
 
             <input type="hidden" name="parameter" value={@parameter.name} />
+            <div class="mt-2">
+            JSON Preview:
             <.input
               name="value"
-              type="text"
+              type="textarea"
               field={@modal_form[:value]}
               placeholder={Phoenix.HTML.Form.input_value(@modal_form, :value)}
               value={Phoenix.HTML.Form.input_value(@modal_form, :value)}
               phx-debounce="500"
-              id={"form:" <> to_string(@parameter.id) <> @location}
-              class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+              class="flex-1 min-h-[12rem] bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
             />
+            </div>
             <button
               type="submit"
-              class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
+              class="mt-2 font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
             >
               Set
             </button>
 
 
+
+
           </.form>
       </.modal>
     <% end %>
+
+
+
+
     </div>
+
     """
   end
 end
