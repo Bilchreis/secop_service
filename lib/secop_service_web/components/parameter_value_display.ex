@@ -632,7 +632,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
               placeholder={Phoenix.HTML.Form.input_value(@modal_form, :value)}
               value={Phoenix.HTML.Form.input_value(@modal_form, :value)}
               phx-debounce="500"
-              class="flex-1 min-h-[12rem] bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+              class="flex-1 min-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
             />
             </div>
             <button
