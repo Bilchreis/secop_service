@@ -101,27 +101,28 @@ defmodule SecopService.PlotDB do
     end
   end
 
+  defp map_to(key, nil), do: key
 
-  defp map_to(key,nil), do: key
-
-  defp map_to(key,map) do
+  defp map_to(key, map) do
     str_key = to_string(key)
-    case Map.get(map, str_key,:not_found) do
+
+    case Map.get(map, str_key, :not_found) do
       :not_found ->
         Logger.warning("Key #{inspect(str_key)} not found in map")
         nil
-      value -> value
+
+      value ->
+        value
     end
   end
 
-  defp default(value,nil) do
+  defp default(value, nil) do
     value
   end
 
-  defp default(_value,default) do
+  defp default(_value, default) do
     default
   end
-
 
   defp process_plot_data(raw_data, plotly_specifier) do
     {type, path} = Map.get(plotly_specifier, "path", []) |> List.pop_at(0)
@@ -130,18 +131,20 @@ defmodule SecopService.PlotDB do
     mapping = Map.get(plotly_specifier, "map_to", nil)
     default = Map.get(plotly_specifier, "default", nil)
 
-
-
     data =
       raw_data
       |> Map.get(parameter, [])
       |> Map.get(type, [])
 
-
     extracted_data =
       case indices do
-        "all" -> Enum.reduce(data, [], fn value, acc -> acc ++ [get_element(value, path) |> map_to(mapping) |> default(default)] end)
-        0 -> Enum.at(data, 0) |> get_element(path) |> map_to(mapping) |> default(default)
+        "all" ->
+          Enum.reduce(data, [], fn value, acc ->
+            acc ++ [get_element(value, path) |> map_to(mapping) |> default(default)]
+          end)
+
+        0 ->
+          Enum.at(data, 0) |> get_element(path) |> map_to(mapping) |> default(default)
       end
 
     extracted_data
@@ -280,22 +283,22 @@ defmodule SecopService.PlotDB do
         Map.get(trace, "parameter", "") == parameter
       end)
 
-
     # If no matching traces, return empty update
-    update = if Enum.empty?(matching_traces) do
-      %{x: [], y: [], traceIndices: []}
-    else
-      # Process only the matching traces
-      Enum.reduce(matching_traces, %{x: [], y: [], traceIndices: []}, fn {trace, index}, acc ->
-        {x, y, trace_indices} = get_extension(trace, index, raw_data)
+    update =
+      if Enum.empty?(matching_traces) do
+        %{x: [], y: [], traceIndices: []}
+      else
+        # Process only the matching traces
+        Enum.reduce(matching_traces, %{x: [], y: [], traceIndices: []}, fn {trace, index}, acc ->
+          {x, y, trace_indices} = get_extension(trace, index, raw_data)
 
-        %{
-          x: acc.x ++ [x],
-          y: acc.y ++ [y],
-          traceIndices: acc.traceIndices ++ trace_indices
-        }
-      end)
-    end
+          %{
+            x: acc.x ++ [x],
+            y: acc.y ++ [y],
+            traceIndices: acc.traceIndices ++ trace_indices
+          }
+        end)
+      end
 
     update
   end

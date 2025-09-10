@@ -93,23 +93,38 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
     end
   end
 
+  def flattened_form_map(
+        flattened_map \\ %{},
+        path \\ ["value"],
+        current_value,
+        datainfo,
+        depth,
+        max_depth
+      )
 
-  def flattened_form_map(flattened_map \\ %{},path \\ ["value"], current_value, datainfo, depth, max_depth)
-
-  def flattened_form_map(flattened_map,path, current_value, datainfo, depth, max_depth) when depth < max_depth do
+  def flattened_form_map(flattened_map, path, current_value, datainfo, depth, max_depth)
+      when depth < max_depth do
     case datainfo["type"] do
       "struct" ->
         Enum.reduce(datainfo["members"], %{}, fn {member_name, member_info}, acc ->
           if member_info["type"] in ["struct", "tuple"] do
             member_value = Map.get(current_value, String.to_existing_atom(member_name))
-            Map.merge(acc, flattened_form_map(%{}, path ++ [member_name], member_value, member_info, depth + 1, max_depth))
+
+            Map.merge(
+              acc,
+              flattened_form_map(
+                %{},
+                path ++ [member_name],
+                member_value,
+                member_info,
+                depth + 1,
+                max_depth
+              )
+            )
           else
             member_value = Map.get(current_value, String.to_existing_atom(member_name))
             Map.put(acc, Enum.join(path ++ [member_name], "."), Jason.encode!(member_value))
           end
-
-
-
         end)
 
       "tuple" ->
@@ -117,12 +132,27 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         |> Enum.reduce(%{}, fn {member_info, index}, acc ->
           if member_info["type"] in ["struct", "tuple"] do
             member_value = Enum.at(current_value, index)
-            Map.merge(acc, flattened_form_map(%{}, path ++ ["f#{Integer.to_string(index)}"], member_value, member_info, depth + 1, max_depth))
+
+            Map.merge(
+              acc,
+              flattened_form_map(
+                %{},
+                path ++ ["f#{Integer.to_string(index)}"],
+                member_value,
+                member_info,
+                depth + 1,
+                max_depth
+              )
+            )
           else
             member_value = Enum.at(current_value, index)
-            Map.put(acc, Enum.join(path ++ ["f#{Integer.to_string(index)}"], "."), Jason.encode!(member_value))
-          end
 
+            Map.put(
+              acc,
+              Enum.join(path ++ ["f#{Integer.to_string(index)}"], "."),
+              Jason.encode!(member_value)
+            )
+          end
         end)
 
       _ ->
@@ -130,7 +160,8 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
     end
   end
 
-  def flattened_form_map(flattened_map,path, current_value, _datainfo, depth, max_depth) when depth == max_depth do
+  def flattened_form_map(flattened_map, path, current_value, _datainfo, depth, max_depth)
+      when depth == max_depth do
     Map.put(flattened_map, Enum.join(path, "."), Jason.encode!(current_value))
   end
 
@@ -142,7 +173,8 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
           port: port,
           module_name: module_name,
           parameter: parameter,
-          location: location
+          location: location,
+          id_str: id_str
         } = _assigns,
         socket
       ) do
@@ -154,30 +186,27 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         val_map -> Map.get(val_map, :data_report) |> Enum.at(0)
       end
 
-
     flat_map = flattened_form_map(%{}, ["value"], parameter_value, parameter.datainfo, 0, 1)
 
-
-
     base_form = %{
-        "location" => "#{location}",
-        "host" => to_string(host),
-        "port" => Integer.to_string(port),
-        "parameter" => parameter.name,
-        "module" => module_name,
-        "value" => Jason.encode!(parameter_value, pretty: true)
-      }
+      "location" => "#{location}",
+      "host" => to_string(host),
+      "port" => Integer.to_string(port),
+      "parameter" => parameter.name,
+      "module" => module_name,
+      "value" => Jason.encode!(parameter_value, pretty: true),
+      "form_type" => "simple"
+    }
 
+    # Keep set_form with nil value
     set_form =
-      to_form(base_form |> Map.put("value", nil))  # Keep set_form with nil value
+      to_form(base_form |> Map.put("value", nil))
 
     modal_form =
-      to_form(Map.merge(base_form, flat_map))
-
-
-
-
-
+      base_form
+      |> Map.put("form_type", "modal")
+      |> Map.merge(flat_map)
+      |> to_form()
 
     socket =
       socket
@@ -193,6 +222,15 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
       |> assign_new(:parameter_value, fn -> parameter_value end)
       |> assign(:show_parameter_value_modal, false)
       |> assign(:is_composite, parameter.datainfo["type"] in ["struct", "tuple"])
+      |> assign(:change_success, nil)
+      |> assign(:id_str, id_str)
+
+    {:ok, socket}
+  end
+
+  def update(%{action: :clear_highlight} = _assigns, socket) do
+    Logger.info("reset change success")
+    socket = assign(socket, :change_success, nil)
 
     {:ok, socket}
   end
@@ -207,53 +245,130 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         [value, _qualifiers] -> value
       end
 
-
-
     {:ok, assign(socket, :parameter_value, parameter_value)}
   end
 
   def update(%{control: :validate, unsigned_params: unsigned_params} = _assigns, socket) do
-    Logger.info(
-      "Validating parameter #{unsigned_params["parameter"]} with value #{unsigned_params["value"]}"
-    )
+    updated_socket =
+      case unsigned_params["form_type"] do
+        "simple" ->
+          Logger.info(
+            "Simple Form: Validating parameter #{unsigned_params["parameter"]} with value #{unsigned_params["value"]}"
+          )
 
-    updated_set_form =
-      NodeControl.validate(
-        unsigned_params,
-        socket.assigns.parameter.datainfo,
-        socket.assigns.set_form
-      )
+          updated_set_form =
+            NodeControl.validate(
+              unsigned_params,
+              socket.assigns.parameter.datainfo,
+              socket.assigns.set_form
+            )
 
-    {:ok, assign(socket, :set_form, updated_set_form)}
+          assign(socket, :set_form, updated_set_form)
+
+        "modal" ->
+          Logger.info(
+            "Modal Form: Validating parameter #{unsigned_params["parameter"]} with value #{unsigned_params["value"]}"
+          )
+
+          updated_modal_form =
+            NodeControl.validate_modal(
+              unsigned_params,
+              socket.assigns.parameter.datainfo,
+              socket.assigns.modal_form
+            )
+
+          assign(socket, :modal_form, updated_modal_form)
+      end
+
+    {:ok, updated_socket}
   end
 
   def update(%{control: :set_parameter, unsigned_params: unsigned_params} = _assigns, socket) do
-
-    ret = NodeControl.change(unsigned_params)
-
-
-    updated_set_form = case ret do
-      {:changed, module, parameter, [value, qualifiers]} ->
-
-        {:ok, str_value} = Jason.encode(value)
-
-        unsigned_params = Map.put(unsigned_params, "value", str_value)
-
-        NodeControl.validate(
-          unsigned_params,
-          socket.assigns.parameter.datainfo,
+    form =
+      case unsigned_params["form_type"] do
+        "simple" ->
           socket.assigns.set_form
-        )
-      {:error, message_type, specifier, error_class, error_message,_} ->
-        Logger.error(
-          "Error setting parameter #{unsigned_params["parameter"]}: #{message_type}, #{specifier}, #{error_class}, #{error_message}"
-        )
-        %{socket.assigns.set_form | errors: [value: {"#{error_class}, #{error_message}", []}]}
 
+        "modal" ->
+          socket.assigns.modal_form
+      end
 
+    validated_form =
+      NodeControl.validate(
+        unsigned_params,
+        socket.assigns.parameter.datainfo,
+        form
+      )
+
+    if validated_form.errors != [] do
+      updated_socket =
+        case unsigned_params["form_type"] do
+          "simple" ->
+            assign(socket, :set_form, validated_form)
+
+          "modal" ->
+            assign(socket, :modal_form, validated_form)
+        end
+
+      {:ok, updated_socket}
+    else
+      # removce pretty formatting for sending to NodeControl.change
+      not_pretty_value = Jason.decode!(validated_form.params["value"]) |> Jason.encode!()
+
+      unsigned_params = Map.put(unsigned_params, "value", not_pretty_value)
+
+      ret = NodeControl.change(unsigned_params)
+      send_update_after(__MODULE__, %{id: socket.assigns.id_str, action: :clear_highlight}, 1000)
+
+      updated_socket =
+        case ret do
+          {:changed, _module, _parameter, [value, _qualifiers]} ->
+            {:ok, str_value} = Jason.encode(value)
+
+            unsigned_params = Map.put(unsigned_params, "value", str_value)
+
+            updated_form =
+              NodeControl.validate(
+                unsigned_params,
+                socket.assigns.parameter.datainfo,
+                validated_form
+              )
+
+            socket = assign(socket, :change_success, "done")
+
+            case unsigned_params["form_type"] do
+              "simple" ->
+                assign(socket, :set_form, updated_form)
+
+              "modal" ->
+                assign(socket, :modal_form, updated_form)
+            end
+
+          {:error, message_type, specifier, error_class, error_message, _} ->
+            Logger.error(
+              "Error setting parameter #{unsigned_params["parameter"]}: #{message_type}, #{specifier}, #{error_class}, #{error_message}"
+            )
+
+            updated_form = %{
+              validated_form
+              | errors: [value: {"#{error_class}, #{error_message}", []}]
+            }
+
+            socket = assign(socket, :change_success, "error")
+
+            case unsigned_params["form_type"] do
+              "simple" ->
+                assign(socket, :set_form, updated_form)
+
+              "modal" ->
+                assign(socket, :modal_form, updated_form)
+            end
+        end
+
+      Logger.info("change_success: #{updated_socket.assigns.change_success}")
+
+      {:ok, updated_socket}
     end
-
-    {:ok, assign(socket, :set_form, updated_set_form)}
   end
 
   attr :parameter_value, :any, required: true
@@ -457,7 +572,6 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
     """
   end
 
-
   @impl true
   def handle_event("close_parameter_value_modal", _params, socket) do
     {:noreply, assign(socket, show_parameter_value_modal: false)}
@@ -471,75 +585,87 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
      )}
   end
 
-
-
   @impl true
   def render(assigns) do
     ~H"""
     <div>
-    <div class="flex gap-2 mt-2 ">
-      <div class={[
-        "flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-800 border rounded-lg p-2 border-stone-500 overflow-scroll",
-        @class
-      ]}>
-        <div class="font-mono text-gray-900 dark:text-gray-200 opacity-100">
-          <.display_parameter parameter_value={@parameter_value} datainfo={@parameter.datainfo} />
+      <div class="flex gap-2 mt-2 ">
+        <div class={[
+          "flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-800 border rounded-lg p-2 border-stone-500 overflow-scroll",
+          @class
+        ]}>
+          <div class="font-mono text-gray-900 dark:text-gray-200 opacity-100">
+            <.display_parameter parameter_value={@parameter_value} datainfo={@parameter.datainfo} />
+          </div>
         </div>
-      </div>
-      <%= if not @parameter.readonly  and not @is_composite do %>
-        <div class="flex justify-between items-start">
-          <.form
-            for={@set_form}
-            phx-submit="set_parameter"
-            phx-change="validate_parameter"
-            class="flex space-x-2"
-          >
-            <input type="hidden" name="port" value={Phoenix.HTML.Form.input_value(@set_form, :port)} />
-            <input type="hidden" name="host" value={Phoenix.HTML.Form.input_value(@set_form, :host)} />
-            <input
-              type="hidden"
-              name="location"
-              value={Phoenix.HTML.Form.input_value(@set_form, :location)}
-            />
-            <input
-              type="hidden"
-              name="module"
-              value={Phoenix.HTML.Form.input_value(@set_form, :module)}
-            />
-            <input type="hidden" name="parameter" value={@parameter.name} />
-            <.input
-              name="value"
-              type="text"
-              field={@set_form[:value]}
-              placeholder="new value"
-              phx-debounce="500"
-              id={"form:" <> to_string(@parameter.id) <> @location}
-              class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2 border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
-            />
-            <button
-              type="submit"
-              class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
+        <%= if not @parameter.readonly  and not @is_composite do %>
+          <div class="flex justify-between items-start">
+            <.form
+              for={@set_form}
+              phx-submit="set_parameter"
+              phx-change="validate_parameter"
+              class="flex space-x-2"
             >
-              Set
-            </button>
+              <input
+                type="hidden"
+                name="form_type"
+                value={Phoenix.HTML.Form.input_value(@set_form, :form_type)}
+              />
+              <input
+                type="hidden"
+                name="port"
+                value={Phoenix.HTML.Form.input_value(@set_form, :port)}
+              />
+              <input
+                type="hidden"
+                name="host"
+                value={Phoenix.HTML.Form.input_value(@set_form, :host)}
+              />
+              <input
+                type="hidden"
+                name="location"
+                value={Phoenix.HTML.Form.input_value(@set_form, :location)}
+              />
+              <input
+                type="hidden"
+                name="module"
+                value={Phoenix.HTML.Form.input_value(@set_form, :module)}
+              />
+              <input type="hidden" name="parameter" value={@parameter.name} />
+              <.input
+                name="value"
+                type="text"
+                field={@set_form[:value]}
+                placeholder="new value"
+                phx-debounce="500"
+                id={"form:" <> to_string(@parameter.id) <> @location}
+                class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2 border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+              />
+              <button
+                type="submit"
+                class="font-semibold pr-4 pl-4 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100 command_item"
+                mod-highlight={@change_success}
+              >
+                Set
+              </button>
+            </.form>
+          </div>
+        <% end %>
+      </div>
 
-
-
-          </.form>
-
-        </div>
-
-      <% end %>
-    </div>
-
-    <%= if not @parameter.readonly and @is_composite do %>
-    <div class="flex gap-2 mt-2 ">
+      <%= if not @parameter.readonly and @is_composite do %>
+        <div class="flex gap-2 mt-2 ">
           <.form
             for={@set_form}
             phx-submit="set_parameter"
             phx-change="validate_parameter"
             class="flex gap-2"
           >
+            <input
+              type="hidden"
+              name="form_type"
+              value={Phoenix.HTML.Form.input_value(@set_form, :form_type)}
+            />
             <input type="hidden" name="port" value={Phoenix.HTML.Form.input_value(@set_form, :port)} />
             <input type="hidden" name="host" value={Phoenix.HTML.Form.input_value(@set_form, :host)} />
             <input
@@ -563,46 +689,45 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
               class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
             />
 
-
             <button
               type="submit"
-              class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
+              class="font-semibold pr-4 pl-4 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100 command_item"
             >
               Set
             </button>
-
-
           </.form>
           <button
-
             phx-click="open_parameter_value_modal"
             phx-target={@myself}
             class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
           >
             Edit Value
           </button>
-
-
-
-
         </div>
 
-
-      <.modal
-        :if={@show_parameter_value_modal}
-        id="parameter-value-modal"
-        title="Change Request Editor"
-        show={@show_parameter_value_modal}
-        on_cancel={JS.push("close_parameter_value_modal",target: @myself)}
-      >
-        <.form
-            for={@modal_form}
-            phx-submit="set_parameter"
-            phx-change="validate_parameter"
-            class=""
-          >
-            <input type="hidden" name="port" value={Phoenix.HTML.Form.input_value(@modal_form, :port)} />
-            <input type="hidden" name="host" value={Phoenix.HTML.Form.input_value(@modal_form, :host)} />
+        <.modal
+          :if={@show_parameter_value_modal}
+          id="parameter-value-modal"
+          title="Change Request Editor"
+          show={@show_parameter_value_modal}
+          on_cancel={JS.push("close_parameter_value_modal", target: @myself)}
+        >
+          <.form for={@modal_form} phx-submit="set_parameter" phx-change="validate_parameter" class="">
+            <input
+              type="hidden"
+              name="form_type"
+              value={Phoenix.HTML.Form.input_value(@modal_form, :form_type)}
+            />
+            <input
+              type="hidden"
+              name="port"
+              value={Phoenix.HTML.Form.input_value(@modal_form, :port)}
+            />
+            <input
+              type="hidden"
+              name="host"
+              value={Phoenix.HTML.Form.input_value(@modal_form, :host)}
+            />
             <input
               type="hidden"
               name="location"
@@ -621,39 +746,31 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
               location={@location}
             />
 
-
             <input type="hidden" name="parameter" value={@parameter.name} />
             <div class="mt-2">
-            JSON Preview:
-            <.input
-              name="value"
-              type="textarea"
-              field={@modal_form[:value]}
-              placeholder={Phoenix.HTML.Form.input_value(@modal_form, :value)}
-              value={Phoenix.HTML.Form.input_value(@modal_form, :value)}
-              phx-debounce="500"
-              class="flex-1 min-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
-            />
+              JSON Preview:
+              <.input
+                name="value"
+                type="textarea"
+                field={@modal_form[:value]}
+                placeholder={Phoenix.HTML.Form.input_value(@modal_form, :value)}
+                value={Phoenix.HTML.Form.input_value(@modal_form, :value)}
+                rows="20"
+                phx-debounce="500"
+                class="flex-1 min-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+              />
             </div>
             <button
               type="submit"
-              class="mt-2 font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
+              class="mt-2 font-semibold pr-4 pl-4 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100 command_item"
+              mod-highlight={@change_success}
             >
               Set
             </button>
-
-
-
-
           </.form>
-      </.modal>
-    <% end %>
-
-
-
-
+        </.modal>
+      <% end %>
     </div>
-
     """
   end
 end

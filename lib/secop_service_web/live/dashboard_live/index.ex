@@ -227,58 +227,22 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
   @impl true
   def handle_event("set_parameter", unsigned_params, socket) do
-    case unsigned_params["location"] do
-      "module_dash" ->
-        send_update(SecopServiceWeb.Components.ParameterValueDisplay,
-          id: "module_dash:" <> path_from_unsigned_params(unsigned_params),
-          control: :set_parameter,
-          unsigned_params: unsigned_params
-        )
-
-      "parameter_value" ->
-        send_update(SecopServiceWeb.Components.ParameterValueDisplay,
-          id: "parameter_value:" <> path_from_unsigned_params(unsigned_params),
-          control: :set_parameter,
-          unsigned_params: unsigned_params
-        )
-
-      _ ->
-        Logger.warning(
-          "Unknown location for parameter validation: #{unsigned_params["location"]}"
-        )
-
-        # Handle the case where the location is not recognized
-        # You might want to send an error message or log it
-    end
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "#{unsigned_params["location"]}:" <> path_from_unsigned_params(unsigned_params),
+      control: :set_parameter,
+      unsigned_params: unsigned_params
+    )
 
     {:noreply, socket}
   end
 
   @impl true
   def handle_event("validate_parameter", unsigned_params, socket) do
-    case unsigned_params["location"] do
-      "module_dash" ->
-        send_update(SecopServiceWeb.Components.ParameterValueDisplay,
-          id: "module_dash:" <> path_from_unsigned_params(unsigned_params),
-          control: :validate,
-          unsigned_params: unsigned_params
-        )
-
-      "parameter_value" ->
-        send_update(SecopServiceWeb.Components.ParameterValueDisplay,
-          id: "parameter_value:" <> path_from_unsigned_params(unsigned_params),
-          control: :validate,
-          unsigned_params: unsigned_params
-        )
-
-      _ ->
-        Logger.warning(
-          "Unknown location for parameter validation: #{unsigned_params["location"]}"
-        )
-
-        # Handle the case where the location is not recognized
-        # You might want to send an error message or log it
-    end
+    send_update(SecopServiceWeb.Components.ParameterValueDisplay,
+      id: "#{unsigned_params["location"]}:" <> path_from_unsigned_params(unsigned_params),
+      control: :validate,
+      unsigned_params: unsigned_params
+    )
 
     {:noreply, socket}
   end
