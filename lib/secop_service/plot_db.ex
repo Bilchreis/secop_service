@@ -21,20 +21,48 @@ defmodule SecopService.PlotDB do
   end
 
   def get_layout(%{plotly: nil} = plot_map) do
+    # Define the buttons first so we can reference them
+    buttons = [
+      %{count: 1, label: "1m", step: "minute", stepmode: "backward"},
+      %{count: 10, label: "10m", step: "minute", stepmode: "backward"},
+      %{count: 30, label: "30m", step: "minute", stepmode: "backward"},
+      %{count: 1, label: "1h", step: "hour", stepmode: "backward"},
+      %{count: 1, label: "1d", step: "day", stepmode: "backward"},
+      %{step: "all", label: "all"}
+    ]
+
+    # Set which button should be active (0-based index)
+    active_button_index = 1  # This makes "10m" the default
+
+    # Calculate the initial range based on the active button
+    active_button = Enum.at(buttons, active_button_index)
+    now = DateTime.utc_now()
+
+    initial_range = case active_button do
+      %{step: "all"} ->
+        nil  # Let Plotly auto-range for "all"
+      %{step: "minute", count: count} ->
+        start_time = DateTime.add(now, -count * 60, :second)
+        [DateTime.to_iso8601(start_time), DateTime.to_iso8601(now)]
+      %{step: "hour", count: count} ->
+        start_time = DateTime.add(now, -count * 3600, :second)
+        [DateTime.to_iso8601(start_time), DateTime.to_iso8601(now)]
+      %{step: "day", count: count} ->
+        start_time = DateTime.add(now, -count * 86400, :second)
+        [DateTime.to_iso8601(start_time), DateTime.to_iso8601(now)]
+      _ ->
+        nil
+    end
+
     layout = %{
       xaxis: %{
         title: %{text: "Time"},
         type: "date",
+        # Set the initial range if we calculated one
+        range: initial_range,
         rangeselector: %{
-          buttons: [
-            %{count: 1, label: "1m", step: "minute", stepmode: "backward"},
-            %{count: 10, label: "10m", step: "minute", stepmode: "backward"},
-            %{count: 30, label: "30m", step: "minute", stepmode: "backward"},
-            %{count: 1, label: "1h", step: "hour", stepmode: "backward"},
-            %{count: 1, label: "1d", step: "day", stepmode: "backward"},
-            %{step: "all", label: "all"}
-          ],
-          active: 5,
+          buttons: buttons,
+          active: active_button_index,  # This makes the button appear selected
           x: 0,
           y: 1.02,
           xanchor: "left",
