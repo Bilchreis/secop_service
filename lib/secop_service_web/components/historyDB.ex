@@ -253,7 +253,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
             </div>
           </button>
-
+          <!--
           <button
             class={[
               "px-4 py-2 rounded-lg focus:outline-none",
@@ -268,6 +268,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               <.icon name="hero-arrow-down-tray" class="h-5 w-5 flex-none mr-1" /> CSV
             </div>
           </button>
+          -->
           <!--
         <button
           class={[
