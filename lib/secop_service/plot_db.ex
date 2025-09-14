@@ -21,20 +21,48 @@ defmodule SecopService.PlotDB do
   end
 
   def get_layout(%{plotly: nil} = plot_map) do
+    # Define the buttons first so we can reference them
+    buttons = [
+      %{count: 1, label: "1m", step: "minute", stepmode: "backward"},
+      %{count: 10, label: "10m", step: "minute", stepmode: "backward"},
+      %{count: 30, label: "30m", step: "minute", stepmode: "backward"},
+      %{count: 1, label: "1h", step: "hour", stepmode: "backward"},
+      %{count: 1, label: "1d", step: "day", stepmode: "backward"},
+      %{step: "all", label: "all"}
+    ]
+
+    # Set which button should be active (0-based index)
+    active_button_index = 1  # This makes "10m" the default
+
+    # Calculate the initial range based on the active button
+    active_button = Enum.at(buttons, active_button_index)
+    now = DateTime.utc_now()
+
+    initial_range = case active_button do
+      %{step: "all"} ->
+        nil  # Let Plotly auto-range for "all"
+      %{step: "minute", count: count} ->
+        start_time = DateTime.add(now, -count * 60, :second)
+        [DateTime.to_iso8601(start_time), DateTime.to_iso8601(now)]
+      %{step: "hour", count: count} ->
+        start_time = DateTime.add(now, -count * 3600, :second)
+        [DateTime.to_iso8601(start_time), DateTime.to_iso8601(now)]
+      %{step: "day", count: count} ->
+        start_time = DateTime.add(now, -count * 86400, :second)
+        [DateTime.to_iso8601(start_time), DateTime.to_iso8601(now)]
+      _ ->
+        nil
+    end
+
     layout = %{
       xaxis: %{
         title: %{text: "Time"},
         type: "date",
+        # Set the initial range if we calculated one
+        range: initial_range,
         rangeselector: %{
-          buttons: [
-            %{count: 1, label: "1m", step: "minute", stepmode: "backward"},
-            %{count: 10, label: "10m", step: "minute", stepmode: "backward"},
-            %{count: 30, label: "30m", step: "minute", stepmode: "backward"},
-            %{count: 1, label: "1h", step: "hour", stepmode: "backward"},
-            %{count: 1, label: "1d", step: "day", stepmode: "backward"},
-            %{step: "all", label: "all"}
-          ],
-          active: 5,
+          buttons: buttons,
+          active: active_button_index,  # This makes the button appear selected
           x: 0,
           y: 1.02,
           xanchor: "left",
@@ -101,27 +129,28 @@ defmodule SecopService.PlotDB do
     end
   end
 
+  defp map_to(key, nil), do: key
 
-  defp map_to(key,nil), do: key
-
-  defp map_to(key,map) do
+  defp map_to(key, map) do
     str_key = to_string(key)
-    case Map.get(map, str_key,:not_found) do
+
+    case Map.get(map, str_key, :not_found) do
       :not_found ->
         Logger.warning("Key #{inspect(str_key)} not found in map")
         nil
-      value -> value
+
+      value ->
+        value
     end
   end
 
-  defp default(value,nil) do
+  defp default(value, nil) do
     value
   end
 
-  defp default(_value,default) do
+  defp default(_value, default) do
     default
   end
-
 
   defp process_plot_data(raw_data, plotly_specifier) do
     {type, path} = Map.get(plotly_specifier, "path", []) |> List.pop_at(0)
@@ -130,18 +159,20 @@ defmodule SecopService.PlotDB do
     mapping = Map.get(plotly_specifier, "map_to", nil)
     default = Map.get(plotly_specifier, "default", nil)
 
-
-
     data =
       raw_data
       |> Map.get(parameter, [])
       |> Map.get(type, [])
 
-
     extracted_data =
       case indices do
-        "all" -> Enum.reduce(data, [], fn value, acc -> acc ++ [get_element(value, path) |> map_to(mapping) |> default(default)] end)
-        0 -> Enum.at(data, 0) |> get_element(path) |> map_to(mapping) |> default(default)
+        "all" ->
+          Enum.reduce(data, [], fn value, acc ->
+            acc ++ [get_element(value, path) |> map_to(mapping) |> default(default)]
+          end)
+
+        0 ->
+          Enum.at(data, 0) |> get_element(path) |> map_to(mapping) |> default(default)
       end
 
     extracted_data
@@ -280,22 +311,22 @@ defmodule SecopService.PlotDB do
         Map.get(trace, "parameter", "") == parameter
       end)
 
-
     # If no matching traces, return empty update
-    update = if Enum.empty?(matching_traces) do
-      %{x: [], y: [], traceIndices: []}
-    else
-      # Process only the matching traces
-      Enum.reduce(matching_traces, %{x: [], y: [], traceIndices: []}, fn {trace, index}, acc ->
-        {x, y, trace_indices} = get_extension(trace, index, raw_data)
+    update =
+      if Enum.empty?(matching_traces) do
+        %{x: [], y: [], traceIndices: []}
+      else
+        # Process only the matching traces
+        Enum.reduce(matching_traces, %{x: [], y: [], traceIndices: []}, fn {trace, index}, acc ->
+          {x, y, trace_indices} = get_extension(trace, index, raw_data)
 
-        %{
-          x: acc.x ++ [x],
-          y: acc.y ++ [y],
-          traceIndices: acc.traceIndices ++ trace_indices
-        }
-      end)
-    end
+          %{
+            x: acc.x ++ [x],
+            y: acc.y ++ [y],
+            traceIndices: acc.traceIndices ++ trace_indices
+          }
+        end)
+      end
 
     update
   end

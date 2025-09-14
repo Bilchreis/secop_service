@@ -303,6 +303,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                   location="module_dash"
                   module_name={@module.name}
                   parameter={Module.get_parameter(@module, "value")}
+                  id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":value"}
                 />
 
                 <div class="p-2 mt-2 text-lg font-bold text-gray-800 dark:text-white">
@@ -317,6 +318,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                   module_name={@module.name}
                   location="module_dash"
                   parameter={Module.get_parameter(@module, "target")}
+                  id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":target"}
                 />
               </div>
             <% Module.has_parameter?(@module, "value") -> %>
@@ -333,6 +335,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                   location="module_dash"
                   module_name={@module.name}
                   parameter={Module.get_parameter(@module, "value")}
+                  id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":value"}
                 />
               </div>
           <% end %>
@@ -501,6 +504,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         location="parameter_value"
         module_name={@module_name}
         parameter={@parameter}
+        id_str={"parameter_value:"<> @node_id_str <> ":" <> @module_name <> ":" <> @parameter.name}
       />
     </div>
     """

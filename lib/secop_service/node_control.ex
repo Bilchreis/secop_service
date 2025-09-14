@@ -39,6 +39,184 @@ defmodule SecopService.NodeControl do
     SEC_Node_Statem.execute_command(nodeid, module, command, value)
   end
 
+  defp get_datainfo_by_path(datainfo, ["value"]), do: datainfo
+
+  defp get_datainfo_by_path(datainfo, []), do: datainfo
+
+  defp get_datainfo_by_path(datainfo, ["value" | rest]) do
+    get_datainfo_by_path(datainfo, rest)
+  end
+
+  defp get_datainfo_by_path(datainfo, [key | rest]) do
+    key_atom = String.to_atom(key)
+
+    case datainfo[:type] do
+      "struct" ->
+        if Map.has_key?(datainfo.members, key_atom) do
+          member_info = datainfo.members[key_atom]
+          get_datainfo_by_path(member_info, rest)
+        else
+          Logger.error("Key #{key} not found in struct members #{inspect(datainfo.members)}")
+        end
+
+      "tuple" ->
+        index = String.replace_prefix(key, "f", "") |> String.to_integer()
+
+        if index < length(datainfo.members) do
+          member_info = Enum.at(datainfo.members, index)
+          get_datainfo_by_path(member_info, rest)
+        else
+          Logger.error(
+            "Index #{index} out of bounds for tuple members #{inspect(datainfo.members)}"
+          )
+        end
+
+      _ ->
+        Logger.error("Cannot navigate into type #{datainfo[:type]} with key #{key}")
+        nil
+    end
+  end
+
+  defp put_validated(value, datainfo, path, target) do
+    case path do
+      ["value"] ->
+        target
+
+      ["value" | rest] ->
+        put_validated(value, datainfo, rest, target)
+
+      [key | rest] ->
+        key_atom = String.to_atom(key)
+
+        case datainfo[:type] do
+          "struct" ->
+            if Map.has_key?(datainfo.members, key_atom) do
+              member_info = datainfo.members[key_atom]
+
+              updated_subvalue =
+                put_validated(Map.get(value, key_atom), member_info, rest, target)
+
+              Map.put(value, key_atom, updated_subvalue)
+            else
+              Logger.error("Key #{key} not found in struct members #{inspect(datainfo.members)}")
+              value
+            end
+
+          "tuple" ->
+            index = String.replace_prefix(key, "f", "") |> String.to_integer()
+
+            if index < length(datainfo.members) do
+              member_info = Enum.at(datainfo.members, index)
+              current_subvalue = Enum.at(value, index)
+              updated_subvalue = put_validated(current_subvalue, member_info, rest, target)
+              List.replace_at(value, index, updated_subvalue)
+            else
+              Logger.error(
+                "Index #{index} out of bounds for tuple members #{inspect(datainfo.members)}"
+              )
+
+              value
+            end
+
+          _ ->
+            Logger.error("Cannot navigate into type #{datainfo[:type]} with key #{key}")
+            value
+        end
+
+      [] ->
+        target
+    end
+  end
+
+  def validate_modal(unsigned_params, datainfo, modal_form) do
+    targets = unsigned_params["_target"]
+    Logger.info("Validating field: #{inspect(targets)}")
+
+    atomized_datainfo = atomize_keys(datainfo)
+
+    paths =
+      Enum.reduce(targets, [], fn target, acc ->
+        [String.split(target, ".", []) | acc]
+      end)
+
+    fields = Enum.zip(targets, paths)
+
+    modal_form =
+      Enum.reduce(fields, modal_form, fn {target, path}, form ->
+        ## get datainfo for target field according to path
+        field_info = get_datainfo_by_path(atomized_datainfo, path)
+
+        form = validate_field(unsigned_params[target], target, field_info, form)
+
+        ## update form["value"] with the validated target field value ( skip if target == "value",
+        # also skip if there are  json format errors listed for the "value field")
+        error_msg =
+          case Keyword.get(form.errors, :value) do
+            {msg, _} -> msg
+            _ -> nil
+          end
+
+        if not Keyword.has_key?(form.errors, string_to_atom(target)) and target != "value" and
+             error_msg != "Invalid JSON format" do
+          val_decoded = Jason.decode!(unsigned_params["value"], keys: :atoms)
+          target_decoded = Jason.decode!(unsigned_params[target], keys: :atoms)
+
+          val_updated =
+            put_validated(val_decoded, atomized_datainfo, path, target_decoded)
+            |> Jason.encode!(pretty: true)
+
+          %{
+            form
+            | params: Map.put(form.params, "value", val_updated),
+              source: Map.put(form.source, "value", val_updated)
+          }
+        else
+          form
+        end
+      end)
+
+    unsigned_params = Map.put(unsigned_params, "value", modal_form.params["value"])
+
+    # Finally, validate the entire value field to ensure overall consistency
+    validate_field(unsigned_params["value"], "value", atomized_datainfo, modal_form)
+  end
+
+  def validate_field(new_field_value, target, datainfo, form) do
+    target_atom = String.to_atom(target)
+
+    case Jason.decode(new_field_value, keys: :atoms) do
+      {:ok, value} ->
+        case validate_against_datainfo(datainfo, value) do
+          {:ok, _} ->
+            # Add validation indicator AND update the form's value
+
+            form =
+              if Keyword.has_key?(form.errors, target_atom) do
+                Logger.info("Clearing errors for field #{target}")
+                %{form | errors: Keyword.delete(form.errors, target_atom)}
+              else
+                form
+              end
+
+            form = %{
+              form
+              | params: Map.put(form.params, target, new_field_value),
+                source: Map.put(form.source, target, new_field_value)
+            }
+
+            form
+
+          {:error, msg} ->
+            # Field-specific error - extend existing errors
+            %{form | errors: Keyword.put(form.errors, target_atom, {msg, []})}
+        end
+
+      {:error, _} ->
+        # Field-specific JSON error - extend existing errors
+        %{form | errors: Keyword.put(form.errors, target_atom, {"Invalid JSON format", []})}
+    end
+  end
+
   def validate(unsigned_params, datainfo, set_form) do
     # Convert datainfo string keys to atoms
     atomized_datainfo = atomize_keys(datainfo)
@@ -48,10 +226,12 @@ defmodule SecopService.NodeControl do
         case validate_against_datainfo(atomized_datainfo, value) do
           {:ok, _} ->
             # Add validation indicator AND update the form's value
+            pretty_value = Jason.encode!(value, pretty: true)
+
             set_form = %{
               set_form
-              | params: Map.put(set_form.params, "value", unsigned_params["value"]),
-                source: Map.put(set_form.source, "value", unsigned_params["value"]),
+              | params: Map.put(set_form.params, "value", pretty_value),
+                source: Map.put(set_form.source, "value", pretty_value),
                 errors: []
             }
 
@@ -71,18 +251,42 @@ defmodule SecopService.NodeControl do
   def validate_against_datainfo(datainfo, value) do
     # Changed from datainfo["type"] to datainfo[:type]
     case datainfo[:type] do
-      "double" -> validate_double(datainfo, value)
-      "int" -> validate_int(datainfo, value)
-      "scaled" -> validate_scaled(datainfo, value)
-      "bool" -> validate_bool(datainfo, value)
-      "enum" -> validate_enum(datainfo, value)
-      "string" -> validate_string(datainfo, value)
-      "blob" -> validate_blob(datainfo, value)
-      "array" -> validate_array(datainfo, value)
-      "tuple" -> validate_tuple(datainfo, value)
-      "struct" -> validate_struct(datainfo, value)
-      "matrix" -> validate_matrix(datainfo, value)
-      _ -> {:error, "Unknown data type"}
+      "double" ->
+        validate_double(datainfo, value)
+
+      "int" ->
+        validate_int(datainfo, value)
+
+      "scaled" ->
+        validate_scaled(datainfo, value)
+
+      "bool" ->
+        validate_bool(datainfo, value)
+
+      "enum" ->
+        validate_enum(datainfo, value)
+
+      "string" ->
+        validate_string(datainfo, value)
+
+      "blob" ->
+        validate_blob(datainfo, value)
+
+      "array" ->
+        validate_array(datainfo, value)
+
+      "tuple" ->
+        validate_tuple(datainfo, value)
+
+      "struct" ->
+        validate_struct(datainfo, value)
+
+      "matrix" ->
+        validate_matrix(datainfo, value)
+
+      _ ->
+        Logger.error("Unknown data type: #{inspect(datainfo)}")
+        {:error, "Unknown data type"}
     end
   end
 

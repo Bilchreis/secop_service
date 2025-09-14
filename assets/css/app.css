@@ -139,3 +139,20 @@
   background-color:  white;
   transition: background-color 0.2s;
 }
+
+
+
+.with-tooltip {
+  position: relative;
+}
+
+.with-tooltip > [role="tooltip"] {
+  display: none;
+}
+
+.with-tooltip:hover > [role="tooltip"],
+.with-tooltip:focus > [role="tooltip"] {
+  display: block;
+  position: absolute;
+
+}
