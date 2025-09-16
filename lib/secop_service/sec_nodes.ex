@@ -549,6 +549,7 @@ defmodule SecopService.Sec_Nodes do
 
   def get_command(id), do: Repo.get(Command, id)
 
+  def get_node(id), do: Repo.get(SEC_Node, id)
   @doc """
   Checks if a SEC node with the given UUID exists in the database.
 

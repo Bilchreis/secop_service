@@ -1,24 +1,59 @@
 defmodule SecopService.PlotDB do
   alias SecopService.Util
   alias SecopService.Sec_Nodes
+  alias SEC_Node_Statem
+  alias SecopService.Sec_Nodes.SEC_Node ,as: SEC_Node
   require Logger
 
-  @max_retries 3
-  # milliseconds
-  @retry_delay 4000
 
-  defp get_values_with_retry(param_id, retries \\ 0) do
-    values = Sec_Nodes.get_values(param_id)
+  defp read_from_device_if_empty({_value_val, _value_ts} = readings,param_id) do
+    case readings do
+      {[], []} ->
+        Logger.warning("No values found in DB for param_id: #{param_id}, trying to read from device")
 
-    case values do
-      [] when retries < @max_retries ->
-        :timer.sleep(@retry_delay)
-        get_values_with_retry(param_id, retries + 1)
 
-      _ ->
-        values
+        parameter = SecopService.Sec_Nodes.get_parameter(param_id)
+        module = SecopService.Sec_Nodes.get_module(parameter.module_id)
+        node = SecopService.Sec_Nodes.get_node(module.sec_node_id)
+
+        id = SEC_Node.get_node_id(node)
+
+        reading = case SEC_Node_Statem.read(id,module.name,parameter.name) do
+          {:reply, _r_mod, _r_para, reading} -> reading
+          _ -> []
+        end
+
+
+
+        case reading do
+          #
+          [val,%{t: ts} ] ->
+            val = val |> Jason.encode!() |> Jason.decode!()
+
+            # Convert Unix timestamp to DateTime
+            secs = trunc(ts)
+            usecs = trunc((ts - secs) * 1_000_000)
+            {:ok, dt} = DateTime.from_unix(secs)
+            ts = %{dt | microsecond: {usecs, 6}} |> DateTime.to_unix( :millisecond)
+
+
+            {[val],[ts]}
+
+          _ -> {[],[]}
+        end
+
+      {_,_} -> readings
+
     end
+
   end
+
+
+  defp get_values(param_id) do
+    Sec_Nodes.get_values(param_id)
+  end
+
+
 
   def get_layout(%{plotly: nil} = plot_map) do
     # Define the buttons first so we can reference them
@@ -446,10 +481,12 @@ defmodule SecopService.PlotDB do
         |> Map.put(:plotly, Map.get(module.custom_properties, "_plotly", nil))
 
       {value_val, value_ts} =
-        get_values_with_retry(value_param.id) |> Sec_Nodes.extract_value_timestamp_lists()
+        get_values(value_param.id) |> Sec_Nodes.extract_value_timestamp_lists() |> read_from_device_if_empty(value_param.id)
+
+
 
       {target_val, target_ts} =
-        get_values_with_retry(target_param.id) |> Sec_Nodes.extract_value_timestamp_lists()
+        get_values(target_param.id) |> Sec_Nodes.extract_value_timestamp_lists() |> read_from_device_if_empty(target_param.id)
 
       plot_map = plot_available(plot_map, value_val)
 
@@ -483,7 +520,7 @@ defmodule SecopService.PlotDB do
           |> Map.put(:plotly, Map.get(module.custom_properties, "_plotly", nil))
 
         {value_val, value_ts} =
-          get_values_with_retry(value_param.id) |> Sec_Nodes.extract_value_timestamp_lists()
+          get_values(value_param.id) |> Sec_Nodes.extract_value_timestamp_lists() |> read_from_device_if_empty(value_param.id)
 
         plot_map = plot_available(plot_map, value_val)
 
@@ -512,7 +549,7 @@ defmodule SecopService.PlotDB do
     plot_map =
       if plottable?(parameter) do
         {value_val, value_ts} =
-          get_values_with_retry(parameter.id) |> Sec_Nodes.extract_value_timestamp_lists()
+          get_values(parameter.id) |> Sec_Nodes.extract_value_timestamp_lists() |> read_from_device_if_empty(parameter.id)
 
         plot_map =
           Map.put(plot_map, :plottable, true)
