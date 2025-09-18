@@ -1,5 +1,5 @@
 <div class="max-w-[2560px] mx-auto">
-  <%= if @active_nodes != %{} do %>
+  <%= if @active_nodes != %{} and @current_node != nil do %>
     <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
       <li class="me-2 mb-2">
         <button
@@ -42,7 +42,10 @@
       />
     </div>
   <% else %>
-    No nodes connected
+    <div class = "max-w-5xl align-middle mx-auto mt-20">
+
+    <.connect_node />
+    </div>
   <% end %>
 
   <.modal

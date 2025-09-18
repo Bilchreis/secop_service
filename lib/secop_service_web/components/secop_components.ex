@@ -13,14 +13,24 @@ defmodule SECoPComponents do
   attr :state, :atom, required: true
   attr :connstate, :boolean, required: true
 
+
   def node_button(assigns) do
     assigns = assign(assigns, :border_col, state_to_col(assigns.state))
+
+    display_name = if assigns.equipment_id != nil do
+      Util.display_name(assigns.equipment_id)
+    else
+      "node: " <> String.slice(assigns.uuid, 0, 8)
+    end
+    assigns = assign(assigns, :display_name, display_name)
 
     assigns =
       case assigns.current do
         true -> assign(assigns, :button_col, "bg-purple-500 hover:bg-purple-700")
         false -> assign(assigns, :button_col, "bg-zinc-500 hover:bg-zinc-700")
       end
+
+
 
     ~H"""
     <button
@@ -33,7 +43,7 @@ defmodule SECoPComponents do
         "font-mono"
       ]}
     >
-      <div class="text-xl font-sans">{Util.display_name(@equipment_id)}</div>
+      <div class="text-xl font-sans">{@display_name}</div>
       <div class="text-sm text-white-400 opacity-60">{@pubsub_topic}</div>
       <div class="flex gap-2">
         <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-zinc-600 font-mono">
@@ -48,6 +58,7 @@ defmodule SECoPComponents do
         </div>
       </div>
     </button>
+
     """
   end
 
@@ -526,22 +537,34 @@ defmodule SECoPComponents do
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
-        <div class="flex justify-end">
-          <button
-            type="button"
-            phx-click="close_connect_modal"
-            class="mr-2 text-gray-500 bg-gray-200 hover:bg-gray-300 focus:outline-none rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-600"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            class="text-white bg-purple-500 hover:bg-purple-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700"
-          >
-            Connect
-          </button>
+        <div class= "flex justify-between">
+            <button
+              phx-click="trigger-node-scan"
+              class="text-white bg-purple-500 hover:bg-purple-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700">
+              Trigger Scan
+            </button>
+
+          <div class="flex justify-end">
+
+            <button
+              type="button"
+              phx-click="close_connect_modal"
+              class="mr-2 text-gray-500 bg-gray-200 hover:bg-gray-300 focus:outline-none rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="text-white bg-purple-500 hover:bg-purple-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700"
+            >
+              Connect
+            </button>
+
+          </div>
         </div>
       </form>
+
+
     </div>
     """
   end
