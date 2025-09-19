@@ -93,6 +93,7 @@ defmodule SECoPComponents do
           |> Enum.map(fn x -> x["severity"] end)
           |> Enum.max_by(fn severity ->
             case severity do
+              "FATAL" -> 5
               "CATASTROPHIC" -> 4
               "ERROR" -> 3
               "WARNING" -> 2
@@ -108,6 +109,7 @@ defmodule SECoPComponents do
           Enum.map(result_list, fn diag ->
             col =
               case diag["severity"] do
+                "FATAL" -> "red-500"
                 "CATASTROPHIC" -> "red-500"
                 "ERROR" -> "red-500"
                 "WARNING" -> "orange-500"
@@ -135,6 +137,8 @@ defmodule SECoPComponents do
           <% "ERROR" -> %>
             <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-50 w-50" />
           <% "CATASTROPHIC" -> %>
+            <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-50 w-50" />
+          <% "FATAL" -> %>
             <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-50 w-50" />
           <% _ -> %>
             <.icon name="hero-question-mark-circle-solid" class="bg-gray-500 h-50 w-50" />
