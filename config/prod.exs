@@ -7,7 +7,8 @@ import Config
 # before starting your production server.
 config :secop_service, SecopServiceWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
-  check_origin: ["http://localhost:4001", "https://yourdomain.com"]
+  http: [ip: {0, 0, 0, 0}, port: 4000],
+  check_origin: false
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: SecopService.Finch
