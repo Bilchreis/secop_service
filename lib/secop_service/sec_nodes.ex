@@ -243,50 +243,57 @@ defmodule SecopService.Sec_Nodes do
 
   # Create a SEC node from the active_nodes data
   defp create_sec_node_from_data(node_data) do
-    properties = node_data.description.properties
+    if node_data.description == nil do
+      Logger.error("Node data missing description: #{inspect(node_data)}")
+      {:error, "Node data missing description, cannot inser into DB"}
+    else
 
-    # Extract custom properties (keys starting with underscore)
-    custom_properties =
-      Enum.reduce(properties, %{}, fn {key, value}, acc ->
-        if String.starts_with?(to_string(key), "_") do
-          Map.put(acc, key, value)
-        else
-          acc
-        end
-      end)
+      properties = Map.get(node_data,:description) |> Map.get(:properties)
 
-    describe_str = Jason.encode!(node_data.raw_description)
+      # Extract custom properties (keys starting with underscore)
+      custom_properties =
+        Enum.reduce(properties, %{}, fn {key, value}, acc ->
+          if String.starts_with?(to_string(key), "_") do
+            Map.put(acc, key, value)
+          else
+            acc
+          end
+        end)
 
-    check_result = check_description(describe_str)
-    # Extract basic node attributes
-    attrs = %{
-      uuid: node_data.uuid,
-      # Fixed typo from eqipment_id
-      equipment_id: node_data.equipment_id,
-      host: to_string(node_data.host),
-      port: node_data.port,
-      description: properties.description,
-      firmware: Map.get(properties, :firmware),
-      implementor: Map.get(properties, :implementor),
-      timeout: Map.get(properties, :timeout),
-      custom_properties: custom_properties,
-      describe_message: node_data.raw_description,
-      describe_message_raw: describe_str,
-      check_result: check_result
-    }
+      describe_str = Jason.encode!(node_data.raw_description)
 
-    # Check if node with this UUID already exists
-    case get_sec_node_by_uuid(attrs.uuid) do
-      nil ->
-        # Node doesn't exist, create it
-        Logger.info("Creating SEC Node with UUID #{attrs.uuid}")
-        create_sec_node(attrs)
+      check_result = check_description(describe_str)
+      # Extract basic node attributes
+      attrs = %{
+        uuid: node_data.uuid,
+        # Fixed typo from eqipment_id
+        equipment_id: node_data.equipment_id,
+        host: to_string(node_data.host),
+        port: node_data.port,
+        description: properties.description,
+        firmware: Map.get(properties, :firmware),
+        implementor: Map.get(properties, :implementor),
+        timeout: Map.get(properties, :timeout),
+        custom_properties: custom_properties,
+        describe_message: node_data.raw_description,
+        describe_message_raw: describe_str,
+        check_result: check_result
+      }
 
-      _existing ->
-        # Node exists, return error
-        Logger.warning("SEC Node with UUID #{attrs.uuid} already exists")
-        {:error, "SEC Node with UUID #{attrs.uuid} already exists"}
+      # Check if node with this UUID already exists
+      case get_sec_node_by_uuid(attrs.uuid) do
+        nil ->
+          # Node doesn't exist, create it
+          Logger.info("Creating SEC Node with UUID #{attrs.uuid}")
+          create_sec_node(attrs)
+
+        _existing ->
+          # Node exists, return error
+          Logger.warning("SEC Node with UUID #{attrs.uuid} already exists")
+          {:error, "SEC Node with UUID #{attrs.uuid} already exists"}
+      end
     end
+
   end
 
   # Store modules for a node

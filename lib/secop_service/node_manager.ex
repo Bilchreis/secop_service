@@ -127,24 +127,29 @@ defmodule SecopService.NodeManager do
 
     result =
       Enum.reduce(active_nodes, %{}, fn {node_id, node_state}, acc ->
-        case Sec_Nodes.node_exists?(node_state.uuid) do
-          false ->
-            # New node
-            Logger.info(
-              "New node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
-            )
+        if node_state.description == nil do
+          acc
+        else
+          case Sec_Nodes.node_exists?(node_state.uuid) do
+            false ->
+              # New node
+              Logger.info(
+                "New node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
+              )
 
-            {:ok, _node} = Sec_Nodes.store_single_node(node_state)
-            Map.put(acc, node_id, node_state)
+              {:ok, _node} = Sec_Nodes.store_single_node(node_state)
+              Map.put(acc, node_id, node_state)
 
-          true ->
-            # Update existing node
-            Logger.info(
-              "Node already in db: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
-            )
+            true ->
+              # Update existing node
+              Logger.info(
+                "Node already in db: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
+              )
 
-            acc
+              acc
+          end
         end
+
       end)
 
     # Start writers for active nodes that don't have one
