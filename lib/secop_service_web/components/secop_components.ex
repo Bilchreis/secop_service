@@ -13,15 +13,16 @@ defmodule SECoPComponents do
   attr :state, :atom, required: true
   attr :connstate, :boolean, required: true
 
-
   def node_button(assigns) do
     assigns = assign(assigns, :border_col, state_to_col(assigns.state))
 
-    display_name = if assigns.equipment_id != nil do
-      Util.display_name(assigns.equipment_id)
-    else
-      "node: " <> String.slice(assigns.uuid, 0, 8)
-    end
+    display_name =
+      if assigns.equipment_id != nil do
+        Util.display_name(assigns.equipment_id)
+      else
+        "node: " <> String.slice(assigns.uuid, 0, 8)
+      end
+
     assigns = assign(assigns, :display_name, display_name)
 
     assigns =
@@ -29,8 +30,6 @@ defmodule SECoPComponents do
         true -> assign(assigns, :button_col, "bg-purple-500 hover:bg-purple-700")
         false -> assign(assigns, :button_col, "bg-zinc-500 hover:bg-zinc-700")
       end
-
-
 
     ~H"""
     <button
@@ -58,7 +57,6 @@ defmodule SECoPComponents do
         </div>
       </div>
     </button>
-
     """
   end
 
@@ -541,15 +539,15 @@ defmodule SECoPComponents do
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
-        <div class= "flex justify-between">
-            <button
-              phx-click="trigger-node-scan"
-              class="text-white bg-purple-500 hover:bg-purple-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700">
-              Trigger Scan
-            </button>
+        <div class="flex justify-between">
+          <button
+            phx-click="trigger-node-scan"
+            class="text-white bg-purple-500 hover:bg-purple-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700"
+          >
+            Trigger Scan
+          </button>
 
           <div class="flex justify-end">
-
             <button
               type="button"
               phx-click="close_connect_modal"
@@ -563,12 +561,9 @@ defmodule SECoPComponents do
             >
               Connect
             </button>
-
           </div>
         </div>
       </form>
-
-
     </div>
     """
   end

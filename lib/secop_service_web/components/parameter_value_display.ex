@@ -40,7 +40,9 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
       "double" ->
         formatted =
           case raw_value do
-            nil -> "N/A"
+            nil ->
+              "N/A"
+
             val when val == 0.0 ->
               "0.0"
 
@@ -60,7 +62,9 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
       "scaled" ->
         formatted =
           case raw_value do
-            nil -> "N/A"
+            nil ->
+              "N/A"
+
             val when val == 0.0 ->
               "0"
 
@@ -184,8 +188,12 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
     parameter_value =
       case get_parameter_value(module_name, node_id, parameter) do
-        nil -> "Waiting for data..."
-        %{data_report: nil} -> nil
+        nil ->
+          "Waiting for data..."
+
+        %{data_report: nil} ->
+          nil
+
         val_map ->
           Map.get(val_map, :data_report) |> Enum.at(0)
       end

@@ -63,13 +63,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   def handle_info({:description_change, pubsub_topic, state}, socket) do
     Logger.info("node state change: #{pubsub_topic} #{state.state}")
 
-
-
     node_id = pubsubtopic_to_node_id(pubsub_topic)
 
-
-
-    updated_node = socket.assigns.active_nodes[node_id]
+    updated_node =
+      socket.assigns.active_nodes[node_id]
       |> Map.put(:description, state.description)
       |> Map.put(:equipment_id, state.equipment_id)
       |> Map.put(:raw_description, state.raw_description)
@@ -78,10 +75,12 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     active_nodes = socket.assigns.active_nodes |> Map.put(node_id, updated_node)
     current_node = socket.assigns.current_node
     values = socket.assigns.values
+
     socket =
       cond do
         current_node == nil ->
           Logger.info("No current node set, yet (possibly first node connected)")
+
           {values, current_node} =
             if Sec_Nodes.node_exists?(state[:uuid]) do
               current_node = Sec_Nodes.get_sec_node_by_uuid(state[:uuid])
@@ -91,10 +90,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
                 :secop_client_pubsub,
                 SEC_Node.get_values_pubsub_topic(current_node)
               )
+
               Logger.info("Current node updated")
               {values, current_node}
             else
-
               Logger.warning(
                 "Node with UUID #{state[:uuid]} does not exist in the database, retrying..."
               )
@@ -103,10 +102,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
               {values, current_node}
             end
 
-
           assign(socket, current_node: current_node) |> assign(values: values)
-
-
 
         state.node_id == SEC_Node.get_node_id(current_node) ->
           {values, current_node} =
@@ -124,6 +120,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
                 :secop_client_pubsub,
                 SEC_Node.get_values_pubsub_topic(current_node)
               )
+
               Logger.info("Current node updated")
               {values, current_node}
             else
@@ -140,7 +137,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
               {values, current_node}
             end
 
-
           assign(socket, current_node: current_node) |> assign(values: values)
 
         true ->
@@ -152,23 +148,22 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   def handle_info({:conn_state, pubsub_topic, active}, socket) do
-
-
     Logger.info("Connection state change for '#{pubsub_topic}',to: Active == #{active}")
 
     active_nodes = socket.assigns.active_nodes
 
-    updated_node = socket.assigns.active_nodes[pubsubtopic_to_node_id(pubsub_topic)] |> Map.put(:active, active)
+    updated_node =
+      socket.assigns.active_nodes[pubsubtopic_to_node_id(pubsub_topic)]
+      |> Map.put(:active, active)
 
-    new_active_nodes = Map.put(active_nodes,pubsubtopic_to_node_id(pubsub_topic), updated_node)
-
-
+    new_active_nodes = Map.put(active_nodes, pubsubtopic_to_node_id(pubsub_topic), updated_node)
 
     socket =
       socket
       |> assign(
-        :active_nodes, new_active_nodes )
-
+        :active_nodes,
+        new_active_nodes
+      )
 
     {:noreply, socket}
   end
@@ -183,9 +178,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   def handle_info({:new_node, pubsub_topic, state}, socket) do
-
     Logger.info("new node discovered: #{pubsub_topic} #{inspect(state)}")
-    active_nodes = socket.assigns.active_nodes |> Map.put(pubsubtopic_to_node_id(pubsub_topic), state)
+
+    active_nodes =
+      socket.assigns.active_nodes |> Map.put(pubsubtopic_to_node_id(pubsub_topic), state)
 
     {:noreply, assign(socket, active_nodes: active_nodes)}
   end
@@ -313,7 +309,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     Logger.info("Triggering node scan...")
     NodeDiscover.scan()
     {:noreply, socket}
-
   end
 
   def handle_event("connect-node", params, socket) do
@@ -393,6 +388,4 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     "#{host}:#{port}:#{module}:#{parameter}"
   end
-
-
 end
