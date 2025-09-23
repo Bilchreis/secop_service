@@ -9,6 +9,7 @@ services:
 
   secop-service:  
     image: ghcr.io/bilchreis/secop_service:latest
+    restart: always
     env_file: ".env.example"
     ports:
       - 4001:4001
