@@ -1,0 +1,30 @@
+services:
+  app:
+      build:
+        context: .
+        dockerfile: Dockerfile
+        args:
+          VARIANT: latest      
+      volumes:
+        - ..:/workspace:cached
+        - vscode-extension:/root/.vscode-server-insiders
+      command: sleep infinity
+      env_file: ".env.example"
+      depends_on:
+        - dev_db
+      network_mode: service:dev_db
+
+
+  dev_db:
+    image: postgres:latest
+    restart: unless-stopped
+    ports:
+        - "4000:4000"
+    env_file: ".env.example"
+    
+
+
+
+
+volumes:
+  vscode-extension:

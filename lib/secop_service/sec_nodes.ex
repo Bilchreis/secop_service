@@ -184,57 +184,59 @@ defmodule SecopService.Sec_Nodes do
   end
 
   defp check_description(describe_str, version \\ "1.0", output \\ "json") do
-    result=
+    result =
       try do
-        {result, _globals} = Pythonx.eval(
-          """
-          from secop_check.checker import Checker
+        {result, _globals} =
+          Pythonx.eval(
+            """
+            from secop_check.checker import Checker
 
-          version_str = version.decode('utf-8') if isinstance(version, bytes) else str(version)
-          output_str = output.decode('utf-8') if isinstance(output, bytes) else str(output)
-
-
-
-          checker = Checker(version_str, [], output_str)
-
-          checker.check(descr)
+            version_str = version.decode('utf-8') if isinstance(version, bytes) else str(version)
+            output_str = output.decode('utf-8') if isinstance(output, bytes) else str(output)
 
 
-          diag_list = []
 
-          for diag in checker.get_diags():
-              step = f' [{diag.step}]' if diag.step else ''
-              ctx = ' / '.join(f'{ty} {name}'.strip()
-                              for ty, name in diag.ctx.path).strip()
-              if ctx:
-                  ctx += ': '
+            checker = Checker(version_str, [], output_str)
 
-              diag_list.append({"severity": diag.severity.name,
-              "step": diag.step,
-              "message": diag.msg,
-              "ctx": [ list(node) for node in diag.ctx.path],
-              "text":f'{diag.severity.name}{step}: {ctx}{diag.msg}'
-              })
+            checker.check(descr)
 
-          diag_list
-          """,
-          %{"descr" => describe_str, "version" => version, "output" => output}
-        )
+
+            diag_list = []
+
+            for diag in checker.get_diags():
+                step = f' [{diag.step}]' if diag.step else ''
+                ctx = ' / '.join(f'{ty} {name}'.strip()
+                                for ty, name in diag.ctx.path).strip()
+                if ctx:
+                    ctx += ': '
+
+                diag_list.append({"severity": diag.severity.name,
+                "step": diag.step,
+                "message": diag.msg,
+                "ctx": [ list(node) for node in diag.ctx.path],
+                "text":f'{diag.severity.name}{step}: {ctx}{diag.msg}'
+                })
+
+            diag_list
+            """,
+            %{"descr" => describe_str, "version" => version, "output" => output}
+          )
 
         Pythonx.decode(result)
       rescue
         e in Pythonx.Error ->
           Logger.error("Python runtime error in check_description: #{inspect(e)}")
-          [%{"severity" => "FATAL",
+
+          [
+            %{
+              "severity" => "FATAL",
               "step" => "undefined",
               "message" => "SECoP Check Crashed",
-              "ctx" => [ ],
+              "ctx" => [],
               "text" => "SECoP Check Crashed"
-              }]
+            }
+          ]
       end
-
-
-
 
     %{"version" => version, "result" => result}
   end
@@ -564,6 +566,7 @@ defmodule SecopService.Sec_Nodes do
   def get_command(id), do: Repo.get(Command, id)
 
   def get_node(id), do: Repo.get(SEC_Node, id)
+
   @doc """
   Checks if a SEC node with the given UUID exists in the database.
 

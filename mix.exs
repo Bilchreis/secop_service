@@ -4,7 +4,7 @@ defmodule SecopService.MixProject do
   def project do
     [
       app: :secop_service,
-      version: "0.0.10",
+      version: "0.0.15",
       elixir: "~> 1.18.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
