@@ -7,7 +7,7 @@ defmodule SecopService.NodeManager do
 
   @pubsub_name :secop_client_pubsub
   # Check for node changes every minute
-  @check_interval 10 * 60 * 1000
+  @check_interval  1000 * 10 * 60
 
   # Client API
 
@@ -42,6 +42,7 @@ defmodule SecopService.NodeManager do
 
   @impl true
   def handle_cast(:sync_nodes, state) do
+    Logger.info("Syncing nodes with database...")
     # Get active nodes from supervisor
     active_nodes = SEC_Node_Supervisor.get_active_nodes()
 
@@ -130,6 +131,7 @@ defmodule SecopService.NodeManager do
   defp sync_nodes_with_db(active_nodes, state) do
     # Store nodes in database
 
+
     result =
       Enum.reduce(active_nodes, %{}, fn {node_id, node_state}, acc ->
         case Sec_Nodes.node_exists?(node_state.uuid) do
@@ -143,11 +145,6 @@ defmodule SecopService.NodeManager do
             Map.put(acc, node_id, node_state)
 
           true ->
-            # Update existing node
-            Logger.info(
-              "Node already in db: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
-            )
-
             acc
         end
       end)
