@@ -191,6 +191,13 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     active_nodes =
       socket.assigns.active_nodes |> Map.put(pubsubtopic_to_node_id(pubsub_topic), state)
 
+    socket = if socket.assigns.show_connect_modal do
+      socket |> assign(show_connect_modal: false)
+    else
+      send(self(), {:put_flash, [:info, "New node '#{pubsub_topic}' discovered."]})
+      socket
+    end
+
     {:noreply, assign(socket, active_nodes: active_nodes)}
   end
 
