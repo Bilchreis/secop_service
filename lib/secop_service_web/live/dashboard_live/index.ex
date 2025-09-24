@@ -177,18 +177,39 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, assign(socket, active_nodes: active_nodes)}
   end
 
+    def handle_info({:new_node, pubsub_topic, :connection_failed}, socket) do
+    Logger.info("connection to: #{pubsub_topic} could not be established")
+    send(self(), {:put_flash, [:error, "Connection to node '#{pubsub_topic}' failed."]})
+
+    {:noreply,socket}
+  end
+
+
   def handle_info({:new_node, pubsub_topic, state}, socket) do
     Logger.info("new node discovered: #{pubsub_topic} #{inspect(state)}")
 
     active_nodes =
       socket.assigns.active_nodes |> Map.put(pubsubtopic_to_node_id(pubsub_topic), state)
 
+    socket = if socket.assigns.show_connect_modal do
+      socket |> assign(show_connect_modal: false)
+    else
+      send(self(), {:put_flash, [:info, "New node '#{pubsub_topic}' discovered."]})
+      socket
+    end
+
     {:noreply, assign(socket, active_nodes: active_nodes)}
   end
 
   @impl true
   def handle_info({:put_flash, [type, message]}, socket) do
+    Process.send_after(self(), :clear_flash, 5000)
     {:noreply, put_flash(socket, type, message)}
+  end
+
+  def handle_info(:clear_flash, socket) do
+    {:noreply, clear_flash(socket)}
+
   end
 
   @impl true
@@ -315,6 +336,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     opts = %{
       host: params["host"] |> String.to_charlist(),
       port: params["port"] |> String.to_integer(),
+      manual: true,
       reconnect_backoff: 5000
     }
 
