@@ -72,6 +72,11 @@ defmodule SecopService.NodeManager do
     {:noreply, state}
   end
 
+  def handle_info({:new_node, _pubsub_topic, :connection_failed}, state) do
+
+    {:noreply, state}
+  end
+
   def handle_info({:new_node, _pubsub_topic, node_state}, state) do
     Logger.info("New node: #{node_state.equipment_id} #{node_state.host} (#{node_state.port})")
 
