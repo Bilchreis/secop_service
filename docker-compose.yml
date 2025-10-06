@@ -4,10 +4,12 @@ services:
     image: postgres:17.4
     env_file: ".env.example"
     restart: always
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
 
 
 
-  secop-service:  
+  secop-service:
     image: ghcr.io/bilchreis/secop_service:latest
     restart: always
     env_file: ".env.example"
