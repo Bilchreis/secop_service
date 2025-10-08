@@ -127,6 +127,8 @@ defmodule SecopServiceWeb.Components.HistoryDB do
 
   @impl true
   def handle_event("request-plotly-data", %{"id" => _chart_id}, %{assigns: assigns} = socket) do
+
+
     {:noreply,
      push_event(socket, "plotly-data-#{socket.assigns.id}", %{
        data: assigns.plot.result.data,
