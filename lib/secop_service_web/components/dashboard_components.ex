@@ -199,22 +199,12 @@ defmodule SecopServiceWeb.DashboardComponents do
     base_class = assigns.module.highest_interface_class
     styles = get_class_styles(base_class)
 
-    # if classes with history
-    if_with_history = [ :measurable, :measurable, :drivable, :readable]
-
-    show_hist = if String.to_atom(base_class) in if_with_history do
-      true
-    else
-      false
-    end
-
     assigns =
       assigns
       |> assign(:grouped_parameters, grouped_parameters)
       |> assign(:grouped_commands, grouped_commands)
       |> assign(:base_class, base_class)
       |> assign(:styles, styles)
-      |> assign(:show_hist, show_hist)
       |> assign_new(:node_id_str, fn -> "#{to_string(assigns.host)}:#{assigns.port}" end)
 
     ~H"""
@@ -436,7 +426,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         </:panel>
       </.accordion>
 
-      <%= if @n_modules < 20  and @show_hist do %>
+      <%= if @n_modules < 20 do %>
         <.live_component
           module={SecopServiceWeb.Components.HistoryDB}
           id={"module-plot:" <> to_string(@module.name)}

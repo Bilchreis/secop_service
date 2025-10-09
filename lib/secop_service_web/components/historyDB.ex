@@ -34,9 +34,23 @@ defmodule SecopServiceWeb.Components.HistoryDB do
         param
 
       %SecopService.Sec_Nodes.Module{} = module ->
-        Enum.find(module.parameters, fn param -> param.name == "value" end)
+        Enum.find(module.parameters, nil, fn param -> param.name == "value" end)
     end
   end
+
+  def tabular?(%SecopService.Sec_Nodes.Module{} = module) do
+    if get_parameter(module) do
+      false
+    else
+      false
+    end
+  end
+
+
+  def tabular?(%SecopService.Sec_Nodes.Parameter{} = _parameter) do
+    true
+  end
+
 
   @impl true
   def update(%{secop_obj: secop_obj} = assigns, socket) do
@@ -51,15 +65,18 @@ defmodule SecopServiceWeb.Components.HistoryDB do
           |> assign(:table_data, nil)
           |> assign(:plot, nil)
 
-        socket =
-          if PlotDB.plottable?(secop_obj) do
+        socket = cond do
+          PlotDB.plottable?(secop_obj) ->
             assign(socket, :display_mode, :graph)
             |> assign(:plottable, true)
             |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
-          else
+          tabular?(secop_obj) ->
             assign(socket, :display_mode, :table)
             |> assign(:plottable, false)
             |> assign_async(:table_data, fn -> get_tabledata(secop_obj) end)
+          true ->
+            assign(socket, :display_mode, :empty)
+            |> assign(:plottable, false)
           end
 
         socket
@@ -225,6 +242,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
     ~H"""
     <div class={["h-full", assigns[:class]]}>
       <div class="flex h-full">
+        <%= if @display_mode != :empty  do %>
         <div class="flex flex-col space-y-2 pl-2 pr-2">
           <button
             class={[
@@ -288,6 +306,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
         </button>
         -->
         </div>
+        <% end %>
 
         <div class="flex-1">
           <%= case @display_mode do %>
@@ -389,6 +408,14 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                   opts={node_browser_pagination_opts()}
                 />
               </.async_result>
+            <% :empty -> %>
+              <!-- Nothing is rendered here, for example communicator modules
+              that do not have a main param like value -->
+
+            <% _ -> %>
+              <div class="flex items-center justify-center h-full text-center bg-gray-300 p-4 rounded-lg">
+                <span class="text-gray-800">Unknown display mode</span>
+              </div>
           <% end %>
         </div>
       </div>
