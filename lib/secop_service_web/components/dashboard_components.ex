@@ -19,6 +19,9 @@ defmodule SecopServiceWeb.DashboardComponents do
   def dash_sec_node(assigns) do
     grouped_modules = Enum.group_by(assigns.node.modules, &(&1.group || nil))
 
+
+
+
     assigns =
       assign(assigns, :grouped_modules, grouped_modules)
       |> assign(:n_modules, length(assigns.node.modules))
