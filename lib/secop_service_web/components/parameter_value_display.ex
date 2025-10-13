@@ -3,6 +3,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   require Logger
 
+  alias Credo.Check.Warning
   alias SecopServiceWeb.DashboardLive.Model
   alias SecopService.NodeControl
   alias NodeTable
@@ -107,9 +108,14 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         depth,
         max_depth
       )
+  def flattened_form_map(flattened_map, _path, nil, _datainfo, depth, max_depth) when depth < max_depth do
+    Map.put(flattened_map, "value", "null")
+  end
 
   def flattened_form_map(flattened_map, path, current_value, datainfo, depth, max_depth)
       when depth < max_depth do
+
+
     case datainfo["type"] do
       "struct" ->
         Enum.reduce(datainfo["members"], %{}, fn {member_name, member_info}, acc ->
@@ -389,27 +395,31 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   def display_parameter(assigns) do
     ~H"""
-    <%= case @datainfo["type"] do %>
-      <% "struct" -> %>
-        <.display_struct parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "tuple" -> %>
-        <.display_tuple parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% type when type in ["double", "int", "scaled"] -> %>
-        <.display_numeric parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "bool" -> %>
-        <.display_bool parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "enum" -> %>
-        <.display_enum parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "array" -> %>
-        <.display_array parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "string" -> %>
-        <.display_string parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "blob" -> %>
-        blob
-      <% "matrix" -> %>
-        matrix
-      <% _ -> %>
-        unknown type
+    <%= if @parameter_value == nil do %>
+      <div class="text-red-500">Warning for Data...</div>
+    <% else %>
+      <%= case @datainfo["type"] do %>
+        <% "struct" -> %>
+          <.display_struct parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "tuple" -> %>
+          <.display_tuple parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% type when type in ["double", "int", "scaled"] -> %>
+          <.display_numeric parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "bool" -> %>
+          <.display_bool parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "enum" -> %>
+          <.display_enum parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "array" -> %>
+          <.display_array parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "string" -> %>
+          <.display_string parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "blob" -> %>
+          blob
+        <% "matrix" -> %>
+          matrix
+        <% _ -> %>
+          unknown type
+      <% end %>
     <% end %>
     """
   end

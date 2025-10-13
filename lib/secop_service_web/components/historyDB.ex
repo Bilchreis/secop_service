@@ -40,7 +40,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
 
   def tabular?(%SecopService.Sec_Nodes.Module{} = module) do
     if get_parameter(module) do
-      false
+      true
     else
       false
     end
