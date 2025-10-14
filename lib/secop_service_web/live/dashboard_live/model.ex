@@ -131,12 +131,16 @@ defmodule SecopServiceWeb.DashboardLive.Model do
     nil
   end
 
-  def process_data_report(_accessible, data_report, datainfo) do
+  def process_data_report(_accessible, {:error_report,[error_cls,error_msg,qualifiers]}, datainfo) do
+    %{error_report: [error_cls,error_msg,qualifiers], datainfo: datainfo}
+  end
+  def process_data_report(accessible, data_report, datainfo) do
     %{data_report: data_report, datainfo: datainfo}
   end
 
   def value_update(values, module, accessible, data_report) do
     # Check if the module exists
+
     case get_in(values, [module, accessible]) do
       nil ->
         {:error, :parameter_not_found, values}
@@ -144,13 +148,23 @@ defmodule SecopServiceWeb.DashboardLive.Model do
       old_param_val ->
         new_param_val = process_data_report(accessible, data_report, old_param_val.datainfo)
 
-        if Enum.at(old_param_val.data_report, 0) == Enum.at(new_param_val.data_report, 0) do
-          {:ok, :equal, values}
-        else
-          # Merge the old parameter value with the new one
-          merged_param_val = Map.merge(old_param_val, new_param_val)
-          {:ok, :updated, put_in(values, [module, accessible], merged_param_val)}
+
+        cond do
+          Map.has_key?(new_param_val,:error_report) ->
+            merged_param_val = Map.merge(old_param_val, new_param_val)
+            {:ok, :updated, put_in(values, [module, accessible], merged_param_val)}
+          Enum.at(old_param_val.data_report, 0) == Enum.at(new_param_val.data_report, 0) ->
+            # No change in value
+            {:ok, :equal, values}
+          true ->
+            # Merge the old parameter value with the new one
+            merged_param_val = Map.merge(old_param_val, new_param_val) |> Map.drop([:error_report])
+            {:ok, :updated, put_in(values, [module, accessible], merged_param_val)}
         end
+
+
+
+
     end
   end
 

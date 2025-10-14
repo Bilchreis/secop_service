@@ -269,7 +269,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     @impl true
   def handle_info({:error_update, module, accessible, error_report}, socket) do
     error_report = {:error_report, error_report}
-
+    IO.inspect(error_report, label: "Error Report Received")
     socket =
       case Model.value_update(socket.assigns.values, module, accessible, error_report) do
         {:ok, :equal, _values} ->

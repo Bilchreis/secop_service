@@ -18,31 +18,38 @@ defmodule SecopService.PlotDB do
 
         id = SEC_Node.get_node_id(node)
 
-        reading =
-          case SEC_Node_Statem.read(id, module.name, parameter.name) do
-            {:reply, _r_mod, _r_para, reading} -> reading
-            _ -> []
-          end
-
-        case reading do
-          #
-          [val, %{t: ts}] ->
-            val = val |> Jason.encode!() |> Jason.decode!()
-
-            # Convert Unix timestamp to DateTime
-            secs = trunc(ts)
-            usecs = trunc((ts - secs) * 1_000_000)
-            {:ok, dt} = DateTime.from_unix(secs)
-            ts = %{dt | microsecond: {usecs, 6}} |> DateTime.to_unix(:millisecond)
-
-            {[val], [ts]}
-
-          _ ->
-            {[], []}
-        end
+        # Retry indefinitely until we get a valid reading
+        read_until_valid(id, module.name, parameter.name)
 
       {_, _} ->
         readings
+    end
+  end
+
+  defp read_until_valid(id, module_name, parameter_name) do
+    case SEC_Node_Statem.read(id, module_name, parameter_name) do
+      {:reply, _r_mod, _r_para, [val, %{t: ts}]} ->
+        val = val |> Jason.encode!() |> Jason.decode!()
+
+        # Convert Unix timestamp to DateTime
+        secs = trunc(ts)
+        usecs = trunc((ts - secs) * 1_000_000)
+        {:ok, dt} = DateTime.from_unix(secs)
+        ts = %{dt | microsecond: {usecs, 6}} |> DateTime.to_unix(:millisecond)
+
+        {[val], [ts]}
+
+      {:error, :read, _specifier, _error_class, error_text, _error_dict} ->
+        Logger.warning("Read failed: #{error_text}, retrying...")
+        # Add a small delay to avoid overwhelming the device
+        Process.sleep(10000)
+        read_until_valid(id, module_name, parameter_name)
+
+      other ->
+        Logger.warning("Unexpected response: #{inspect(other)}, retrying...")
+        # Add a small delay to avoid overwhelming the device
+        Process.sleep(20000)
+        read_until_valid(id, module_name, parameter_name)
     end
   end
 
