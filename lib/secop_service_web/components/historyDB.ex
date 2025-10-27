@@ -40,7 +40,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
 
   def tabular?(%SecopService.Sec_Nodes.Module{} = module) do
     if get_parameter(module) do
-      false
+      true
     else
       false
     end
@@ -315,7 +315,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                 <.async_result :let={_plot} assign={@plot}>
                   <:loading>
                     <div class="animate-pulse flex items-center justify-center h-full text-center bg-gray-300 p-4 rounded-lg">
-                      <span class="text-gray-700">Fetching Plot Data</span>
+                      <span class="text-gray-700">Waiting for valid Plot Data...</span>
                     </div>
                   </:loading>
                   <:failed>

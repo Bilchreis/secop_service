@@ -40,6 +40,9 @@ defmodule SecopServiceWeb.DashboardLive.Index do
         model[:active_nodes][SEC_Node.get_node_id(model.current_node)][:pubsub_topic]
 
       Phoenix.PubSub.subscribe(:secop_client_pubsub, "value_update:#{values_pubsub_topic}")
+
+      Phoenix.PubSub.subscribe(:secop_client_pubsub, "error_update:#{values_pubsub_topic}")
+
     end
 
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "descriptive_data_change")
@@ -90,6 +93,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
                 :secop_client_pubsub,
                 SEC_Node.get_values_pubsub_topic(current_node)
               )
+              Phoenix.PubSub.subscribe(
+                :secop_client_pubsub,
+                SEC_Node.get_error_pubsub_topic(current_node)
+              )
 
               Logger.info("Current node updated")
               {values, current_node}
@@ -112,6 +119,11 @@ defmodule SecopServiceWeb.DashboardLive.Index do
                 :secop_client_pubsub,
                 SEC_Node.get_values_pubsub_topic(current_node)
               )
+              Phoenix.PubSub.unsubscribe(
+                :secop_client_pubsub,
+                SEC_Node.get_error_pubsub_topic(current_node)
+              )
+
 
               current_node = Sec_Nodes.get_sec_node_by_uuid(state[:uuid])
               values = Model.get_val_map(current_node)
@@ -120,6 +132,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
                 :secop_client_pubsub,
                 SEC_Node.get_values_pubsub_topic(current_node)
               )
+              Phoenix.PubSub.subscribe(
+                :secop_client_pubsub,
+                SEC_Node.get_error_pubsub_topic(current_node)
+              )
 
               Logger.info("Current node updated")
               {values, current_node}
@@ -127,6 +143,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
               Phoenix.PubSub.unsubscribe(
                 :secop_client_pubsub,
                 SEC_Node.get_values_pubsub_topic(current_node)
+              )
+              Phoenix.PubSub.unsubscribe(
+                :secop_client_pubsub,
+                SEC_Node.get_error_pubsub_topic(current_node)
               )
 
               Logger.warning(
@@ -246,6 +266,37 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
+    @impl true
+  def handle_info({:error_update, module, accessible, error_report}, socket) do
+    error_report = {:error_report, error_report}
+
+    socket =
+      case Model.value_update(socket.assigns.values, module, accessible, error_report) do
+        {:ok, :equal, _values} ->
+          socket
+
+        {:ok, :updated, values} ->
+          node_id_str =
+            "#{to_string(socket.assigns.current_node.host)}:#{socket.assigns.current_node.port}"
+
+          update_components(
+            node_id_str,
+            module,
+            accessible,
+            error_report
+          )
+
+          assign(socket, :values, values)
+
+        {:error, :parameter_not_found, _values} ->
+          Logger.warning("Parameter #{accessible} in module #{module} not found in values")
+          socket
+      end
+
+    {:noreply, socket}
+  end
+
+
   def handle_event("toggle-conn-state", _unsigned_params, socket) do
     Logger.info("Toggling connection state for current node")
 
@@ -278,6 +329,11 @@ defmodule SecopServiceWeb.DashboardLive.Index do
       SEC_Node.get_values_pubsub_topic(current_node)
     )
 
+    Phoenix.PubSub.unsubscribe(
+      :secop_client_pubsub,
+      SEC_Node.get_error_pubsub_topic(current_node)
+    )
+
     # subscribe to the new node's pubsub topic & update the model
     new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
     new_model = model_from_socket(socket) |> Model.set_current_node(new_node_id)
@@ -286,6 +342,11 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     Phoenix.PubSub.subscribe(
       :secop_client_pubsub,
       SEC_Node.get_values_pubsub_topic(new_model.current_node)
+    )
+
+    Phoenix.PubSub.subscribe(
+      :secop_client_pubsub,
+      SEC_Node.get_error_pubsub_topic(new_model.current_node)
     )
 
     {:noreply, socket}

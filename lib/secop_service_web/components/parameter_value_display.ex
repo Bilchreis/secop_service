@@ -3,6 +3,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   require Logger
 
+
   alias SecopServiceWeb.DashboardLive.Model
   alias SecopService.NodeControl
   alias NodeTable
@@ -107,9 +108,14 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         depth,
         max_depth
       )
+  def flattened_form_map(flattened_map, _path, nil, _datainfo, depth, max_depth) when depth < max_depth do
+    Map.put(flattened_map, "value", "null")
+  end
 
   def flattened_form_map(flattened_map, path, current_value, datainfo, depth, max_depth)
       when depth < max_depth do
+
+
     case datainfo["type"] do
       "struct" ->
         Enum.reduce(datainfo["members"], %{}, fn {member_name, member_info}, acc ->
@@ -186,19 +192,33 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
       ) do
     node_id = {String.to_charlist(host), port}
 
-    parameter_value =
-      case get_parameter_value(module_name, node_id, parameter) do
+    val_map = get_parameter_value(module_name, node_id, parameter)
+
+    socket  =
+      case val_map do
         nil ->
-          "Waiting for data..."
+          assign(socket, :parameter_value, nil)
+             |> assign(:parameter_error, nil)
 
         %{data_report: nil} ->
-          nil
+          assign(socket, :parameter_value, nil)
+            |> assign(:parameter_error, nil)
+
+        %{error_report: [error_cls, error_msg, _qualifiers]} ->
+          assign(socket, :parameter_error, [error_cls, error_msg])
+            |> assign(:parameter_value, nil)
+
+
+        %{data_report: [value, _qualifiers]} ->
+          assign(socket, :parameter_value, value)
+            |> assign(:parameter_error, nil)
+
 
         val_map ->
           Map.get(val_map, :data_report) |> Enum.at(0)
       end
 
-    flat_map = flattened_form_map(%{}, ["value"], parameter_value, parameter.datainfo, 0, 1)
+    flat_map = flattened_form_map(%{}, ["value"], socket.assigns.parameter_value, parameter.datainfo, 0, 1)
 
     base_form = %{
       "location" => "#{location}",
@@ -206,7 +226,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
       "port" => Integer.to_string(port),
       "parameter" => parameter.name,
       "module" => module_name,
-      "value" => Jason.encode!(parameter_value, pretty: true),
+      "value" => Jason.encode!(socket.assigns.parameter_value, pretty: true),
       "form_type" => "simple"
     }
 
@@ -231,11 +251,11 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
       |> assign(:set_form, set_form)
       |> assign(:modal_form, modal_form)
       |> assign(:location, location)
-      |> assign_new(:parameter_value, fn -> parameter_value end)
       |> assign(:show_parameter_value_modal, false)
       |> assign(:is_composite, parameter.datainfo["type"] in ["struct", "tuple"])
       |> assign(:change_success, nil)
       |> assign(:id_str, id_str)
+
 
     {:ok, socket}
   end
@@ -251,13 +271,25 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
   def update(%{value_update: data_report} = _assigns, socket) do
     # parameter = socket.assigns.parameter
 
-    parameter_value =
+
+    socket =
       case data_report do
-        nil -> "Waiting for data..."
-        [value, _qualifiers] -> value
+
+        {:error_report , [error_cls, error_msg, qualifiers]} ->
+          Logger.warning("Error Update: #{error_cls}, #{error_msg}, #{inspect(qualifiers)}")
+          assign(socket, :parameter_error, [error_cls, error_msg])
+
+
+        [value, _qualifiers] ->
+          assign(socket, :parameter_value, value)
+            |> assign(:parameter_error, nil)
+
+        _ -> Logger.warning("Malformed datareport received: #{IO.inspect(data_report)}")
+          socket
       end
 
-    {:ok, assign(socket, :parameter_value, parameter_value)}
+
+    {:ok, socket}
   end
 
   def update(%{control: :validate, unsigned_params: unsigned_params} = _assigns, socket) do
@@ -389,27 +421,31 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   def display_parameter(assigns) do
     ~H"""
-    <%= case @datainfo["type"] do %>
-      <% "struct" -> %>
-        <.display_struct parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "tuple" -> %>
-        <.display_tuple parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% type when type in ["double", "int", "scaled"] -> %>
-        <.display_numeric parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "bool" -> %>
-        <.display_bool parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "enum" -> %>
-        <.display_enum parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "array" -> %>
-        <.display_array parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "string" -> %>
-        <.display_string parameter_value={@parameter_value} datainfo={@datainfo} />
-      <% "blob" -> %>
-        blob
-      <% "matrix" -> %>
-        matrix
-      <% _ -> %>
-        unknown type
+    <%= if @parameter_value == nil do %>
+      <div class="text-white-500">Waiting for Data...</div>
+    <% else %>
+      <%= case @datainfo["type"] do %>
+        <% "struct" -> %>
+          <.display_struct parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "tuple" -> %>
+          <.display_tuple parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% type when type in ["double", "int", "scaled"] -> %>
+          <.display_numeric parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "bool" -> %>
+          <.display_bool parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "enum" -> %>
+          <.display_enum parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "array" -> %>
+          <.display_array parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "string" -> %>
+          <.display_string parameter_value={@parameter_value} datainfo={@datainfo} />
+        <% "blob" -> %>
+          blob
+        <% "matrix" -> %>
+          matrix
+        <% _ -> %>
+          unknown type
+      <% end %>
     <% end %>
     """
   end
@@ -609,6 +645,13 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
           <div class="font-mono text-gray-900 dark:text-gray-200 opacity-100">
             <.display_parameter parameter_value={@parameter_value} datainfo={@parameter.datainfo} />
           </div>
+          <div>
+            <%= if @parameter_error != nil do %>
+              <div class="text-red-500 mt-2">
+                Error: <%= Enum.at(@parameter_error, 0) %> - <%= Enum.at(@parameter_error, 1) %>
+              </div>
+            <% end %>
+          </div>
         </div>
         <%= if not @parameter.readonly  and not @is_composite do %>
           <div class="flex justify-between items-start">
@@ -768,7 +811,6 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
                 placeholder={Phoenix.HTML.Form.input_value(@modal_form, :value)}
                 value={Phoenix.HTML.Form.input_value(@modal_form, :value)}
                 rows="20"
-                phx-debounce="500"
                 class="flex-1 min-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
               />
             </div>
