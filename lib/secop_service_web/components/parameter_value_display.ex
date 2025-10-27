@@ -271,6 +271,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
   def update(%{value_update: data_report} = _assigns, socket) do
     # parameter = socket.assigns.parameter
 
+
     socket =
       case data_report do
 

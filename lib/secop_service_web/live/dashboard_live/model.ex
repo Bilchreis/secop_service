@@ -148,19 +148,15 @@ defmodule SecopServiceWeb.DashboardLive.Model do
       old_param_val ->
         new_param_val = process_data_report(accessible, data_report, old_param_val.datainfo)
 
+      if old_param_val == new_param_val do
+        {:ok, :equal, values}
+      else
+        # Merge the old parameter value with the new one
+        merged_param_val = Map.merge(old_param_val, new_param_val)
 
-        cond do
-          Map.has_key?(new_param_val,:error_report) ->
-            merged_param_val = Map.merge(old_param_val, new_param_val)
-            {:ok, :updated, put_in(values, [module, accessible], merged_param_val)}
-          Enum.at(old_param_val.data_report, 0) == Enum.at(new_param_val.data_report, 0) ->
-            # No change in value
-            {:ok, :equal, values}
-          true ->
-            # Merge the old parameter value with the new one
-            merged_param_val = Map.merge(old_param_val, new_param_val) |> Map.drop([:error_report])
-            {:ok, :updated, put_in(values, [module, accessible], merged_param_val)}
-        end
+
+        {:ok, :updated, put_in(values, [module, accessible], merged_param_val)}
+      end
 
 
 
