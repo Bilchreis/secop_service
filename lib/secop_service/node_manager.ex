@@ -1,9 +1,11 @@
 defmodule SecopService.NodeManager do
   use GenServer
   require Logger
+  alias SecopService.NodeSupervisor
   alias SecopService.Sec_Nodes
   alias SEC_Node_Supervisor
-  alias SecopService.NodeDBWriterSupervisor
+  alias SecopService.NodeSupervisor
+
 
   @pubsub_name :secop_client_pubsub
   # Check for node changes every minute
@@ -90,21 +92,29 @@ defmodule SecopService.NodeManager do
     Logger.info("Description Change for node: #{node_state.equipment_id}")
 
     # Find the old UUID if present
-
     old_uuid = find_old_uuid(state.nodes, node_state.node_id)
 
     # If we have an old UUID and it's different, stop the old writer
     state =
       if old_uuid && old_uuid != node_state.uuid do
-        Logger.info("Node UUID changed from #{old_uuid} to #{node_state.uuid}, updating writer")
-        NodeDBWriterSupervisor.stop_writer(old_uuid)
+        Logger.info("Node UUID changed from #{old_uuid} to #{node_state.uuid}, stopping node Services")
+        NodeSupervisor.stop_node_services(node_state.node_id)
 
         # Store the new node configuration
-        {:ok, _node} = Sec_Nodes.store_single_node(node_state)
+        {:ok, db_node} = Sec_Nodes.store_single_node(node_state)
+
+        Logger.debug("publish new node added at: #{db_node.uuid}")
+
+        Phoenix.PubSub.broadcast(
+          :secop_client_pubsub,
+          "new_node",
+          {:new_node_db, db_node}
+        )
+
 
         updated_nodes = Map.put(state.nodes, node_state.node_id, node_state)
         # Start a new writer
-        NodeDBWriterSupervisor.start_writer(node_state)
+        NodeSupervisor.start_child(Sec_Nodes.get_sec_node_by_uuid(node_state.uuid))
         %{state | nodes: updated_nodes}
       else
         state
@@ -142,6 +152,7 @@ defmodule SecopService.NodeManager do
             )
 
             {:ok, _node} = Sec_Nodes.store_single_node(node_state)
+
             Map.put(acc, node_id, node_state)
 
           true ->
@@ -149,21 +160,22 @@ defmodule SecopService.NodeManager do
         end
       end)
 
-    # Start writers for active nodes that don't have one
+    # Start node Services for active nodes that don't have one
     Enum.each(active_nodes, fn {_node_id, node_state} ->
-      unless NodeDBWriterSupervisor.writer_exists?(node_state.uuid) do
-        NodeDBWriterSupervisor.start_writer(node_state)
+      if not NodeSupervisor.services_running?(node_state.node_id) do
+        Logger.info("Starting Services for node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}")
+        NodeSupervisor.start_child(Sec_Nodes.get_sec_node_by_uuid(node_state.uuid))
       end
     end)
 
-    # Stop writers for nodes that are no longer active
-    active_uuids = active_nodes |> Enum.map(fn {_, node} -> node.uuid end) |> MapSet.new()
-    current_writer_uuids = NodeDBWriterSupervisor.list_writer_uuids() |> MapSet.new()
+    # Stop Node Services for nodes that are no longer active
+    active_node_ids = active_nodes |> Enum.map(fn {_, node} -> node.node_id end) |> MapSet.new()
+    current_service_node_ids = NodeSupervisor.list_node_id_services() |> MapSet.new()
 
     # Writers to stop: those that exist but aren't in active nodes
-    MapSet.difference(current_writer_uuids, active_uuids)
-    |> Enum.each(fn uuid ->
-      NodeDBWriterSupervisor.stop_writer(uuid)
+    MapSet.difference(current_service_node_ids, active_node_ids)
+    |> Enum.each(fn node_id ->
+      NodeSupervisor.stop_node_services(node_id)
     end)
 
     old_nodes = state.nodes

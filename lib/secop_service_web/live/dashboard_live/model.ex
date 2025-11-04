@@ -134,7 +134,7 @@ defmodule SecopServiceWeb.DashboardLive.Model do
   def process_data_report(_accessible, {:error_report,[error_cls,error_msg,qualifiers]}, datainfo) do
     %{error_report: [error_cls,error_msg,qualifiers], datainfo: datainfo}
   end
-  def process_data_report(accessible, data_report, datainfo) do
+  def process_data_report(_accessible, data_report, datainfo) do
     %{data_report: data_report, datainfo: datainfo}
   end
 

@@ -197,7 +197,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     {:noreply, assign(socket, active_nodes: active_nodes)}
   end
 
-    def handle_info({:new_node, pubsub_topic, :connection_failed}, socket) do
+  def handle_info({:new_node, pubsub_topic, :connection_failed}, socket) do
     Logger.info("connection to: #{pubsub_topic} could not be established")
     send(self(), {:put_flash, [:error, "Connection to node '#{pubsub_topic}' failed."]})
 
