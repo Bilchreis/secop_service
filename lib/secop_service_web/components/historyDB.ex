@@ -46,11 +46,9 @@ defmodule SecopServiceWeb.Components.HistoryDB do
     end
   end
 
-
   def tabular?(%SecopService.Sec_Nodes.Parameter{} = _parameter) do
     true
   end
-
 
   @impl true
   def update(%{secop_obj: secop_obj} = assigns, socket) do
@@ -65,18 +63,21 @@ defmodule SecopServiceWeb.Components.HistoryDB do
           |> assign(:table_data, nil)
           |> assign(:plot, nil)
 
-        socket = cond do
-          PlotDB.plottable?(secop_obj) ->
-            assign(socket, :display_mode, :graph)
-            |> assign(:plottable, true)
-            |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
-          tabular?(secop_obj) ->
-            assign(socket, :display_mode, :table)
-            |> assign(:plottable, false)
-            |> assign_async(:table_data, fn -> get_tabledata(secop_obj) end)
-          true ->
-            assign(socket, :display_mode, :empty)
-            |> assign(:plottable, false)
+        socket =
+          cond do
+            PlotDB.plottable?(secop_obj) ->
+              assign(socket, :display_mode, :graph)
+              |> assign(:plottable, true)
+              |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
+
+            tabular?(secop_obj) ->
+              assign(socket, :display_mode, :table)
+              |> assign(:plottable, false)
+              |> assign_async(:table_data, fn -> get_tabledata(secop_obj) end)
+
+            true ->
+              assign(socket, :display_mode, :empty)
+              |> assign(:plottable, false)
           end
 
         socket
@@ -90,7 +91,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
     {:ok, socket}
   end
 
-  def update(%{value_update: value_update, parameter: parameter} = _assigns, socket) do
+  def update(%{value_update: value_update_list, parameter: parameter} = _assigns, socket) do
     param_list =
       case socket.assigns.secop_obj do
         %SecopService.Sec_Nodes.Parameter{} = param ->
@@ -108,33 +109,32 @@ defmodule SecopServiceWeb.Components.HistoryDB do
 
     socket =
       if socket.assigns.plottable and parameter in param_list and socket.assigns.plot.ok? do
-        [value, qualifiers] = value_update
+        validated_datapoints =
+          Enum.reduce(value_update_list, [], fn [value, qualifiers], acc ->
+            case qualifiers do
+              %{t: timestamp} ->
+                # Convert to milliseconds if needed
+                timestamp = trunc(timestamp * 1000)
+                [{value, timestamp} | acc]
 
-        socket =
-          case qualifiers do
-            %{t: timestamp} ->
-              # Convert to milliseconds if needed
-              timestamp = trunc(timestamp * 1000)
-              # Find the trace index based on the parameter name
-              # This assumes traces are ordered by parameter name in plot.data
+              _ ->
+                acc
+            end
+          end)
+          |> Enum.reverse()
 
-              # Format data for the extend-traces event
-              # The event expects arrays of arrays (one per trace)
-              update_data =
-                PlotDB.get_trace_updates(socket.assigns.plot.result, value, timestamp, parameter)
+        if length(validated_datapoints) > 0 do
+          update_data =
+            PlotDB.get_trace_updates_batch(
+              socket.assigns.plot.result,
+              validated_datapoints,
+              parameter
+            )
 
-              # Push the event to the client
-              push_event(socket, "extend-traces-#{socket.assigns.id}", update_data)
-
-            _ ->
-              Logger.warning(
-                "Received Datareport without timestamp qualifier #{inspect(qualifiers)}, Data: #{inspect(value)}"
-              )
-
-              socket
-          end
-
-        socket
+          push_event(socket, "extend-traces-#{socket.assigns.id}", update_data)
+        else
+          socket
+        end
       else
         socket
       end
@@ -144,8 +144,6 @@ defmodule SecopServiceWeb.Components.HistoryDB do
 
   @impl true
   def handle_event("request-plotly-data", %{"id" => _chart_id}, %{assigns: assigns} = socket) do
-
-
     {:noreply,
      push_event(socket, "plotly-data-#{socket.assigns.id}", %{
        data: assigns.plot.result.data,
@@ -243,37 +241,37 @@ defmodule SecopServiceWeb.Components.HistoryDB do
     <div class={["h-full", assigns[:class]]}>
       <div class="flex h-full">
         <%= if @display_mode != :empty  do %>
-        <div class="flex flex-col space-y-2 pl-2 pr-2">
-          <button
-            class={[
-              "px-4 py-2 rounded-lg focus:outline-none",
-              @display_mode == :graph &&
-                "bg-gray-500 text-white hover:bg-gray-600 dark:bg-purple-700 dark:hover:bg-gray-800",
-              @display_mode != :graph &&
-                "bg-gray-300 dark:bg-gray-600 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-700"
-            ]}
-            phx-click={JS.push("set-display-mode", value: %{mode: "graph"}, target: @myself)}
-          >
-            <div class="flex items-center">
-              <.icon name="hero-chart-bar-solid" class="h-5 w-5 flex-none mr-1" /> Graph
-            </div>
-          </button>
+          <div class="flex flex-col space-y-2 pl-2 pr-2">
+            <button
+              class={[
+                "px-4 py-2 rounded-lg focus:outline-none",
+                @display_mode == :graph &&
+                  "bg-gray-500 text-white hover:bg-gray-600 dark:bg-purple-700 dark:hover:bg-gray-800",
+                @display_mode != :graph &&
+                  "bg-gray-300 dark:bg-gray-600 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-700"
+              ]}
+              phx-click={JS.push("set-display-mode", value: %{mode: "graph"}, target: @myself)}
+            >
+              <div class="flex items-center">
+                <.icon name="hero-chart-bar-solid" class="h-5 w-5 flex-none mr-1" /> Graph
+              </div>
+            </button>
 
-          <button
-            class={[
-              "px-4 py-2 rounded-lg focus:outline-none",
-              @display_mode == :table &&
-                "bg-stone-500 text-white hover:bg-stone-600 dark:bg-purple-700 dark:hover:bg-stone-800",
-              @display_mode != :table &&
-                "bg-stone-300 dark:bg-stone-600 dark:text-white hover:bg-stone-400 dark:hover:bg-stone-700"
-            ]}
-            phx-click={JS.push("set-display-mode", value: %{mode: "table"}, target: @myself)}
-          >
-            <div class="flex items-center">
-              <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
-            </div>
-          </button>
-          <!--
+            <button
+              class={[
+                "px-4 py-2 rounded-lg focus:outline-none",
+                @display_mode == :table &&
+                  "bg-stone-500 text-white hover:bg-stone-600 dark:bg-purple-700 dark:hover:bg-stone-800",
+                @display_mode != :table &&
+                  "bg-stone-300 dark:bg-stone-600 dark:text-white hover:bg-stone-400 dark:hover:bg-stone-700"
+              ]}
+              phx-click={JS.push("set-display-mode", value: %{mode: "table"}, target: @myself)}
+            >
+              <div class="flex items-center">
+                <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
+              </div>
+            </button>
+            <!--
           <button
             class={[
               "px-4 py-2 rounded-lg focus:outline-none",
@@ -305,7 +303,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
           </div>
         </button>
         -->
-        </div>
+          </div>
         <% end %>
 
         <div class="flex-1">

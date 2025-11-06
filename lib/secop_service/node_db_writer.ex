@@ -14,11 +14,7 @@ defmodule SecopService.NodeDBWriter do
   # Client API
 
   def start_link(node_db) do
-    state = %{node_db: node_db}
-
-    Logger.info("Starting DB writer for Node: #{node_db.equipment_id} (#{node_db.uuid})")
-
-    GenServer.start_link(__MODULE__, state,
+    GenServer.start_link(__MODULE__, node_db,
       name: {:via, Registry, {Registry.NodeDBWriter, SEC_Node.get_node_id(node_db)}}
     )
   end
@@ -76,6 +72,10 @@ defmodule SecopService.NodeDBWriter do
     else
       {:noreply, %{state | parameter_batch: updated_batch}}
     end
+  rescue
+    e ->
+      Logger.error("Failed to initialize NodeDBWriter: #{Exception.message(e)}")
+      {:stop, {:initialization_failed, e}}
   end
 
   @impl true

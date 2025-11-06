@@ -89,6 +89,10 @@ defmodule SecopService.Sec_Nodes.SEC_Node do
     "value_update:#{sec_node.host}:#{sec_node.port}"
   end
 
+  def get_processed_values_pubsub_topic(sec_node) do
+    "value_update:processed:#{sec_node.host}:#{sec_node.port}"
+  end
+
   def get_error_pubsub_topic(sec_node) do
     "error_update:#{sec_node.host}:#{sec_node.port}"
   end

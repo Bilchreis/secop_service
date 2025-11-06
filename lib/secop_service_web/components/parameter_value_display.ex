@@ -3,13 +3,12 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   require Logger
 
-
-  alias SecopServiceWeb.DashboardLive.Model
   alias SecopService.NodeControl
   alias NodeTable
   import SecopServiceWeb.CoreComponents
   alias Phoenix.LiveView.JS
   import SecopServiceWeb.Components.ParameterFormFieldComponents
+  alias SecopService.NodeValues
 
   @impl true
   def mount(socket) do
@@ -18,19 +17,19 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   defp get_parameter_value(module_name, node_id, parameter) do
     case NodeTable.lookup(
-           node_id,
+           {:service, node_id},
            {:data_report, String.to_existing_atom(module_name),
             String.to_existing_atom(parameter.name)}
          ) do
       {:ok, data_report} ->
-        Model.process_data_report(parameter.name, data_report, parameter.datainfo)
+        data_report
 
       {:error, :notfound} ->
         Logger.warning(
           "Data report for module #{module_name} and parameter #{parameter.name} not found in NodeTable for node #{inspect(node_id)}}."
         )
 
-        Model.process_data_report(parameter.name, nil, parameter.datainfo)
+        NodeValues.process_data_report(parameter.name, nil, parameter.datainfo)
     end
   end
 
@@ -108,14 +107,14 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         depth,
         max_depth
       )
-  def flattened_form_map(flattened_map, _path, nil, _datainfo, depth, max_depth) when depth < max_depth do
+
+  def flattened_form_map(flattened_map, _path, nil, _datainfo, depth, max_depth)
+      when depth < max_depth do
     Map.put(flattened_map, "value", "null")
   end
 
   def flattened_form_map(flattened_map, path, current_value, datainfo, depth, max_depth)
       when depth < max_depth do
-
-
     case datainfo["type"] do
       "struct" ->
         Enum.reduce(datainfo["members"], %{}, fn {member_name, member_info}, acc ->
@@ -194,31 +193,30 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
     val_map = get_parameter_value(module_name, node_id, parameter)
 
-    socket  =
+    socket =
       case val_map do
         nil ->
           assign(socket, :parameter_value, nil)
-             |> assign(:parameter_error, nil)
+          |> assign(:parameter_error, nil)
 
         %{data_report: nil} ->
           assign(socket, :parameter_value, nil)
-            |> assign(:parameter_error, nil)
+          |> assign(:parameter_error, nil)
 
         %{error_report: [error_cls, error_msg, _qualifiers]} ->
           assign(socket, :parameter_error, [error_cls, error_msg])
-            |> assign(:parameter_value, nil)
-
+          |> assign(:parameter_value, nil)
 
         %{data_report: [value, _qualifiers]} ->
           assign(socket, :parameter_value, value)
-            |> assign(:parameter_error, nil)
-
+          |> assign(:parameter_error, nil)
 
         val_map ->
           Map.get(val_map, :data_report) |> Enum.at(0)
       end
 
-    flat_map = flattened_form_map(%{}, ["value"], socket.assigns.parameter_value, parameter.datainfo, 0, 1)
+    flat_map =
+      flattened_form_map(%{}, ["value"], socket.assigns.parameter_value, parameter.datainfo, 0, 1)
 
     base_form = %{
       "location" => "#{location}",
@@ -256,7 +254,6 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
       |> assign(:change_success, nil)
       |> assign(:id_str, id_str)
 
-
     {:ok, socket}
   end
 
@@ -269,25 +266,22 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   @impl true
   def update(%{value_update: data_report} = _assigns, socket) do
-    # parameter = socket.assigns.parameter
-
+    data_report = data_report.data_report
 
     socket =
       case data_report do
-
-        {:error_report , [error_cls, error_msg, qualifiers]} ->
+        {:error_report, [error_cls, error_msg, qualifiers]} ->
           Logger.warning("Error Update: #{error_cls}, #{error_msg}, #{inspect(qualifiers)}")
           assign(socket, :parameter_error, [error_cls, error_msg])
 
-
         [value, _qualifiers] ->
           assign(socket, :parameter_value, value)
-            |> assign(:parameter_error, nil)
+          |> assign(:parameter_error, nil)
 
-        _ -> Logger.warning("Malformed datareport received: #{IO.inspect(data_report)}")
+        _ ->
+          Logger.warning("Malformed datareport received: #{IO.inspect(data_report)}")
           socket
       end
-
 
     {:ok, socket}
   end
@@ -648,7 +642,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
           <div>
             <%= if @parameter_error != nil do %>
               <div class="text-red-500 mt-2">
-                Error: <%= Enum.at(@parameter_error, 0) %> - <%= Enum.at(@parameter_error, 1) %>
+                Error: {Enum.at(@parameter_error, 0)} - {Enum.at(@parameter_error, 1)}
               </div>
             <% end %>
           </div>

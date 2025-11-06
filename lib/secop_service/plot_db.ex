@@ -325,21 +325,47 @@ defmodule SecopService.PlotDB do
     Map.put(plot_map, :data, data)
   end
 
-  def get_trace_updates(%{plotly: nil} = plot_map, value, timestamp, parameter) do
+  def get_trace_updates_batch(%{plotly: nil} = plot_map, datapoints, parameter) do
     trace_index =
       Enum.find_index(plot_map.data, fn trace ->
         trace[:name] == parameter
       end) || 0
 
+    # Extract all timestamps and values from the batch
+    {values, timestamps} = Enum.unzip(datapoints)
+
     # Format data for the extend-traces event
     # The event expects arrays of arrays (one per trace)
     %{
       # Add one timestamp to the specified trace
-      x: [[timestamp]],
+      x: [timestamps],
       # Add one value to the specified trace
-      y: [[value]],
+      y: [values],
       traceIndices: [trace_index]
     }
+  end
+
+  def get_trace_updates_batch(%{plotly: _plotly} = plot_map, datapoints, parameter) do
+    trace_data =
+      Enum.reduce(datapoints, %{}, fn {value, timestamp}, acc ->
+        update = get_trace_updates(plot_map, value, timestamp, parameter)
+
+        Map.merge(acc, update, fn _key, {x1, y1}, {x2, y2} ->
+          {x1 ++ x2, y1 ++ y2}
+        end)
+      end)
+
+    # Convert to Plotly format: %{x: [[...], [...]], y: [[...], [...]], traceIndices: [0, 1]}
+    # Sort by trace index to ensure consistent ordering
+    trace_data
+    |> Enum.sort_by(fn {index, _data} -> index end)
+    |> Enum.reduce(%{x: [], y: [], traceIndices: []}, fn {index, {x, y}}, acc ->
+      %{
+        x: acc.x ++ [x],
+        y: acc.y ++ [y],
+        traceIndices: acc.traceIndices ++ [index]
+      }
+    end)
   end
 
   # Get the updates for an incoming datareport with plotly specification
@@ -359,17 +385,13 @@ defmodule SecopService.PlotDB do
     # If no matching traces, return empty update
     update =
       if Enum.empty?(matching_traces) do
-        %{x: [], y: [], traceIndices: []}
+        %{}
       else
         # Process only the matching traces
-        Enum.reduce(matching_traces, %{x: [], y: [], traceIndices: []}, fn {trace, index}, acc ->
+        Enum.reduce(matching_traces, %{}, fn {trace, index}, acc ->
           {x, y, trace_indices} = get_extension(trace, index, raw_data)
 
-          %{
-            x: acc.x ++ [x],
-            y: acc.y ++ [y],
-            traceIndices: acc.traceIndices ++ trace_indices
-          }
+          Map.put(acc, trace_indices, {x, y})
         end)
       end
 
@@ -391,7 +413,7 @@ defmodule SecopService.PlotDB do
         [nil]
       end
 
-    {xdata, ydata, [trace_index]}
+    {xdata, ydata, trace_index}
   end
 
   def plottable?(%SecopService.Sec_Nodes.Parameter{} = parameter) do

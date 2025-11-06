@@ -7,7 +7,9 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   alias NodeDiscover
   alias SEC_Node_Supervisor
   alias SEC_Node
-  alias SecopService.Sec_Nodes
+
+  alias SecopService.NodeValues
+  alias SecopService.NodeSupervisor
   require Logger
 
   alias SEC_Node_Statem
@@ -29,6 +31,30 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     |> assign(:values, model.values)
   end
 
+  defp subscribe_to_node(node_id) do
+    Phoenix.PubSub.subscribe(
+      SecopService.PubSub,
+      "value_update:processed:#{elem(node_id, 0)}:#{elem(node_id, 1)}"
+    )
+
+    Phoenix.PubSub.subscribe(
+      SecopService.PubSub,
+      "plot_data:#{elem(node_id, 0)}:#{elem(node_id, 1)}"
+    )
+  end
+
+  defp unsubscribe_from_node(node_id) do
+    Phoenix.PubSub.unsubscribe(
+      SecopService.PubSub,
+      "value_update:processed:#{elem(node_id, 0)}:#{elem(node_id, 1)}"
+    )
+
+    Phoenix.PubSub.subscribe(
+      SecopService.PubSub,
+      "plot_data:#{elem(node_id, 0)}:#{elem(node_id, 1)}"
+    )
+  end
+
   @impl true
   def mount(_params, _session, socket) do
     model = Model.get_initial_model()
@@ -36,13 +62,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     if model.active_nodes == %{} do
       Logger.info("No active nodes detected")
     else
-      values_pubsub_topic =
-        model[:active_nodes][SEC_Node.get_node_id(model.current_node)][:pubsub_topic]
-
-      Phoenix.PubSub.subscribe(:secop_client_pubsub, "value_update:#{values_pubsub_topic}")
-
-      Phoenix.PubSub.subscribe(:secop_client_pubsub, "error_update:#{values_pubsub_topic}")
-
+      subscribe_to_node(SEC_Node.get_node_id(model.current_node))
     end
 
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "descriptive_data_change")
@@ -85,18 +105,11 @@ defmodule SecopServiceWeb.DashboardLive.Index do
           Logger.info("No current node set, yet (possibly first node connected)")
 
           {values, current_node} =
-            if Sec_Nodes.node_exists?(state[:uuid]) do
-              current_node = Sec_Nodes.get_sec_node_by_uuid(state[:uuid])
-              values = Model.get_val_map(current_node)
+            if NodeSupervisor.services_running?(state[:uuid]) do
+              {:ok, current_node} = NodeValues.get_node_db(node_id)
+              {:ok, values} = NodeValues.get_values(node_id)
 
-              Phoenix.PubSub.subscribe(
-                :secop_client_pubsub,
-                SEC_Node.get_values_pubsub_topic(current_node)
-              )
-              Phoenix.PubSub.subscribe(
-                :secop_client_pubsub,
-                SEC_Node.get_error_pubsub_topic(current_node)
-              )
+              subscribe_to_node(node_id)
 
               Logger.info("Current node updated")
               {values, current_node}
@@ -113,41 +126,19 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
         state.node_id == SEC_Node.get_node_id(current_node) ->
           {values, current_node} =
-            if Sec_Nodes.node_exists?(state[:uuid]) do
+            if NodeSupervisor.services_running?(state[:uuid]) do
               # unsubscribe from all subs (prevents double updates)
-              Phoenix.PubSub.unsubscribe(
-                :secop_client_pubsub,
-                SEC_Node.get_values_pubsub_topic(current_node)
-              )
-              Phoenix.PubSub.unsubscribe(
-                :secop_client_pubsub,
-                SEC_Node.get_error_pubsub_topic(current_node)
-              )
+              unsubscribe_from_node(SEC_Node.get_node_id(current_node))
 
+              {:ok, current_node} = NodeValues.get_node_db(node_id)
+              {:ok, values} = NodeValues.get_values(node_id)
 
-              current_node = Sec_Nodes.get_sec_node_by_uuid(state[:uuid])
-              values = Model.get_val_map(current_node)
-
-              Phoenix.PubSub.subscribe(
-                :secop_client_pubsub,
-                SEC_Node.get_values_pubsub_topic(current_node)
-              )
-              Phoenix.PubSub.subscribe(
-                :secop_client_pubsub,
-                SEC_Node.get_error_pubsub_topic(current_node)
-              )
+              subscribe_to_node(node_id)
 
               Logger.info("Current node updated")
               {values, current_node}
             else
-              Phoenix.PubSub.unsubscribe(
-                :secop_client_pubsub,
-                SEC_Node.get_values_pubsub_topic(current_node)
-              )
-              Phoenix.PubSub.unsubscribe(
-                :secop_client_pubsub,
-                SEC_Node.get_error_pubsub_topic(current_node)
-              )
+              unsubscribe_from_node(SEC_Node.get_node_id(current_node))
 
               Logger.warning(
                 "Node with UUID #{state[:uuid]} does not exist in the database, unsubscribed from pubsub topic."
@@ -201,9 +192,8 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     Logger.info("connection to: #{pubsub_topic} could not be established")
     send(self(), {:put_flash, [:error, "Connection to node '#{pubsub_topic}' failed."]})
 
-    {:noreply,socket}
+    {:noreply, socket}
   end
-
 
   def handle_info({:new_node, pubsub_topic, state}, socket) do
     Logger.info("new node discovered: #{pubsub_topic} #{inspect(state)}")
@@ -211,12 +201,13 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     active_nodes =
       socket.assigns.active_nodes |> Map.put(pubsubtopic_to_node_id(pubsub_topic), state)
 
-    socket = if socket.assigns.show_connect_modal do
-      socket |> assign(show_connect_modal: false)
-    else
-      send(self(), {:put_flash, [:info, "New node '#{pubsub_topic}' discovered."]})
-      socket
-    end
+    socket =
+      if socket.assigns.show_connect_modal do
+        socket |> assign(show_connect_modal: false)
+      else
+        send(self(), {:put_flash, [:info, "New node '#{pubsub_topic}' discovered."]})
+        socket
+      end
 
     {:noreply, assign(socket, active_nodes: active_nodes)}
   end
@@ -229,73 +220,42 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
   def handle_info(:clear_flash, socket) do
     {:noreply, clear_flash(socket)}
-
   end
 
   @impl true
-  def handle_info({:value_update, module, accessible, data_report}, socket) do
+  def handle_info({:value_update, :updated, module, accessible, data_report}, socket) do
+    values = socket.assigns.values
+
+    values = put_in(values, [module, accessible], data_report)
+
+    node_id_str =
+      "#{to_string(socket.assigns.current_node.host)}:#{socket.assigns.current_node.port}"
+
+    update_components(
+      node_id_str,
+      module,
+      accessible,
+      data_report
+    )
+
+    {:noreply, assign(socket, :values, values)}
+  end
+
+  @impl true
+  def handle_info({:value_update, :equal, _module, _accessible, _data_report}, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:plot_data, module, accessible, data_report}, socket) do
     send_update(SecopServiceWeb.Components.HistoryDB,
       id: "module-plot:#{module}",
       value_update: data_report,
       parameter: accessible
     )
 
-    socket =
-      case Model.value_update(socket.assigns.values, module, accessible, data_report) do
-        {:ok, :equal, _values} ->
-          socket
-
-        {:ok, :updated, values} ->
-          node_id_str =
-            "#{to_string(socket.assigns.current_node.host)}:#{socket.assigns.current_node.port}"
-
-          update_components(
-            node_id_str,
-            module,
-            accessible,
-            data_report
-          )
-
-          assign(socket, :values, values)
-
-        {:error, :parameter_not_found, _values} ->
-          Logger.warning("Parameter #{accessible} in module #{module} not found in values")
-          socket
-      end
-
     {:noreply, socket}
   end
-
-    @impl true
-  def handle_info({:error_update, module, accessible, error_report}, socket) do
-    error_report = {:error_report, error_report}
-
-    socket =
-      case Model.value_update(socket.assigns.values, module, accessible, error_report) do
-        {:ok, :equal, _values} ->
-          socket
-
-        {:ok, :updated, values} ->
-          node_id_str =
-            "#{to_string(socket.assigns.current_node.host)}:#{socket.assigns.current_node.port}"
-
-          update_components(
-            node_id_str,
-            module,
-            accessible,
-            error_report
-          )
-
-          assign(socket, :values, values)
-
-        {:error, :parameter_not_found, _values} ->
-          Logger.warning("Parameter #{accessible} in module #{module} not found in values")
-          socket
-      end
-
-    {:noreply, socket}
-  end
-
 
   def handle_event("toggle-conn-state", _unsigned_params, socket) do
     Logger.info("Toggling connection state for current node")
@@ -324,30 +284,14 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     current_node = socket.assigns.current_node
 
-    Phoenix.PubSub.unsubscribe(
-      :secop_client_pubsub,
-      SEC_Node.get_values_pubsub_topic(current_node)
-    )
-
-    Phoenix.PubSub.unsubscribe(
-      :secop_client_pubsub,
-      SEC_Node.get_error_pubsub_topic(current_node)
-    )
+    unsubscribe_from_node(SEC_Node.get_node_id(current_node))
 
     # subscribe to the new node's pubsub topic & update the model
     new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
     new_model = model_from_socket(socket) |> Model.set_current_node(new_node_id)
     socket = model_to_socket(new_model, socket)
 
-    Phoenix.PubSub.subscribe(
-      :secop_client_pubsub,
-      SEC_Node.get_values_pubsub_topic(new_model.current_node)
-    )
-
-    Phoenix.PubSub.subscribe(
-      :secop_client_pubsub,
-      SEC_Node.get_error_pubsub_topic(new_model.current_node)
-    )
+    subscribe_to_node(new_node_id)
 
     {:noreply, socket}
   end
