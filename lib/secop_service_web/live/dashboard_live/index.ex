@@ -2,7 +2,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   alias SecopService.Sec_Nodes.SEC_Node
   use SecopServiceWeb, :live_view
 
-  alias SecopServiceWeb.DashboardLive.Model, as: Model
+  alias SecopService.Model
   alias SecopClient
   alias NodeDiscover
   alias SEC_Node_Supervisor
@@ -16,20 +16,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   import SECoPComponents
   import SecopServiceWeb.DashboardComponents
 
-  def model_from_socket(socket) do
-    %{
-      active_nodes: socket.assigns.active_nodes,
-      current_node: socket.assigns.current_node,
-      values: socket.assigns.values
-    }
-  end
 
-  def model_to_socket(model, socket) do
-    socket
-    |> assign(:active_nodes, model.active_nodes)
-    |> assign(:current_node, model.current_node)
-    |> assign(:values, model.values)
-  end
 
   defp subscribe_to_node(node_id) do
     Phoenix.PubSub.subscribe(
@@ -61,8 +48,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     if model.active_nodes == %{} do
       Logger.info("No active nodes detected")
-    else
-      subscribe_to_node(SEC_Node.get_node_id(model.current_node))
     end
 
     Phoenix.PubSub.subscribe(:secop_client_pubsub, "descriptive_data_change")
@@ -72,12 +57,53 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     socket =
       socket
-      |> assign(:active_nodes, model.active_nodes)
-      |> assign(:current_node, model.current_node)
-      |> assign(:values, model.values)
+      |> Model.to_socket(model)
       |> assign(:show_connect_modal, false)
 
     {:ok, socket}
+  end
+
+  defp parse_node_param(node_param) do
+    case String.split(node_param, ":") do
+      [host, port] ->
+        {:ok, {String.to_charlist(host), String.to_integer(port)}}
+      _ ->
+        :error
+    end
+  end
+
+  @impl true
+  def handle_params(unsigned_params, _uri, socket) do
+
+    model = Model.from_socket(socket)
+
+    model = case unsigned_params do
+    %{"node" => node_param} ->
+      # Parse node from URL like "?node=192.168.1.1:5000"
+      case parse_node_param(node_param) do
+        {:ok, node_id} when is_map_key(model.active_nodes, node_id) ->
+          Model.set_current_node(model,node_id)
+
+        _ ->
+          # Invalid node, use default
+          default_node_id = Model.get_default_node_id(model)
+          Model.set_current_node(model, default_node_id)
+      end
+    _ ->
+      # No node in URL, use default
+      default_node_id = Model.get_default_node_id(model)
+      Model.set_current_node(model, default_node_id)
+    end
+
+    if model.current_node do
+      subscribe_to_node(SEC_Node.get_node_id(model.current_node))
+    end
+
+    socket =
+      socket
+      |> Model.to_socket(model)
+    {:noreply, socket}
+
   end
 
   ### New Values Map Update
@@ -286,14 +312,8 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     unsubscribe_from_node(SEC_Node.get_node_id(current_node))
 
-    # subscribe to the new node's pubsub topic & update the model
-    new_node_id = pubsubtopic_to_node_id(new_pubsub_topic)
-    new_model = model_from_socket(socket) |> Model.set_current_node(new_node_id)
-    socket = model_to_socket(new_model, socket)
 
-    subscribe_to_node(new_node_id)
-
-    {:noreply, socket}
+    {:noreply, push_patch(socket, to: ~p"/dashboard?node=#{new_pubsub_topic}")}
   end
 
   @impl true
