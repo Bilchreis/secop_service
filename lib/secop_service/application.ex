@@ -15,8 +15,13 @@ defmodule SecopService.Application do
       # Start the Finch HTTP client for sending emails
       {Finch, name: SecopService.Finch},
       {Registry, keys: :unique, name: Registry.NodeDBWriter},
-      SecopService.NodeDBWriterSupervisor,
+      {Registry, keys: :unique, name: Registry.NodeValues},
+      {Registry, keys: :unique, name: Registry.NodeServices},
+      {Registry, keys: :unique, name: Registry.PlotCacheSupervisor},
+      {Registry, keys: :unique, name: Registry.PlotCacheDispatcher},
+      {Registry, keys: :unique, name: Registry.PlotCache},
       SecopService.NodeManager,
+      {SecopService.NodeSupervisor, []},
       # Start a worker by calling: SecopService.Worker.start_link(arg)
       # {SecopService.Worker, arg},
       # Start to serve requests, typically the last entry

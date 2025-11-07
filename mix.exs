@@ -19,7 +19,7 @@ defmodule SecopService.MixProject do
   def application do
     [
       mod: {SecopService.Application, []},
-      extra_applications: [:logger, :runtime_tools, :os_mon, :secop_client]
+      extra_applications: [:logger, :wx, :runtime_tools, :observer, :os_mon, :secop_client]
     ]
   end
 
@@ -60,7 +60,7 @@ defmodule SecopService.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.43"},
+      {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.44"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:tzdata, "~> 1.1"},
       {:flop, "~> 0.26.1"},

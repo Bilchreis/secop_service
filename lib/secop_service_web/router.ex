@@ -49,6 +49,7 @@ defmodule SecopServiceWeb.Router do
         additional_pages: [
           flame_on: FlameOn.DashboardPage
         ]
+
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end

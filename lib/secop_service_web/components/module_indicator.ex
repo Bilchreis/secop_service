@@ -3,9 +3,9 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
 
   require Logger
 
-  alias SecopServiceWeb.DashboardLive.Model
   alias NodeTable
   alias SecopService.Util
+  alias SecopService.NodeValues
 
   @impl true
   def mount(socket) do
@@ -17,18 +17,18 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
       if status_param != nil do
         stat_val =
           case NodeTable.lookup(
-                 node_id,
+                 {:service, node_id},
                  {:data_report, String.to_existing_atom(module_name), :status}
                ) do
             {:ok, data_report} ->
-              Model.process_data_report(status_param.name, data_report, status_param.datainfo)
+              data_report
 
             {:error, :notfound} ->
               Logger.warning(
                 "Data report for module #{module_name} and parameter status not found in NodeTable for node #{inspect(node_id)}}."
               )
 
-              Model.process_data_report(status_param.name, nil, status_param.datainfo)
+              NodeValues.process_data_report(status_param.name, nil, status_param.datainfo)
           end
 
         stat_val
@@ -68,13 +68,8 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
   end
 
   @impl true
-  def update(%{value_update: data_report} = _assigns, socket) do
-    status_param = socket.assigns.status_param
-
-    status_value =
-      Model.process_data_report(status_param.name, data_report, status_param.datainfo)
-
-    {:ok, assign(socket, :status_value, status_value)}
+  def update(%{value_update: processed_value_update} = _assigns, socket) do
+    {:ok, assign(socket, :status_value, processed_value_update)}
   end
 
   attr :status_value, :map, required: true

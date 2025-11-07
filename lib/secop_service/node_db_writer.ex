@@ -3,6 +3,7 @@ defmodule SecopService.NodeDBWriter do
   require Logger
 
   alias SecopService.Repo
+  alias SecopService.Sec_Nodes.SEC_Node
 
   @pubsub_name :secop_client_pubsub
   # Batch parameter values for 5 seconds
@@ -12,36 +13,35 @@ defmodule SecopService.NodeDBWriter do
 
   # Client API
 
-  def start_link(opts) do
-    GenServer.start_link(
-      __MODULE__,
-      opts,
-      name: via_tuple(opts)
+  def start_link(node_db) do
+    GenServer.start_link(__MODULE__, node_db,
+      name: {:via, Registry, {Registry.NodeDBWriter, SEC_Node.get_node_id(node_db)}}
     )
   end
 
-  def update_parameter(node_uuid, module, parameter, data_report) do
-    GenServer.cast(via_tuple(node_uuid), {:parameter_update, module, parameter, data_report})
+  def update_parameter(node_id, module, parameter, data_report) do
+    [{sec_node_pid, _value}] = Registry.lookup(Registry.NodeDBWriter, node_id)
+    GenServer.cast(sec_node_pid, {:parameter_update, module, parameter, data_report})
   end
 
   # Server callbacks
 
   @impl true
-  def init(opts) do
+  def init(node_db) do
     # Subscribe to node's topic for parameter updates
-    topic = "value_update:#{opts[:host]}:#{opts[:port]}"
+    topic = SEC_Node.get_values_pubsub_topic(node_db)
     Phoenix.PubSub.subscribe(@pubsub_name, topic)
 
-    Logger.info("Started DB writer for Node: #{opts[:equipment_id]} (#{opts[:uuid]})")
+    Logger.info("Started DB writer for Node: #{node_db.equipment_id} (#{node_db.uuid})")
 
     # Build parameter cache with full parameter records once at startup
-    parameter_cache = build_parameter_cache(opts[:uuid])
+    parameter_cache = build_parameter_cache(node_db.uuid)
 
     # Log cache stats
     cache_size = map_size(parameter_cache)
 
     Logger.info(
-      "Built parameter cache for node #{opts[:equipment_id]} with #{cache_size} parameters"
+      "Built parameter cache for node #{node_db.equipment_id} with #{cache_size} parameters"
     )
 
     # Start batch flush timer
@@ -49,10 +49,10 @@ defmodule SecopService.NodeDBWriter do
 
     {:ok,
      %{
-       host: opts[:host],
-       port: opts[:port],
-       equipment_id: opts[:equipment_id],
-       uuid: opts[:uuid],
+       host: node_db.host,
+       port: node_db.port,
+       equipment_id: node_db.equipment_id,
+       uuid: node_db.uuid,
        parameter_batch: [],
        batch_start_time: DateTime.utc_now(),
        # Cache of full parameter records (built once, never updated)
@@ -72,6 +72,10 @@ defmodule SecopService.NodeDBWriter do
     else
       {:noreply, %{state | parameter_batch: updated_batch}}
     end
+  rescue
+    e ->
+      Logger.error("Failed to initialize NodeDBWriter: #{Exception.message(e)}")
+      {:stop, {:initialization_failed, e}}
   end
 
   @impl true
@@ -122,16 +126,6 @@ defmodule SecopService.NodeDBWriter do
 
     Logger.info("Stopping NodeDBWriter for: #{state.equipment_id} (reason: #{inspect(reason)})")
     :ok
-  end
-
-  # Private functions
-
-  defp via_tuple(opts) when is_map(opts) do
-    {:via, Registry, {Registry.NodeDBWriter, opts[:uuid]}}
-  end
-
-  defp via_tuple(uuid) when is_binary(uuid) do
-    {:via, Registry, {Registry.NodeDBWriter, uuid}}
   end
 
   defp schedule_batch_flush do
@@ -233,164 +227,5 @@ defmodule SecopService.NodeDBWriter do
     Enum.reduce(parameters, %{}, fn parameter, acc ->
       Map.put(acc, {parameter.module.name, parameter.name}, parameter)
     end)
-  end
-end
-
-defmodule SecopService.NodeDBWriterSupervisor do
-  @moduledoc """
-  A dynamic supervisor responsible for managing NodeDBWriter processes.
-
-  This supervisor:
-  - Creates NodeDBWriter processes for each active SEC node
-  - Ensures clean shutdown when nodes disconnect
-  - Allows for runtime creation and termination of writers
-  - Provides functions to manage NodeDBWriter lifecycle
-  """
-
-  use DynamicSupervisor
-  require Logger
-  alias SecopService.NodeDBWriter
-
-  # Client API
-
-  @doc """
-  Starts the NodeDBWriterSupervisor.
-  """
-  def start_link(init_arg \\ []) do
-    DynamicSupervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
-  end
-
-  @doc """
-  Starts a NodeDBWriter for a node with the given state.
-
-  ## Parameters
-
-    * `node_state` - A map containing the node configuration:
-      * `:uuid` - The node's UUID
-      * `:equipment_id` - The node's equipment ID
-      * `:host` - The node's host address
-      * `:port` - The node's port number
-      * Other relevant node data
-
-  ## Returns
-
-    * `{:ok, pid}` - The PID of the started NodeDBWriter
-    * `{:error, reason}` - If the NodeDBWriter could not be started
-  """
-  def start_writer(node_state) do
-    # Create a specification for the child
-    child_spec = %{
-      id: NodeDBWriter,
-      start: {NodeDBWriter, :start_link, [node_state]},
-      # Don't restart if it terminates normally
-      restart: :transient,
-      shutdown: 5000
-    }
-
-    case DynamicSupervisor.start_child(__MODULE__, child_spec) do
-      {:ok, pid} ->
-        Logger.info("Started NodeDBWriter for #{node_state.equipment_id} (#{node_state.uuid})")
-        {:ok, pid}
-
-      {:error, {:already_started, pid}} ->
-        Logger.info("NodeDBWriter already started for #{node_state.uuid}")
-        {:ok, pid}
-
-      {:error, reason} = error ->
-        Logger.error("Failed to start NodeDBWriter for #{node_state.uuid}: #{inspect(reason)}")
-        error
-    end
-  end
-
-  @doc """
-  Terminates the NodeDBWriter for the given node UUID.
-
-  ## Parameters
-
-    * `node_uuid` - The UUID of the node whose writer should be terminated
-
-  ## Returns
-
-    * `:ok` - If the writer was terminated or wasn't running
-    * `{:error, :not_found}` - If no writer for this UUID was found
-  """
-  def stop_writer(node_uuid) do
-    case get_writer_pid(node_uuid) do
-      nil ->
-        Logger.info("No NodeDBWriter found for UUID #{node_uuid}")
-        {:error, :not_found}
-
-      pid ->
-        Logger.info("Stopping NodeDBWriter for UUID #{node_uuid}")
-        DynamicSupervisor.terminate_child(__MODULE__, pid)
-    end
-  end
-
-  @doc """
-  Get the PID of the NodeDBWriter for the given node UUID, if running.
-
-  ## Parameters
-
-    * `node_uuid` - The UUID of the node
-
-  ## Returns
-
-    * `pid` - The PID of the running NodeDBWriter
-    * `nil` - If no writer is running for this UUID
-  """
-  def get_writer_pid(node_uuid) do
-    case Registry.lookup(Registry.NodeDBWriter, node_uuid) do
-      [{pid, _}] -> pid
-      [] -> nil
-    end
-  end
-
-  @doc """
-  Checks if a NodeDBWriter for the given node UUID is running.
-
-  ## Parameters
-
-    * `node_uuid` - The UUID of the node
-
-  ## Returns
-
-    * `true` - If a writer is running for this UUID
-    * `false` - If no writer is running for this UUID
-  """
-  def writer_exists?(node_uuid) do
-    get_writer_pid(node_uuid) != nil
-  end
-
-  @doc """
-  Gets a list of all running NodeDBWriter UUIDs.
-
-  ## Returns
-
-    * A list of node UUIDs for which writers are running
-  """
-  def list_writer_uuids do
-    Registry.select(Registry.NodeDBWriter, [{{:"$1", :_, :_}, [], [:"$1"]}])
-  end
-
-  @doc """
-  Count of currently running NodeDBWriter processes.
-
-  ## Returns
-
-    * Integer count of running writers
-  """
-  def count_writers do
-    DynamicSupervisor.count_children(__MODULE__).active
-  end
-
-  # Supervisor callbacks
-
-  @impl true
-  def init(_init_arg) do
-    DynamicSupervisor.init(
-      strategy: :one_for_one,
-      max_restarts: 5,
-      max_seconds: 60
-    )
   end
 end
