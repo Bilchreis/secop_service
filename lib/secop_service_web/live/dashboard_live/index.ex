@@ -137,7 +137,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
               subscribe_to_node(node_id)
 
-              Logger.info("Current node updated")
+              Logger.info("Current node updated #{inspect(node_id)}")
               {values, current_node}
             else
               Logger.warning(
@@ -161,7 +161,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
               subscribe_to_node(node_id)
 
-              Logger.info("Current node updated")
+              Logger.info("Current node updated #{inspect(node_id)}")
               {values, current_node}
             else
               unsubscribe_from_node(SEC_Node.get_node_id(current_node))
@@ -177,7 +177,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
           assign(socket, current_node: current_node) |> assign(values: values)
 
         true ->
-          Logger.info("Current node not updated")
+          Logger.info("Current node not updated #{inspect(node_id)}")
           socket
       end
 

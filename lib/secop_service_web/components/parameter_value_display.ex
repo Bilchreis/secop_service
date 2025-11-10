@@ -26,9 +26,15 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
       {:error, :notfound} ->
         Logger.warning(
-          "Data report for module #{module_name} and parameter #{parameter.name} not found in NodeTable for node #{inspect(node_id)}}."
+          "Data report for module #{module_name} and parameter #{parameter.name} not found in NodeTable for node #{inspect(node_id)}."
         )
 
+        NodeValues.process_data_report(parameter.name, nil, parameter.datainfo)
+
+      {:error, :table_not_found} ->
+        Logger.info(
+          "ETS table not found for node #{inspect(node_id)}, likely during reconnection. Returning nil."
+        )
         NodeValues.process_data_report(parameter.name, nil, parameter.datainfo)
     end
   end
