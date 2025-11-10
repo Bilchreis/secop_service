@@ -34,8 +34,8 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
     |> foreign_key_constraint(:parameter_id)
   end
 
-  # Create a value with proper type handling based on parameter type
-  def create_with_parameter(raw_value, parameter, timestamp, qualifiers \\ %{}) do
+
+  def create_raw_with_parameter(raw_value, parameter, timestamp, qualifiers \\ %{}) do
     # Convert Unix timestamp to DateTime if needed
     formatted_timestamp =
       case timestamp do
@@ -111,12 +111,26 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
           %{type: type || "unknown", value: raw_value}
       end
 
+
+      %{
+        value: formatted_value,
+        timestamp: formatted_timestamp,
+        qualifiers: qualifiers,
+        parameter_id: parameter.id
+      }
+  end
+
+  # Create a value with proper type handling based on parameter type
+  def create_with_parameter(raw_value, parameter, timestamp, qualifiers \\ %{}) do
+
+    param_val_map = create_raw_with_parameter(raw_value,parameter,timestamp,qualifiers)
+
     %__MODULE__{}
     |> changeset(%{
-      value: formatted_value,
-      timestamp: formatted_timestamp,
-      qualifiers: qualifiers,
-      parameter_id: parameter.id
+      value: param_val_map.value,
+      timestamp: param_val_map.timestamp,
+      qualifiers: param_val_map.qualifiers,
+      parameter_id: param_val_map.parameter_id
     })
   end
 

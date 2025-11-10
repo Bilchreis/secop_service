@@ -106,11 +106,11 @@ defmodule SecopService.NodeManager do
 
         Logger.debug("publish new node added at: #{db_node.uuid}")
 
-        Phoenix.PubSub.broadcast(
-          :secop_client_pubsub,
-          "new_node",
-          {:new_node_db, db_node}
-        )
+        # Phoenix.PubSub.broadcast(
+        #   :secop_client_pubsub,
+        #   "new_node",
+        #   {:new_node_db, db_node}
+        # )
 
         updated_nodes = Map.put(state.nodes, node_state.node_id, node_state)
         # Start a new writer

@@ -28,11 +28,11 @@ defmodule SecopService.NodeSupervisor do
   def stop_node_services(node_id) do
     case get_services_pid(node_id) do
       nil ->
-        Logger.info("No Services running found for ID: #{node_id}")
+        Logger.info("No Services running found for ID: #{inspect(node_id)}")
         {:error, :not_found}
 
       pid ->
-        Logger.info("Stopping Services for ID: #{node_id}")
+        Logger.info("Stopping Services for ID: #{inspect(node_id)}")
         DynamicSupervisor.terminate_child(__MODULE__, pid)
     end
   end

@@ -54,7 +54,7 @@ defmodule SecopService.NodeDBWriter do
        equipment_id: node_db.equipment_id,
        uuid: node_db.uuid,
        parameter_batch: [],
-       batch_start_time: DateTime.utc_now(),
+       batchsize: 0,
        # Cache of full parameter records (built once, never updated)
        parameter_cache: parameter_cache
      }}
@@ -62,20 +62,42 @@ defmodule SecopService.NodeDBWriter do
 
   @impl true
   def handle_cast({:parameter_update, module, parameter, value, timestamp, qualifiers}, state) do
-    # Add to batch
-    updated_batch = [{module, parameter, value, timestamp, qualifiers} | state.parameter_batch]
+    case Map.get(state.parameter_cache, {module, parameter}) do
+      nil ->
+        # Parameter not in cache, log once and skip
+        Logger.warning("Parameter not in cache (skipping): #{module}:#{parameter}")
 
-    # Check if we need to flush based on size
-    if length(updated_batch) >= @max_batch_size do
-      new_state = flush_parameter_batch(%{state | parameter_batch: updated_batch})
-      {:noreply, new_state}
-    else
-      {:noreply, %{state | parameter_batch: updated_batch}}
+        {:noreply, state}
+
+
+
+      parameter_db ->
+        # Process the parameter values
+
+        now = DateTime.utc_now() |> DateTime.to_naive() |> NaiveDateTime.truncate(:second)
+        param_val_map = SecopService.Sec_Nodes.ParameterValue.create_raw_with_parameter(
+                value,
+                parameter_db,
+                timestamp || DateTime.utc_now(),
+                qualifiers || %{}
+              )
+        |> Map.put(:inserted_at, now)
+        |> Map.put(:updated_at, now)
+
+
+        batchsize = state.batchsize + 1
+            # Add to batch
+        updated_batch = [param_val_map | state.parameter_batch]
+
+        # Check if we need to flush based on size
+        if batchsize >= @max_batch_size do
+          insert_parameter_batch(updated_batch)
+          {:noreply, %{state | parameter_batch: [], batchsize: 0}}
+        else
+          {:noreply, %{state | parameter_batch: updated_batch, batchsize: batchsize}}
+        end
     end
-  rescue
-    e ->
-      Logger.error("Failed to initialize NodeDBWriter: #{Exception.message(e)}")
-      {:stop, {:initialization_failed, e}}
+
   end
 
   @impl true
@@ -105,7 +127,8 @@ defmodule SecopService.NodeDBWriter do
       if Enum.empty?(state.parameter_batch) do
         state
       else
-        flush_parameter_batch(state)
+        insert_parameter_batch(state.parameter_batch)
+        %{state | parameter_batch: [], batchsize: 0}
       end
 
     {:noreply, new_state}
@@ -121,7 +144,7 @@ defmodule SecopService.NodeDBWriter do
   def terminate(reason, state) do
     # Flush any remaining parameter values
     unless Enum.empty?(state.parameter_batch) do
-      flush_parameter_batch(state)
+      insert_parameter_batch(state.parameter_batch)
     end
 
     Logger.info("Stopping NodeDBWriter for: #{state.equipment_id} (reason: #{inspect(reason)})")
@@ -132,78 +155,18 @@ defmodule SecopService.NodeDBWriter do
     Process.send_after(self(), :flush_parameter_batch, @batch_interval)
   end
 
-  defp flush_parameter_batch(state) do
-    batch_size = length(state.parameter_batch)
-    node_id = state.equipment_id
 
-    if batch_size > 0 do
-      Logger.debug("Flushing batch of #{batch_size} parameter values for node #{node_id}")
+  defp insert_parameter_batch(batch) do
 
-      # Group by parameter and insert in bulk
-      parameter_groups =
-        Enum.group_by(
-          state.parameter_batch,
-          fn {module_name, parameter_name, _, _, _} ->
-            {module_name, parameter_name}
-          end
-        )
+    Task.start(fn ->
+      {count, _} = Repo.insert_all(
+        SecopService.Sec_Nodes.ParameterValue,
+        batch
+      )
 
-      # Process each parameter's values
-      Enum.each(parameter_groups, fn {{module_name, parameter_name}, values} ->
-        cache_key = {module_name, parameter_name}
+      Logger.debug("Successfully inserted #{count} parameter values")
+    end)
 
-        # Process if parameter exists in cache, silently skip if not
-        case Map.get(state.parameter_cache, cache_key) do
-          nil ->
-            # Parameter not in cache, log once and skip
-            Logger.warning("Parameter not in cache (skipping): #{module_name}:#{parameter_name}")
-
-          parameter ->
-            # Process the parameter values
-            insert_parameter_batch(module_name, parameter_name, parameter, values)
-        end
-      end)
-
-      # Return updated state with empty batch
-      %{
-        state
-        | parameter_batch: [],
-          batch_start_time: DateTime.utc_now()
-      }
-    else
-      # No values to flush
-      state
-    end
-  end
-
-  defp insert_parameter_batch(module_name, parameter_name, parameter, values) do
-    # Process in transaction using Ecto.Multi for better performance
-    multi =
-      Enum.reduce(values, Ecto.Multi.new(), fn {_, _, value, timestamp, qualifiers}, multi ->
-        # Create the parameter value changeset using the cached parameter
-        changeset =
-          SecopService.Sec_Nodes.ParameterValue.create_with_parameter(
-            value,
-            parameter,
-            timestamp || DateTime.utc_now(),
-            qualifiers || %{}
-          )
-
-        # Generate a unique operation name
-        name = "val_#{:erlang.unique_integer([:positive])}"
-        Ecto.Multi.insert(multi, name, changeset)
-      end)
-
-    # Execute the multi operation
-    case Repo.transaction(multi) do
-      {:ok, _results} ->
-        :ok
-
-      {:error, failed_operation, failed_value, _changes_so_far} ->
-        Logger.error(
-          "Failed to insert parameter values for #{module_name}:#{parameter_name}: #{inspect(failed_operation)} - #{inspect(failed_value)}"
-        )
-    end
   end
 
   # Build a cache of full parameter records indexed by {module_name, parameter_name}
