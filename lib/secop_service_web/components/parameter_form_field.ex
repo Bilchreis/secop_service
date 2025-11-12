@@ -194,6 +194,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
   attr :path, :list, default: ["value"]
   attr :parameter_id, :string, required: true
   attr :location, :string, required: true
+  attr :show_tooltip, :boolean, default: true
 
   def input_enum(assigns) do
     select_options = assigns.datainfo["members"]
@@ -205,7 +206,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       |> assign(
         :popover_id,
         "popover-" <>
-          assigns.location <> "-" <> assigns.parameter_id <> Enum.join(assigns.path, "-")
+          assigns.location <> "-" <> to_string(assigns.parameter_id) <> Enum.join(assigns.path, "-")
       )
 
     ~H"""
@@ -220,8 +221,10 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
           rounded-lg p-2  border-stone-500 dark:border-stone-500
           font-mono text-gray-900 dark:text-gray-200 opacity-100"
     />
+    <%= if @show_tooltip do %>
+      <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
+    <% end %>
 
-    <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
     """
   end
 
