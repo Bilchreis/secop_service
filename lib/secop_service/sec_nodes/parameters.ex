@@ -21,7 +21,6 @@ defmodule SecopService.Sec_Nodes.Parameter do
     field :custom_properties, :map
 
     belongs_to :module, SecopService.Sec_Nodes.Module
-    has_many :parameter_values, SecopService.Sec_Nodes.ParameterValue
 
     timestamps()
   end
@@ -68,5 +67,14 @@ defmodule SecopService.Sec_Nodes.Parameter do
   # Helper to get unit
   def get_unit(parameter) do
     parameter.datainfo[:unit] || ""
+  end
+
+  # Helper to get the appropriate value table/module
+  def get_value_schema_module(parameter) do
+    SecopService.Sec_Nodes.ParameterValue.get_schema_module(parameter)
+  end
+
+  def get_storage_type(parameter) do
+    SecopService.Sec_Nodes.ParameterValue.get_storage_type(parameter)
   end
 end

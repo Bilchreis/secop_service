@@ -8,7 +8,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   alias Phoenix.LiveView.JS
 
   defp get_tabledata(secop_obj, params \\ %{}) do
-    case get_parameter_id(secop_obj) |> Sec_Nodes.list_parameter_values(params) do
+    case get_parameter(secop_obj) |> Sec_Nodes.list_parameter_values(params) do
       {:ok, {parameter_values, meta}} ->
         {:ok, %{table_data: %{parameter_values: parameter_values, meta: meta}}}
 
@@ -21,11 +21,6 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   @impl true
   def mount(socket) do
     {:ok, socket}
-  end
-
-  defp get_parameter_id(secop_obj) do
-    get_parameter(secop_obj)
-    |> Map.get(:id)
   end
 
   defp get_parameter(secop_obj) do

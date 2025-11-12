@@ -1,197 +1,243 @@
 defmodule SecopService.Sec_Nodes.ParameterValue do
-  use Ecto.Schema
-  import Ecto.Changeset
   alias SecopService.Sec_Nodes.Parameter
+  alias SecopService.Sec_Nodes.ParameterValue
   alias ExPrintf
   require Logger
 
-  @derive {
-    Flop.Schema,
-    filterable: [:timestamp, :parameter_id],
-    sortable: [:timestamp, :parameter_id],
-    default_order: %{
-      order_by: [:timestamp],
-      order_directions: [:desc]
-    }
+  # Type-specific modules
+  @type_modules %{
+    int: ParameterValue.Int,
+    double: ParameterValue.Double,
+    bool: ParameterValue.Bool,
+    string: ParameterValue.String,
+    array_int: ParameterValue.ArrayInt,
+    array_double: ParameterValue.ArrayDouble,
+    array_bool: ParameterValue.ArrayBool,
+    array_string: ParameterValue.ArrayString,
+    json: ParameterValue.Json
   }
 
-  schema "parameter_values" do
-    # Stores simple values directly, complex values as structures
-    field :value, :map
-    field :timestamp, :utc_datetime_usec
-    # For storing metadata like status codes
-    field :qualifiers, :map
-
-    belongs_to :parameter, Parameter
-
-    timestamps()
+  # Determine which schema module and table to use for a parameter
+  def get_schema_module(%Parameter{} = parameter) do
+    storage_type = get_storage_type(parameter)
+    Map.fetch!(@type_modules, storage_type)
   end
 
-  def changeset(parameter_value, attrs) do
-    parameter_value
-    |> cast(attrs, [:value, :timestamp, :qualifiers, :parameter_id])
-    |> validate_required([:value, :timestamp, :parameter_id])
-    |> foreign_key_constraint(:parameter_id)
+  def get_schema_module(storage_type) when is_atom(storage_type) do
+    Map.fetch!(@type_modules, storage_type)
   end
 
+  def get_storage_type(%Parameter{} = parameter) do
+    case parameter.datainfo["type"] do
+      "int" ->
+        :int
 
-  def create_raw_with_parameter(raw_value, parameter, timestamp, qualifiers \\ %{}) do
-    # Convert Unix timestamp to DateTime if needed
-    formatted_timestamp =
-      case timestamp do
-        nil ->
-          DateTime.utc_now()
+      "scaled" ->
+        :int
 
-        %DateTime{} = dt ->
-          dt
+      "enum" ->
+        :int
 
-        unix_time when is_float(unix_time) ->
-          # Convert Unix timestamp to DateTime
-          secs = trunc(unix_time)
-          usecs = trunc((unix_time - secs) * 1_000_000)
-          {:ok, dt} = DateTime.from_unix(secs)
-          %{dt | microsecond: {usecs, 6}}
+      "double" ->
+        :double
 
-        _other ->
-          Logger.warning("Invalid timestamp format: #{inspect(timestamp)}, using current time")
-          DateTime.utc_now()
-      end
+      "bool" ->
+        :bool
 
-    # Ensure the value is properly formatted as a map for JSONB storage
-    formatted_value =
-      case parameter.datainfo["type"] do
-        # Simple types must be wrapped in a map for JSONB storage
-        "double" ->
-          %{type: "double", value: raw_value}
+      "string" ->
+        :string
 
-        "int" ->
-          %{type: "int", value: raw_value}
+      "array" ->
+        # Check if it's a simple 1D array or nested
+        member_type = get_in(parameter.datainfo, ["members", "type"])
 
-        "bool" ->
-          %{type: "bool", value: raw_value}
+        case member_type do
+          "int" -> :array_int
+          "scaled" -> :array_int
+          "enum" -> :array_int
+          "double" -> :array_double
+          "bool" -> :array_bool
+          "string" -> :array_string
+          # Nested arrays or arrays of complex types
+          _ -> :json
+        end
 
-        # Scaled values pre-calculate the actual value
-        "scaled" ->
-          scale = parameter.datainfo["scale"] || 1.0
-          %{type: "scaled", value: raw_value * scale}
-
-        # Enum values store both the numeric value and its name for convenience
-        "enum" ->
-          # Find name for the numeric value (with error handling)
-          name =
-            try do
-              parameter.datainfo["members"]
-              |> Enum.find(fn
-                {_name, val} -> val == raw_value
-                _ -> false
-              end)
-              |> case do
-                {name, _} -> name
-                nil -> "unknown_#{raw_value}"
-                _ -> "unknown"
-              end
-            rescue
-              e ->
-                Logger.error("Error finding enum name: #{inspect(e)}")
-                "error_#{raw_value}"
-            end
-
-          %{type: "enum", numeric: raw_value, name: name}
-
-        # Complex types
-        type when type in ["array", "tuple", "struct", "matrix"] ->
-          # Store with type information to assist rendering
-          %{
-            type: type,
-            value: raw_value
-          }
-
-        # Fallback for any other type - ALWAYS wrap in a map
-        type ->
-          %{type: type || "unknown", value: raw_value}
-      end
-
-
-      %{
-        value: formatted_value,
-        timestamp: formatted_timestamp,
-        qualifiers: qualifiers,
-        parameter_id: parameter.id
-      }
-  end
-
-  # Create a value with proper type handling based on parameter type
-  def create_with_parameter(raw_value, parameter, timestamp, qualifiers \\ %{}) do
-
-    param_val_map = create_raw_with_parameter(raw_value,parameter,timestamp,qualifiers)
-
-    %__MODULE__{}
-    |> changeset(%{
-      value: param_val_map.value,
-      timestamp: param_val_map.timestamp,
-      qualifiers: param_val_map.qualifiers,
-      parameter_id: param_val_map.parameter_id
-    })
-  end
-
-  # Helpers for working with stored values
-
-  # Get the raw value with appropriate type handling
-  def get_raw_value(parameter_value, _parameter) do
-    case parameter_value.value do
-      # Handle different map structures
-      %{"value" => v} ->
-        v
-
-      %{"numeric" => n} ->
-        n
-
-      nil ->
-        nil
-
-      # Fallback for direct values (should not happen with new code)
-      value when not is_map(value) ->
-        Logger.warning("Unexpected direct value in parameter_value: #{inspect(value)}")
-        value
-
-      # Handle unknown map structures
-      other ->
-        Logger.debug("Unknown value structure: #{inspect(other)}")
-        other
+      # Complex types: struct, tuple, blob, matrix, nested arrays
+      _ ->
+        :json
     end
   end
 
-  # Get a display-friendly value with unit
+  # Format timestamp consistently
+  defp format_timestamp(timestamp) do
+    case timestamp do
+      nil ->
+        DateTime.utc_now()
+
+      %DateTime{} = dt ->
+        dt
+
+      unix_time when is_number(unix_time) ->
+        try do
+          microseconds = trunc(unix_time * 1_000_000)
+          DateTime.from_unix!(microseconds, :microsecond)
+        rescue
+          ArgumentError ->
+            Logger.warning("Invalid Unix timestamp: #{inspect(unix_time)}, using current time")
+            DateTime.utc_now()
+        end
+
+      _other ->
+        Logger.warning("Invalid timestamp format: #{inspect(timestamp)}, using current time")
+        DateTime.utc_now()
+    end
+  end
+
+  # Format value based on parameter type
+  defp format_value(raw_value, parameter) do
+    case parameter.datainfo["type"] do
+      # Atomic types - store directly
+      "double" ->
+        raw_value
+
+      "int" ->
+        raw_value
+
+      "bool" ->
+        raw_value
+
+      "string" ->
+        raw_value
+
+      # Scaled values - convert to integer for storage
+      "scaled" ->
+        # SECoP transports scaled as integer, store as-is
+        raw_value
+
+      # Enum - store numeric value
+      "enum" ->
+        raw_value
+
+      # 1D arrays - store directly in array columns
+      "array" ->
+        member_type = get_in(parameter.datainfo, ["members", "type"])
+
+        case member_type do
+          type when type in ["int", "scaled", "enum", "double", "bool", "string"] ->
+            # Simple array - store directly
+            raw_value
+
+          _ ->
+            # Complex/nested array - store as map
+            %{type: "array", value: raw_value}
+        end
+
+      # Complex types - store as structured data
+      type when type in ["struct", "tuple", "blob", "matrix"] ->
+        %{type: type, value: raw_value}
+
+      type ->
+        Logger.warning("Unknown type #{type}, storing as JSON")
+        %{type: type || "unknown", value: raw_value}
+    end
+  end
+
+  def create_map(raw_value, parameter, timestamp, qualifiers \\ %{}) do
+    formatted_timestamp = format_timestamp(timestamp)
+    formatted_value = format_value(raw_value, parameter)
+
+    %{
+      value: formatted_value,
+      timestamp: formatted_timestamp,
+      qualifiers: qualifiers,
+      parameter_id: parameter.id
+    }
+  end
+
+  # Create a value with proper type handling based on parameter type
+  def create_changeset(raw_value, parameter, timestamp, qualifiers \\ %{}) do
+    param_val_map = create_map(raw_value, parameter, timestamp, qualifiers)
+
+    schema_module = get_schema_module(parameter)
+
+    struct(schema_module)
+    |> schema_module.changeset(param_val_map)
+  end
+
+  # Get raw value (handles all storage types)
+  def get_raw_value(parameter_value, parameter) do
+    case get_storage_type(parameter) do
+      storage
+      when storage in [
+             :int,
+             :double,
+             :bool,
+             :string,
+             :array_int,
+             :array_double,
+             :array_bool,
+             :array_string
+           ] ->
+        # For atomic types and simple arrays, value is stored directly
+        parameter_value.value
+
+      :json ->
+        # For complex types, extract from map structure
+        case parameter_value.value do
+          %{"value" => v} -> v
+          other -> other
+        end
+    end
+  end
+
+  # Get display-friendly value with unit
   def get_display_value(parameter_value, parameter) do
     raw_value = get_raw_value(parameter_value, parameter)
-
     unit = parameter.datainfo["unit"] || ""
 
     case parameter.datainfo["type"] do
       "double" ->
         format_string = parameter.datainfo["fmtstr"] || "%.6g"
-        # Simple formatting with :io_lib.format
         formatted = ExPrintf.sprintf(format_string, [raw_value])
-        "#{formatted} #{unit}"
+        append_unit(formatted, unit)
 
       "scaled" ->
-        format_string = parameter.datainfo["fmtstr"] || "%.6g"
-        formatted = ExPrintf.sprintf(format_string, [raw_value])
-        "#{formatted} #{unit}"
+        # Convert scaled integer to actual value
+        scale = parameter.datainfo["scale"] || 1.0
+        actual_value = raw_value * scale
+
+        format_string =
+          parameter.datainfo["fmtstr"] ||
+            "%." <> Integer.to_string(max(0, -floor(:math.log10(scale)))) <> "f"
+
+        formatted = ExPrintf.sprintf(format_string, [actual_value])
+        append_unit(formatted, unit)
 
       "enum" ->
-        # Return the name for display
-        case parameter_value.value do
-          %{name: name} -> name
-          _ -> "#{raw_value}"
-        end
+        # Find name for the numeric value
+        name = find_enum_name(parameter.datainfo["members"], raw_value)
+        name
+
+      "array" ->
+        "[" <>
+          (raw_value |> Enum.map(&to_string/1) |> Enum.join(", ")) <>
+          "]" <>
+          if unit != "", do: " #{unit}", else: ""
 
       _ ->
-        if unit == "" do
-          "#{Jason.encode!(raw_value)}"
-        else
-          "#{Jason.encode!(raw_value)} #{unit}"
-        end
+        append_unit(Jason.encode!(raw_value), unit)
     end
+  end
+
+  defp append_unit(value_str, ""), do: value_str
+  defp append_unit(value_str, unit), do: "#{value_str} #{unit}"
+
+  defp find_enum_name(members, value) do
+    case Enum.find(members, fn {_name, val} -> val == value end) do
+      {name, _} -> name
+      nil -> "unknown_#{value}"
+    end
+  rescue
+    _ -> "error_#{value}"
   end
 end

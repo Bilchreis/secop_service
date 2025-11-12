@@ -35,6 +35,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
         Logger.info(
           "ETS table not found for node #{inspect(node_id)}, likely during reconnection. Returning nil."
         )
+
         NodeValues.process_data_report(parameter.name, nil, parameter.datainfo)
     end
   end

@@ -67,7 +67,8 @@ defmodule SecopService.MixProject do
       {:flop_phoenix, "~> 0.24.1"},
       {:exprintf, "~> 0.2.1"},
       {:pythonx, "~> 0.4.4"},
-      {:flame_on, git: "https://github.com/DockYard/flame_on.git"}
+      {:flame_on, git: "https://github.com/DockYard/flame_on.git"},
+      {:benchee, "~> 1.5", only: :dev}
     ]
   end
 

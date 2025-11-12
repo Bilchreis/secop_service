@@ -4,12 +4,26 @@ defmodule SecopService.NodeDBWriter do
 
   alias SecopService.Repo
   alias SecopService.Sec_Nodes.SEC_Node
+  alias SecopService.Sec_Nodes.ParameterValue
+  alias Ecto.Multi
 
   @pubsub_name :secop_client_pubsub
   # Batch parameter values for 5 seconds
   @batch_interval 10_000
   # Safety limit for batch size
   @max_batch_size 1000
+
+  @batch_list [
+    :batch_int,
+    :batch_double,
+    :batch_bool,
+    :batch_string,
+    :batch_array_int,
+    :batch_array_double,
+    :batch_array_bool,
+    :batch_array_string,
+    :batch_json
+  ]
 
   # Client API
 
@@ -53,7 +67,17 @@ defmodule SecopService.NodeDBWriter do
        port: node_db.port,
        equipment_id: node_db.equipment_id,
        uuid: node_db.uuid,
-       parameter_batch: [],
+       # Separate batches at top level
+       batch_int: [],
+       batch_double: [],
+       batch_bool: [],
+       batch_string: [],
+       batch_array_int: [],
+       batch_array_double: [],
+       batch_array_bool: [],
+       batch_array_string: [],
+       batch_json: [],
+       # Single counter for total batch size across all types
        batchsize: 0,
        # Cache of full parameter records (built once, never updated)
        parameter_cache: parameter_cache
@@ -66,38 +90,61 @@ defmodule SecopService.NodeDBWriter do
       nil ->
         # Parameter not in cache, log once and skip
         Logger.warning("Parameter not in cache (skipping): #{module}:#{parameter}")
-
         {:noreply, state}
 
-
-
       parameter_db ->
-        # Process the parameter values
+        # Determine storage type for this parameter
+        storage_type = ParameterValue.get_storage_type(parameter_db)
 
+        # Process the parameter value
         now = DateTime.utc_now() |> DateTime.to_naive() |> NaiveDateTime.truncate(:second)
-        param_val_map = SecopService.Sec_Nodes.ParameterValue.create_raw_with_parameter(
-                value,
-                parameter_db,
-                timestamp || DateTime.utc_now(),
-                qualifiers || %{}
-              )
-        |> Map.put(:inserted_at, now)
-        |> Map.put(:updated_at, now)
 
+        param_val_map =
+          ParameterValue.create_map(
+            value,
+            parameter_db,
+            timestamp || DateTime.utc_now(),
+            qualifiers || %{}
+          )
+          |> Map.put(:inserted_at, now)
+          |> Map.put(:updated_at, now)
 
-        batchsize = state.batchsize + 1
-            # Add to batch
-        updated_batch = [param_val_map | state.parameter_batch]
+        # Get the batch field name for this storage type
+        batch_key = get_batch_key(storage_type)
 
-        # Check if we need to flush based on size
-        if batchsize >= @max_batch_size do
-          insert_parameter_batch(updated_batch)
-          {:noreply, %{state | parameter_batch: [], batchsize: 0}}
+        # Add to the appropriate batch
+        current_batch = Map.get(state, batch_key)
+        updated_batch = [param_val_map | current_batch]
+
+        # Update state with new batch and increment total size
+        new_state =
+          state
+          |> Map.put(batch_key, updated_batch)
+          |> Map.put(:batchsize, state.batchsize + 1)
+
+        # Check if we need to flush based on total size
+        if new_state.batchsize >= @max_batch_size do
+          flush_all_batches(new_state)
+
+          # Clear all batches and reset counter
+          {:noreply,
+           %{
+             new_state
+             | batch_int: [],
+               batch_double: [],
+               batch_bool: [],
+               batch_string: [],
+               batch_array_int: [],
+               batch_array_double: [],
+               batch_array_bool: [],
+               batch_array_string: [],
+               batch_json: [],
+               batchsize: 0
+           }}
         else
-          {:noreply, %{state | parameter_batch: updated_batch, batchsize: batchsize}}
+          {:noreply, new_state}
         end
     end
-
   end
 
   @impl true
@@ -122,13 +169,26 @@ defmodule SecopService.NodeDBWriter do
     # Schedule the next batch
     schedule_batch_flush()
 
-    # Flush current batch if not empty
+    # Flush current batches if not empty
     new_state =
-      if Enum.empty?(state.parameter_batch) do
+      if state.batchsize == 0 do
         state
       else
-        insert_parameter_batch(state.parameter_batch)
-        %{state | parameter_batch: [], batchsize: 0}
+        flush_all_batches(state)
+
+        %{
+          state
+          | batch_int: [],
+            batch_double: [],
+            batch_bool: [],
+            batch_string: [],
+            batch_array_int: [],
+            batch_array_double: [],
+            batch_array_bool: [],
+            batch_array_string: [],
+            batch_json: [],
+            batchsize: 0
+        }
       end
 
     {:noreply, new_state}
@@ -143,8 +203,8 @@ defmodule SecopService.NodeDBWriter do
   @impl true
   def terminate(reason, state) do
     # Flush any remaining parameter values
-    unless Enum.empty?(state.parameter_batch) do
-      insert_parameter_batch(state.parameter_batch)
+    if state.batchsize > 0 do
+      flush_all_batches(state)
     end
 
     Logger.info("Stopping NodeDBWriter for: #{state.equipment_id} (reason: #{inspect(reason)})")
@@ -155,18 +215,39 @@ defmodule SecopService.NodeDBWriter do
     Process.send_after(self(), :flush_parameter_batch, @batch_interval)
   end
 
-
-  defp insert_parameter_batch(batch) do
-
+  defp flush_all_batches(state) do
     Task.start(fn ->
-      {count, _} = Repo.insert_all(
-        SecopService.Sec_Nodes.ParameterValue,
-        batch
-      )
+      Enum.reduce(@batch_list, Multi.new(), fn batch_key, multi_acc ->
+        batch = Map.get(state, batch_key)
 
-      Logger.debug("Successfully inserted #{count} parameter values")
+        if not Enum.empty?(batch) do
+          storage_type =
+            case batch_key do
+              :batch_int -> :int
+              :batch_double -> :double
+              :batch_bool -> :bool
+              :batch_string -> :string
+              :batch_array_int -> :array_int
+              :batch_array_double -> :array_double
+              :batch_array_bool -> :array_bool
+              :batch_array_string -> :array_string
+              :batch_json -> :json
+            end
+
+          schema_module = ParameterValue.get_schema_module(storage_type)
+
+          multi_acc
+          |> Multi.insert_all(
+            :"insert_#{storage_type}_values",
+            schema_module,
+            batch
+          )
+        else
+          multi_acc
+        end
+      end)
+      |> Repo.transaction()
     end)
-
   end
 
   # Build a cache of full parameter records indexed by {module_name, parameter_name}
@@ -190,5 +271,20 @@ defmodule SecopService.NodeDBWriter do
     Enum.reduce(parameters, %{}, fn parameter, acc ->
       Map.put(acc, {parameter.module.name, parameter.name}, parameter)
     end)
+  end
+
+  # Map storage type to batch key name
+  defp get_batch_key(storage_type) do
+    case storage_type do
+      :int -> :batch_int
+      :double -> :batch_double
+      :bool -> :batch_bool
+      :string -> :batch_string
+      :array_int -> :batch_array_int
+      :array_double -> :batch_array_double
+      :array_bool -> :batch_array_bool
+      :array_string -> :batch_array_string
+      :json -> :batch_json
+    end
   end
 end

@@ -202,25 +202,28 @@ defmodule SecopService.PlotDB do
     parameter = Map.get(plotly_specifier, "parameter", "")
     indices = Map.get(plotly_specifier, "indices", "all")
     mapping = Map.get(plotly_specifier, "map_to", nil)
-    default = Map.get(plotly_specifier, "default", nil)
+    default_val = Map.get(plotly_specifier, "default", nil)
 
     data =
       raw_data
       |> Map.get(parameter, [])
       |> Map.get(type, [])
 
-    extracted_data =
-      case indices do
-        "all" ->
-          Enum.reduce(data, [], fn value, acc ->
-            acc ++ [get_element(value, path) |> map_to(mapping) |> default(default)]
-          end)
+    case indices do
+      "all" ->
+        # Use direct list comprehension instead of Enum.map
+        for value <- data do
+          get_element(value, path)
+          |> map_to(mapping)
+          |> default(default_val)
+        end
 
-        0 ->
-          Enum.at(data, 0) |> get_element(path) |> map_to(mapping) |> default(default)
-      end
-
-    extracted_data
+      0 ->
+        Enum.at(data, 0)
+        |> get_element(path)
+        |> map_to(mapping)
+        |> default(default_val)
+    end
   end
 
   # single parameter/readable with scalar data
@@ -246,6 +249,9 @@ defmodule SecopService.PlotDB do
 
     data = Map.get(plotly, "data", [])
 
+    # Pre-process all plot data specifications once
+    processed_cache = build_plot_data_cache(data, raw_data)
+
     data =
       Enum.reduce(data, [], fn trace, data_acc ->
         new_data =
@@ -255,7 +261,8 @@ defmodule SecopService.PlotDB do
             case value do
               # Plotly path and parameter
               %{"path" => _path, "parameter" => _parameter} ->
-                Map.put(acc, key, process_plot_data(raw_data, value))
+                cache_key = {key, value}
+                Map.put(acc, key, Map.get(processed_cache, cache_key))
 
               # Standard plotly specifier
               _ ->
@@ -301,6 +308,8 @@ defmodule SecopService.PlotDB do
 
     data = Map.get(plotly, "data", [])
 
+    processed_cache = build_plot_data_cache(data, raw_data)
+
     data =
       Enum.reduce(data, [], fn trace, data_acc ->
         new_data =
@@ -308,11 +317,11 @@ defmodule SecopService.PlotDB do
             acc = Map.put(acc, key, value)
 
             case value do
-              # Plotly path and parameter
+              # Use cached processed data
               %{"path" => _path, "parameter" => _parameter} ->
-                Map.put(acc, key, process_plot_data(raw_data, value))
+                cache_key = {key, value}
+                Map.put(acc, key, Map.get(processed_cache, cache_key))
 
-              # Standard plotly specifier
               _ ->
                 Map.put(acc, key, value)
             end
@@ -323,6 +332,19 @@ defmodule SecopService.PlotDB do
 
     data = Enum.reverse(data)
     Map.put(plot_map, :data, data)
+  end
+
+  # Build a cache of all processed plot data upfront
+  defp build_plot_data_cache(traces, raw_data) do
+    traces
+    |> Enum.flat_map(fn trace ->
+      Enum.filter(trace, fn {_key, value} ->
+        match?(%{"path" => _, "parameter" => _}, value)
+      end)
+    end)
+    |> Map.new(fn {key, spec} ->
+      {{key, spec}, process_plot_data(raw_data, spec)}
+    end)
   end
 
   def get_trace_updates_batch(%{plotly: nil} = plot_map, datapoints, parameter) do
@@ -513,13 +535,13 @@ defmodule SecopService.PlotDB do
         |> Map.put(:plotly, Map.get(module.custom_properties, "_plotly", nil))
 
       {value_val, value_ts} =
-        get_values(value_param.id)
-        |> Sec_Nodes.extract_value_timestamp_lists()
+        get_values(value_param)
+        |> Sec_Nodes.extract_value_timestamp_lists(value_param)
         |> read_from_device_if_empty(value_param.id)
 
       {target_val, target_ts} =
-        get_values(target_param.id)
-        |> Sec_Nodes.extract_value_timestamp_lists()
+        get_values(target_param)
+        |> Sec_Nodes.extract_value_timestamp_lists(target_param)
         |> read_from_device_if_empty(target_param.id)
 
       plot_map = plot_available(plot_map, value_val)
@@ -554,8 +576,8 @@ defmodule SecopService.PlotDB do
           |> Map.put(:plotly, Map.get(module.custom_properties, "_plotly", nil))
 
         {value_val, value_ts} =
-          get_values(value_param.id)
-          |> Sec_Nodes.extract_value_timestamp_lists()
+          get_values(value_param)
+          |> Sec_Nodes.extract_value_timestamp_lists(value_param)
           |> read_from_device_if_empty(value_param.id)
 
         plot_map = plot_available(plot_map, value_val)
@@ -585,8 +607,8 @@ defmodule SecopService.PlotDB do
     plot_map =
       if plottable?(parameter) do
         {value_val, value_ts} =
-          get_values(parameter.id)
-          |> Sec_Nodes.extract_value_timestamp_lists()
+          get_values(parameter)
+          |> Sec_Nodes.extract_value_timestamp_lists(parameter)
           |> read_from_device_if_empty(parameter.id)
 
         plot_map =
