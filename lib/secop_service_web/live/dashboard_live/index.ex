@@ -310,6 +310,8 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     current_node = socket.assigns.current_node
 
+
+
     unsubscribe_from_node(SEC_Node.get_node_id(current_node))
 
 
