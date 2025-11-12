@@ -8,15 +8,14 @@ defmodule SecopService.Model do
   alias SecopService.NodeValues
   alias SecopService.NodeSupervisor
 
-
   # Define the struct at the top of the module
   defstruct [:active_nodes, :current_node, :values]
 
   @type t :: %__MODULE__{
-    active_nodes: map(),
-    current_node: map() | nil,
-    values: map() | nil
-  }
+          active_nodes: map(),
+          current_node: map() | nil,
+          values: map() | nil
+        }
 
   @spec from_socket(Phoenix.LiveView.Socket.t()) :: %Model{}
   def from_socket(socket) do
@@ -34,7 +33,6 @@ defmodule SecopService.Model do
     |> assign(:current_node, model.current_node)
     |> assign(:values, model.values)
   end
-
 
   @spec get_initial_model() :: %Model{}
   def get_initial_model() do
@@ -68,7 +66,6 @@ defmodule SecopService.Model do
 
   @spec get_default_node_id(%Model{}) :: {String.t(), integer()} | nil
   def get_default_node_id(model) do
-
     if model.active_nodes == %{} do
       nil
     else
@@ -76,9 +73,7 @@ defmodule SecopService.Model do
       {_current_node_key, default_node_state} = Map.to_list(model.active_nodes) |> List.first()
       default_node_state[:node_id]
     end
-
   end
-
 
   @spec set_current_node(%Model{}, nil | {String.t(), integer()}) :: %Model{}
   def set_current_node(model, nil) do

@@ -16,8 +16,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   import SECoPComponents
   import SecopServiceWeb.DashboardComponents
 
-
-
   defp subscribe_to_node(node_id) do
     Phoenix.PubSub.subscribe(
       SecopService.PubSub,
@@ -67,6 +65,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     case String.split(node_param, ":") do
       [host, port] ->
         {:ok, {String.to_charlist(host), String.to_integer(port)}}
+
       _ ->
         :error
     end
@@ -74,26 +73,27 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
   @impl true
   def handle_params(unsigned_params, _uri, socket) do
-
     model = Model.from_socket(socket)
 
-    model = case unsigned_params do
-    %{"node" => node_param} ->
-      # Parse node from URL like "?node=192.168.1.1:5000"
-      case parse_node_param(node_param) do
-        {:ok, node_id} when is_map_key(model.active_nodes, node_id) ->
-          Model.set_current_node(model,node_id)
+    model =
+      case unsigned_params do
+        %{"node" => node_param} ->
+          # Parse node from URL like "?node=192.168.1.1:5000"
+          case parse_node_param(node_param) do
+            {:ok, node_id} when is_map_key(model.active_nodes, node_id) ->
+              Model.set_current_node(model, node_id)
+
+            _ ->
+              # Invalid node, use default
+              default_node_id = Model.get_default_node_id(model)
+              Model.set_current_node(model, default_node_id)
+          end
 
         _ ->
-          # Invalid node, use default
+          # No node in URL, use default
           default_node_id = Model.get_default_node_id(model)
           Model.set_current_node(model, default_node_id)
       end
-    _ ->
-      # No node in URL, use default
-      default_node_id = Model.get_default_node_id(model)
-      Model.set_current_node(model, default_node_id)
-    end
 
     if model.current_node do
       subscribe_to_node(SEC_Node.get_node_id(model.current_node))
@@ -102,8 +102,8 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     socket =
       socket
       |> Model.to_socket(model)
-    {:noreply, socket}
 
+    {:noreply, socket}
   end
 
   ### New Values Map Update
@@ -310,10 +310,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     current_node = socket.assigns.current_node
 
-
-
     unsubscribe_from_node(SEC_Node.get_node_id(current_node))
-
 
     {:noreply, push_patch(socket, to: ~p"/dashboard?node=#{new_pubsub_topic}")}
   end

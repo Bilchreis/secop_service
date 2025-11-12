@@ -197,7 +197,6 @@ defmodule SecopService.PlotDB do
     default
   end
 
-
   defp process_plot_data(raw_data, plotly_specifier) do
     {type, path} = Map.get(plotly_specifier, "path", []) |> List.pop_at(0)
     parameter = Map.get(plotly_specifier, "parameter", "")
@@ -311,7 +310,6 @@ defmodule SecopService.PlotDB do
 
     processed_cache = build_plot_data_cache(data, raw_data)
 
-
     data =
       Enum.reduce(data, [], fn trace, data_acc ->
         new_data =
@@ -348,7 +346,6 @@ defmodule SecopService.PlotDB do
       {{key, spec}, process_plot_data(raw_data, spec)}
     end)
   end
-
 
   def get_trace_updates_batch(%{plotly: nil} = plot_map, datapoints, parameter) do
     trace_index =
@@ -526,7 +523,6 @@ defmodule SecopService.PlotDB do
 
   #
   def drivable_plot(module) do
-
     plot_map = %{}
 
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)

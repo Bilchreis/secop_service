@@ -84,8 +84,6 @@ defmodule SecopService.NodeDBWriter do
      }}
   end
 
-
-
   @impl true
   def handle_cast({:parameter_update, module, parameter, value, timestamp, qualifiers}, state) do
     case Map.get(state.parameter_cache, {module, parameter}) do
@@ -217,16 +215,10 @@ defmodule SecopService.NodeDBWriter do
     Process.send_after(self(), :flush_parameter_batch, @batch_interval)
   end
 
-
   defp flush_all_batches(state) do
-
     Task.start(fn ->
-
-      Enum.reduce(@batch_list,Multi.new(), fn batch_key, multi_acc ->
+      Enum.reduce(@batch_list, Multi.new(), fn batch_key, multi_acc ->
         batch = Map.get(state, batch_key)
-
-
-
 
         if not Enum.empty?(batch) do
           storage_type =
@@ -244,8 +236,6 @@ defmodule SecopService.NodeDBWriter do
 
           schema_module = ParameterValue.get_schema_module(storage_type)
 
-
-
           multi_acc
           |> Multi.insert_all(
             :"insert_#{storage_type}_values",
@@ -255,12 +245,9 @@ defmodule SecopService.NodeDBWriter do
         else
           multi_acc
         end
-      end) |> Repo.transaction()
-
-
-
+      end)
+      |> Repo.transaction()
     end)
-
   end
 
   # Build a cache of full parameter records indexed by {module_name, parameter_name}
@@ -286,7 +273,7 @@ defmodule SecopService.NodeDBWriter do
     end)
   end
 
-    # Map storage type to batch key name
+  # Map storage type to batch key name
   defp get_batch_key(storage_type) do
     case storage_type do
       :int -> :batch_int

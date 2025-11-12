@@ -1,12 +1,10 @@
 defmodule SecopService.Sec_Nodes.ParameterValue do
-
   alias SecopService.Sec_Nodes.Parameter
   alias SecopService.Sec_Nodes.ParameterValue
   alias ExPrintf
   require Logger
 
-
-    # Type-specific modules
+  # Type-specific modules
   @type_modules %{
     int: ParameterValue.Int,
     double: ParameterValue.Double,
@@ -19,9 +17,6 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
     json: ParameterValue.Json
   }
 
-
-
-
   # Determine which schema module and table to use for a parameter
   def get_schema_module(%Parameter{} = parameter) do
     storage_type = get_storage_type(parameter)
@@ -32,15 +27,25 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
     Map.fetch!(@type_modules, storage_type)
   end
 
-
   def get_storage_type(%Parameter{} = parameter) do
     case parameter.datainfo["type"] do
-      "int" -> :int
-      "scaled" -> :int
-      "enum" -> :int
-      "double" -> :double
-      "bool" -> :bool
-      "string" -> :string
+      "int" ->
+        :int
+
+      "scaled" ->
+        :int
+
+      "enum" ->
+        :int
+
+      "double" ->
+        :double
+
+      "bool" ->
+        :bool
+
+      "string" ->
+        :string
 
       "array" ->
         # Check if it's a simple 1D array or nested
@@ -53,17 +58,15 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
           "double" -> :array_double
           "bool" -> :array_bool
           "string" -> :array_string
-
           # Nested arrays or arrays of complex types
           _ -> :json
         end
 
       # Complex types: struct, tuple, blob, matrix, nested arrays
-      _ -> :json
+      _ ->
+        :json
     end
   end
-
-
 
   # Format timestamp consistently
   defp format_timestamp(timestamp) do
@@ -139,37 +142,42 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
     end
   end
 
-
   def create_map(raw_value, parameter, timestamp, qualifiers \\ %{}) do
     formatted_timestamp = format_timestamp(timestamp)
     formatted_value = format_value(raw_value, parameter)
 
-
-      %{
-        value: formatted_value,
-        timestamp: formatted_timestamp,
-        qualifiers: qualifiers,
-        parameter_id: parameter.id
-      }
+    %{
+      value: formatted_value,
+      timestamp: formatted_timestamp,
+      qualifiers: qualifiers,
+      parameter_id: parameter.id
+    }
   end
 
   # Create a value with proper type handling based on parameter type
   def create_changeset(raw_value, parameter, timestamp, qualifiers \\ %{}) do
-
-    param_val_map = create_map(raw_value,parameter,timestamp,qualifiers)
+    param_val_map = create_map(raw_value, parameter, timestamp, qualifiers)
 
     schema_module = get_schema_module(parameter)
 
     struct(schema_module)
-      |> schema_module.changeset(param_val_map)
+    |> schema_module.changeset(param_val_map)
   end
 
-
-    # Get raw value (handles all storage types)
+  # Get raw value (handles all storage types)
   def get_raw_value(parameter_value, parameter) do
     case get_storage_type(parameter) do
-      storage when storage in [:int, :double, :bool, :string,
-                                :array_int, :array_double, :array_bool, :array_string] ->
+      storage
+      when storage in [
+             :int,
+             :double,
+             :bool,
+             :string,
+             :array_int,
+             :array_double,
+             :array_bool,
+             :array_string
+           ] ->
         # For atomic types and simple arrays, value is stored directly
         parameter_value.value
 
@@ -181,7 +189,6 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
         end
     end
   end
-
 
   # Get display-friendly value with unit
   def get_display_value(parameter_value, parameter) do
@@ -198,8 +205,11 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
         # Convert scaled integer to actual value
         scale = parameter.datainfo["scale"] || 1.0
         actual_value = raw_value * scale
-        format_string = parameter.datainfo["fmtstr"] ||
-          "%." <> Integer.to_string(max(0, -floor(:math.log10(scale)))) <> "f"
+
+        format_string =
+          parameter.datainfo["fmtstr"] ||
+            "%." <> Integer.to_string(max(0, -floor(:math.log10(scale)))) <> "f"
+
         formatted = ExPrintf.sprintf(format_string, [actual_value])
         append_unit(formatted, unit)
 
@@ -209,7 +219,9 @@ defmodule SecopService.Sec_Nodes.ParameterValue do
         name
 
       "array" ->
-        "[" <> (raw_value |> Enum.map(&to_string/1) |> Enum.join(", ")) <> "]" <>
+        "[" <>
+          (raw_value |> Enum.map(&to_string/1) |> Enum.join(", ")) <>
+          "]" <>
           if unit != "", do: " #{unit}", else: ""
 
       _ ->

@@ -6,9 +6,6 @@ defmodule SecopService.Sec_Nodes do
   require Logger
   alias Jason
 
-
-
-
   def get_recent_values(parameter, limit \\ 100) do
     schema_module = ParameterValue.get_schema_module(parameter)
 
@@ -53,7 +50,6 @@ defmodule SecopService.Sec_Nodes do
     |> order_by(asc: :timestamp)
     |> Repo.all()
   end
-
 
   @doc """
   Stores SEC nodes and their components from an active_nodes map.
@@ -436,7 +432,6 @@ defmodule SecopService.Sec_Nodes do
   end
 
   def get_sec_node_by_uuid(uuid) do
-
     SEC_Node
     |> Repo.get_by(uuid: uuid)
     |> Repo.preload(

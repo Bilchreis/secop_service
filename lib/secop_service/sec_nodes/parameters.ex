@@ -69,7 +69,6 @@ defmodule SecopService.Sec_Nodes.Parameter do
     parameter.datainfo[:unit] || ""
   end
 
-
   # Helper to get the appropriate value table/module
   def get_value_schema_module(parameter) do
     SecopService.Sec_Nodes.ParameterValue.get_schema_module(parameter)
