@@ -252,19 +252,26 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   def handle_info({:value_update, :updated, module, accessible, data_report}, socket) do
     values = socket.assigns.values
 
-    values = put_in(values, [module, accessible], data_report)
+    if Map.has_key?(values, module) do
+      put_in(values, [module, accessible], data_report)
 
-    node_id_str =
+      node_id_str =
       "#{to_string(socket.assigns.current_node.host)}:#{socket.assigns.current_node.port}"
 
-    update_components(
-      node_id_str,
-      module,
-      accessible,
-      data_report
-    )
+      update_components(
+        node_id_str,
+        module,
+        accessible,
+        data_report
+      )
 
-    {:noreply, assign(socket, :values, values)}
+      {:noreply, assign(socket, :values, values)}
+    else
+      {:noreply, socket}
+    end
+
+
+
   end
 
   @impl true

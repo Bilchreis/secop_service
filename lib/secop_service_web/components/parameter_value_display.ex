@@ -237,7 +237,12 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
     # Keep set_form with nil value
     set_form =
-      to_form(base_form |> Map.put("value", nil))
+      case parameter.datainfo["type"] do
+        "enum" -> base_form |> Map.put("value", nil)
+        _ -> base_form
+      end
+
+    set_form = to_form(set_form)
 
     modal_form =
       base_form
@@ -638,7 +643,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
   def render(assigns) do
     ~H"""
     <div>
-      <div class="flex gap-2 mt-2 ">
+      <div class="flex mt-2 ">
         <div class={[
           "flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-800 border rounded-lg p-2 border-stone-500 overflow-scroll",
           @class
@@ -655,7 +660,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
           </div>
         </div>
         <%= if not @parameter.readonly  and not @is_composite do %>
-          <div class="flex justify-between items-start">
+          <div class="flex justify-between items-center">
             <.form
               for={@set_form}
               phx-submit="set_parameter"
@@ -691,11 +696,15 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
               <%= case @parameter.datainfo["type"] do %>
               <% "enum" -> %>
                 <.input_enum
+                    id={"form:" <> to_string(@parameter.id) <> @location}
                     datainfo={@parameter.datainfo}
                     location={@location}
                     modal_form={@set_form}
                     parameter_id={@parameter.id}
                     show_tooltip={false}
+
+
+
                 />
               <% _ -> %>
                 <.input
@@ -746,26 +755,17 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
               value={Phoenix.HTML.Form.input_value(@set_form, :module)}
             />
             <input type="hidden" name="parameter" value={@parameter.name} />
-            <%= case @parameter.datainfo["type"] do %>
-            <% "enum" -> %>
-              <.input_enum
-                  id={"form:" <> to_string(@parameter.id) <> @location}
-                  datainfo={@parameter.datainfo}
-                  location={@location}
-                  modal_form={@set_form}
-                  parameter_id={@parameter.id}
-              />
-            <% _ -> %>
-              <.input
-                name="value"
-                type="text"
-                field={@set_form[:value]}
-                placeholder="new value"
-                phx-debounce="500"
-                id={"form:" <> to_string(@parameter.id) <> @location}
-                class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
-              />
-            <% end %>
+
+            <.input
+              name="value"
+              type="text"
+              field={@set_form[:value]}
+              placeholder="new value"
+              phx-debounce="500"
+              id={"form:" <> to_string(@parameter.id) <> @location}
+              class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+            />
+
             <button
               type="submit"
               class="font-semibold pr-4 pl-4 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100 command_item"
