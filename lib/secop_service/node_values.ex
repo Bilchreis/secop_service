@@ -194,7 +194,12 @@ defmodule SecopService.NodeValues do
             merged_param_val
           end
 
-        if old_param_val == merged_param_val do
+        # Compare without timestamps
+        old_without_timestamp = remove_timestamp(old_param_val)
+        merged_without_timestamp = remove_timestamp(merged_param_val)
+
+
+        if old_without_timestamp == merged_without_timestamp do
           Phoenix.PubSub.broadcast(
             SecopService.PubSub,
             "value_update:processed:#{SEC_Node.get_id_str(node_db)}",
@@ -215,6 +220,14 @@ defmodule SecopService.NodeValues do
         end
     end
   end
+
+    # Remove timestamp from data_report qualifiers for comparison
+  defp remove_timestamp(%{data_report: [value, qualifiers]} = param_val) when is_map(qualifiers) do
+    Map.put(param_val, :data_report, [value, Map.drop(qualifiers, [:t])])
+  end
+
+  defp remove_timestamp(param_val), do: param_val
+
 
   def process_data_report("status", data_report, datainfo) do
     if data_report != nil do
