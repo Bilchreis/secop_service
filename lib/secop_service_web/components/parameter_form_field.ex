@@ -194,9 +194,15 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
   attr :path, :list, default: ["value"]
   attr :parameter_id, :string, required: true
   attr :location, :string, required: true
+  attr :show_tooltip, :boolean, default: true
+  attr :id, :string, default: nil
+  attr :class, :string, default: ""
 
   def input_enum(assigns) do
     select_options = assigns.datainfo["members"]
+
+        base_class = "flex-1 full-w bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 font-mono text-gray-900 dark:text-gray-200 opacity-100"
+    class = if assigns[:class], do: "#{base_class} #{assigns[:class]}", else: base_class
 
     assigns =
       assigns
@@ -205,23 +211,24 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       |> assign(
         :popover_id,
         "popover-" <>
-          assigns.location <> "-" <> assigns.parameter_id <> Enum.join(assigns.path, "-")
+          assigns.location <> "-" <> to_string(assigns.parameter_id) <> Enum.join(assigns.path, "-")
       )
 
     ~H"""
     <.input
+      id = {@id}
       name={@field}
       type="select"
       options={@options}
       field={@modal_form[@field]}
       value={Phoenix.HTML.Form.input_value(@modal_form, @field)}
       phx-debounce="500"
-      class="flex-1 full-w bg-zinc-300 dark:bg-zinc-600 border
-          rounded-lg p-2  border-stone-500 dark:border-stone-500
-          font-mono text-gray-900 dark:text-gray-200 opacity-100"
+      class={["flex-1 full-w bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 font-mono text-gray-900 dark:text-gray-200 opacity-100", assigns[:class]]}
     />
+    <%= if @show_tooltip do %>
+      <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
+    <% end %>
 
-    <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
     """
   end
 
