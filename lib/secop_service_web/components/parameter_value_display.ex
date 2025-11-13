@@ -749,9 +749,10 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
             <%= case @parameter.datainfo["type"] do %>
             <% "enum" -> %>
               <.input_enum
+                  id={"form:" <> to_string(@parameter.id) <> @location}
                   datainfo={@parameter.datainfo}
                   location={@location}
-                  modal_form={@modal_form}
+                  modal_form={@set_form}
                   parameter_id={@parameter.id}
               />
             <% _ -> %>

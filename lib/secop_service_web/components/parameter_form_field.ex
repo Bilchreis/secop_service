@@ -195,6 +195,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
   attr :parameter_id, :string, required: true
   attr :location, :string, required: true
   attr :show_tooltip, :boolean, default: true
+  attr :id, :string, default: nil
 
   def input_enum(assigns) do
     select_options = assigns.datainfo["members"]
@@ -211,6 +212,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
 
     ~H"""
     <.input
+      id = {@id}
       name={@field}
       type="select"
       options={@options}

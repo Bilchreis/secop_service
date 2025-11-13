@@ -454,7 +454,7 @@ defmodule SECoPComponents do
   slot :trigger, validate_attrs: false
   slot :panel, validate_attrs: false
 
-  @spec accordion(Socket.assigns()) :: Rendered.t()
+
   def accordion(assigns) do
     ~H"""
     <div class={["accordion", assigns[:class]]} id={@id} {@rest}>
