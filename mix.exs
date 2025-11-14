@@ -5,11 +5,12 @@ defmodule SecopService.MixProject do
     [
       app: :secop_service,
       version: "0.0.15",
-      elixir: "~> 1.18.4",
+      elixir: "~> 1.19.3",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      compilers: [:phoenix_live_view] ++ Mix.compilers(),
     ]
   end
 
@@ -40,10 +41,10 @@ defmodule SecopService.MixProject do
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix_live_view, "~> 1.0"},
-      {:floki, ">= 0.30.0", only: :test},
-      {:phoenix_live_dashboard, "~> 0.8.3"},
-      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
+      {:phoenix_live_view, "~> 1.1"},
+      {:lazy_html, ">= 0.0.0", only: :test},
+      {:phoenix_live_dashboard, "~> 0.8.7"},
+      {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
       {:heroicons,
        github: "tailwindlabs/heroicons",
@@ -63,12 +64,13 @@ defmodule SecopService.MixProject do
       {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.45"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:tzdata, "~> 1.1"},
-      {:flop, "~> 0.26.1"},
-      {:flop_phoenix, "~> 0.24.1"},
+      {:flop, "~> 0.26.3"},
+      {:flop_phoenix, "~> 0.25.3"},
       {:exprintf, "~> 0.2.1"},
       {:pythonx, "~> 0.4.4"},
       {:flame_on, git: "https://github.com/DockYard/flame_on.git"},
-      {:benchee, "~> 1.5", only: :dev}
+      {:benchee, "~> 1.5", only: :dev},
+      {:igniter, "~> 0.6", only: :dev}
     ]
   end
 
