@@ -15,6 +15,8 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   alias SEC_Node_Statem
   import SECoPComponents
   import SecopServiceWeb.DashboardComponents
+  import SecopServiceWeb.Layouts
+
 
   defp subscribe_to_node(node_id) do
     Phoenix.PubSub.subscribe(
