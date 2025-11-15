@@ -75,12 +75,12 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
   attr :status_value, :map, required: true
 
   def inner_status_indicator(assigns) do
-    assigns = if assigns.status_value.data_report == nil do
-      assign(assigns, :stat_color, "bg-gray-500")
-    else
-      assigns
-    end
-
+    assigns =
+      if assigns.status_value.data_report == nil do
+        assign(assigns, :stat_color, "bg-gray-500")
+      else
+        assigns
+      end
 
     ~H"""
     <div class="flex items-center">

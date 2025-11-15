@@ -1,60 +1,59 @@
 <Layouts.app flash={@flash}>
-    <%= if @active_nodes != %{} and @current_node != nil do %>
-      <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
+  <%= if @active_nodes != %{} and @current_node != nil do %>
+    <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
+      <li class="me-2 mb-2">
+        <button
+          phx-click="open_connect_modal"
+          class={[
+            "border-gray-400",
+            "bg-zinc-500 hover:bg-zinc-700",
+            "border-4 text-white text-left font-bold py-2 px-4 rounded"
+          ]}
+        >
+          <div class="text-xl">Connect Node</div>
+          <div class="text-sm text-white-400 invisible">placeholder</div>
+          <div class="invisible">placeholder</div>
+        </button>
+      </li>
+      <%= for {_addr,node} <- @active_nodes do %>
         <li class="me-2 mb-2">
-          <button
-            phx-click="open_connect_modal"
-            class={[
-              "border-gray-400",
-              "bg-zinc-500 hover:bg-zinc-700",
-              "border-4 text-white text-left font-bold py-2 px-4 rounded"
-            ]}
-          >
-            <div class="text-xl">Connect Node</div>
-            <div class="text-sm text-white-400 invisible">placeholder</div>
-            <div class="invisible">placeholder</div>
-          </button>
+          <.node_button
+            equipment_id={node.equipment_id}
+            pubsub_topic={node.pubsub_topic}
+            uuid={node.uuid}
+            current={node.uuid == @current_node.uuid}
+            state={node.state}
+            connstate={node.active}
+          />
         </li>
-        <%= for {_addr,node} <- @active_nodes do %>
-          <li class="me-2 mb-2">
-            <.node_button
-              equipment_id={node.equipment_id}
-              pubsub_topic={node.pubsub_topic}
-              uuid={node.uuid}
-              current={node.uuid == @current_node.uuid}
-              state={node.state}
-              connstate={node.active}
-            />
-          </li>
-        <% end %>
-      </ul>
+      <% end %>
+    </ul>
 
-      <div class="flex">
-        <.module_indicators
-          node={@current_node}
-          node_state={@active_nodes[SEC_Node.get_node_id(@current_node)].state}
-          values={@values}
-          node_id_str={SEC_Node.get_id_str(@current_node)}
-        />
-        <.dash_sec_node
-          node={@current_node}
-          state_map={@active_nodes[SEC_Node.get_node_id(@current_node)]}
-        />
-      </div>
-    <% else %>
-      <div class="max-w-5xl align-middle mx-auto mt-20">
-        <.connect_node />
-      </div>
-    <% end %>
-
-    <.modal
-      :if={@show_connect_modal}
-      id="connect-modal"
-      title=""
-      show={@show_connect_modal}
-      on_cancel={JS.push("close_connect_modal")}
-    >
+    <div class="flex">
+      <.module_indicators
+        node={@current_node}
+        node_state={@active_nodes[SEC_Node.get_node_id(@current_node)].state}
+        values={@values}
+        node_id_str={SEC_Node.get_id_str(@current_node)}
+      />
+      <.dash_sec_node
+        node={@current_node}
+        state_map={@active_nodes[SEC_Node.get_node_id(@current_node)]}
+      />
+    </div>
+  <% else %>
+    <div class="max-w-5xl align-middle mx-auto mt-20">
       <.connect_node />
-    </.modal>
-</Layouts.app>
+    </div>
+  <% end %>
 
+  <.modal
+    :if={@show_connect_modal}
+    id="connect-modal"
+    title=""
+    show={@show_connect_modal}
+    on_cancel={JS.push("close_connect_modal")}
+  >
+    <.connect_node />
+  </.modal>
+</Layouts.app>

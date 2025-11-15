@@ -51,8 +51,7 @@ defmodule SecopServiceWeb do
 
   def live_view do
     quote do
-      use Phoenix.LiveView,
-        layout: {SecopServiceWeb.Layouts, :app}
+      use Phoenix.LiveView
 
       unquote(html_helpers())
     end
@@ -87,7 +86,6 @@ defmodule SecopServiceWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import SecopServiceWeb.CoreComponents
-
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS
