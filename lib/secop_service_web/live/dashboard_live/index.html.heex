@@ -1,4 +1,4 @@
-<div class="max-w-[2560px] mx-auto">
+<Layouts.app flash={@flash}>
   <%= if @active_nodes != %{} and @current_node != nil do %>
     <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
       <li class="me-2 mb-2">
@@ -56,4 +56,4 @@
   >
     <.connect_node />
   </.modal>
-</div>
+</Layouts.app>

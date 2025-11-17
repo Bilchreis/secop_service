@@ -144,48 +144,6 @@ defmodule SecopServiceWeb.CoreComponents do
   end
 
   @doc """
-  Shows the flash group with standard titles and content.
-
-  ## Examples
-
-      <.flash_group flash={@flash} />
-  """
-  attr :flash, :map, required: true, doc: "the map of flash messages"
-  attr :id, :string, default: "flash-group", doc: "the optional id of flash container"
-
-  def flash_group(assigns) do
-    ~H"""
-    <div id={@id}>
-      <.flash kind={:info} title={gettext("Success!")} flash={@flash} />
-      <.flash kind={:error} title={gettext("Error!")} flash={@flash} />
-      <.flash
-        id="client-error"
-        kind={:error}
-        title={gettext("We can't find the internet")}
-        phx-disconnected={show(".phx-client-error #client-error")}
-        phx-connected={hide("#client-error")}
-        hidden
-      >
-        {gettext("Attempting to reconnect")}
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
-      </.flash>
-
-      <.flash
-        id="server-error"
-        kind={:error}
-        title={gettext("Something went wrong!")}
-        phx-disconnected={show(".phx-server-error #server-error")}
-        phx-connected={hide("#server-error")}
-        hidden
-      >
-        {gettext("Hang in there while we get back on track")}
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
-      </.flash>
-    </div>
-    """
-  end
-
-  @doc """
   Renders a simple form.
 
   ## Examples
@@ -705,12 +663,21 @@ defmodule SecopServiceWeb.CoreComponents do
       class="fixed bottom-0 left-0 right-0 flex flex-wrap items-center justify-center gap-y-5 gap-x-2 p-4 bg-white dark:bg-gray-700 shadow-md text-gray-700 dark:text-gray-200 z-50"
       page_list_attrs={[class: "order-1 flex gap-2 basis-full justify-center"]}
       current_page_link_attrs={[class: "p-2 border rounded bg-purple-500 text-white"]}
-      page_link_attrs={[class: "p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"]}
+      page_link_attrs={[
+        class:
+          "p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+      ]}
     >
-      <:previous attrs={[class: "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"]}>
+      <:previous attrs={[
+        class:
+          "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+      ]}>
         Prev
       </:previous>
-      <:next attrs={[class: "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"]}>
+      <:next attrs={[
+        class:
+          "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+      ]}>
         Next
       </:next>
     </Flop.Phoenix.pagination>

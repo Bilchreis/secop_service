@@ -51,8 +51,7 @@ defmodule SecopServiceWeb do
 
   def live_view do
     quote do
-      use Phoenix.LiveView,
-        layout: {SecopServiceWeb.Layouts, :app}
+      use Phoenix.LiveView
 
       unquote(html_helpers())
     end
@@ -81,14 +80,16 @@ defmodule SecopServiceWeb do
 
   defp html_helpers do
     quote do
+      use Gettext, backend: SecopServiceWeb.Gettext
+
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components and translation
       import SecopServiceWeb.CoreComponents
-      import SecopServiceWeb.Gettext
 
-      # Shortcut for generating JS commands
+      # Common modules used in templates
       alias Phoenix.LiveView.JS
+      alias SecopServiceWeb.Layouts
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())

@@ -256,7 +256,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
       put_in(values, [module, accessible], data_report)
 
       node_id_str =
-      "#{to_string(socket.assigns.current_node.host)}:#{socket.assigns.current_node.port}"
+        "#{to_string(socket.assigns.current_node.host)}:#{socket.assigns.current_node.port}"
 
       update_components(
         node_id_str,
@@ -269,9 +269,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     else
       {:noreply, socket}
     end
-
-
-
   end
 
   @impl true

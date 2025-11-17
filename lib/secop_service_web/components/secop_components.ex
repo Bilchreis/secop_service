@@ -127,19 +127,19 @@ defmodule SECoPComponents do
       <div>
         <%= case @highest_error_class do %>
           <% "PASS" -> %>
-            <.icon name="hero-check-badge-solid" class="bg-green-500 h-50 w-50" />
+            <.icon name="hero-check-badge-solid" class="bg-green-500 h-10 w-10" />
           <% "HINT" -> %>
-            <.icon name="hero-check-badge-solid" class="bg-yellow-500 h-50 w-50" />
+            <.icon name="hero-check-badge-solid" class="bg-yellow-500 h-10 w-10" />
           <% "WARNING" -> %>
-            <.icon name="hero-exclamation-triangle-solid" class="bg-orange-500 h-50 w-50" />
+            <.icon name="hero-exclamation-triangle-solid" class="bg-orange-500 h-10 w-10" />
           <% "ERROR" -> %>
-            <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-50 w-50" />
+            <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-10 w-10" />
           <% "CATASTROPHIC" -> %>
-            <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-50 w-50" />
+            <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-10 w-10" />
           <% "FATAL" -> %>
-            <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-50 w-50" />
+            <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-10 w-10" />
           <% _ -> %>
-            <.icon name="hero-question-mark-circle-solid" class="bg-gray-500 h-50 w-50" />
+            <.icon name="hero-question-mark-circle-solid" class="bg-gray-500 h-10 w-10" />
         <% end %>
       </div>
 
@@ -453,7 +453,6 @@ defmodule SECoPComponents do
 
   slot :trigger, validate_attrs: false
   slot :panel, validate_attrs: false
-
 
   def accordion(assigns) do
     ~H"""

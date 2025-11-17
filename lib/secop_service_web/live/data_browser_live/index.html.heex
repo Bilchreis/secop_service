@@ -1,52 +1,54 @@
-<div class="container mx-auto">
-  <Flop.Phoenix.table items={@sec_nodes} meta={@meta} path={~p"/browse"} opts={table_opts()}>
-    <:col :let={sec_node} label="Created at" field={:inserted_at}>
-      {sec_node.inserted_at
-      |> DateTime.from_naive!("Etc/UTC")
-      |> DateTime.shift_zone!("Europe/Berlin")
-      |> Calendar.strftime("%d.%m.%Y %H:%M")}
-    </:col>
-    <:col :let={sec_node} label="UUID" field={:uuid}>
-      <span class="font-mono">{sec_node.uuid}</span>
-    </:col>
-    <:col :let={sec_node} label="Equipment ID" field={:equipment_id}>
-      {sec_node.equipment_id}
-    </:col>
-    <:col :let={sec_node} label="URI" field={:uri}>{sec_node.host}:{sec_node.port}</:col>
-    alias SecopService.Sec_Nodes.SEC_Node
-    <:col :let={sec_node} label="Description" field={:description}>
-      {SEC_Node.display_description(sec_node)}
-    </:col>
-    <:col :let={sec_node} label="Actions">
-      <div class="flex flex-col space-y-2 w-full">
-        <.link
-          navigate={~p"/browse/node/#{sec_node.uuid}"}
-          class="bg-purple-500 hover:bg-zinc-600 text-white font-bold py-1 px-2 rounded w-full text-center"
-        >
-          View Node
-        </.link>
-        <button
-          class="bg-zinc-500 hover:bg-zinc-600 text-white font-bold py-1 px-2 rounded w-full text-center"
-          phx-click="open_json_modal"
-          phx-value-uuid={sec_node.uuid}
-        >
-          View JSON Description
-        </button>
+<Layouts.app flash={@flash}>
+  <div class="container mx-auto">
+    <Flop.Phoenix.table items={@sec_nodes} meta={@meta} path={~p"/browse"} opts={table_opts()}>
+      <:col :let={sec_node} label="Created at" field={:inserted_at}>
+        {sec_node.inserted_at
+        |> DateTime.from_naive!("Etc/UTC")
+        |> DateTime.shift_zone!("Europe/Berlin")
+        |> Calendar.strftime("%d.%m.%Y %H:%M")}
+      </:col>
+      <:col :let={sec_node} label="UUID" field={:uuid}>
+        <span class="font-mono">{sec_node.uuid}</span>
+      </:col>
+      <:col :let={sec_node} label="Equipment ID" field={:equipment_id}>
+        {sec_node.equipment_id}
+      </:col>
+      <:col :let={sec_node} label="URI" field={:uri}>{sec_node.host}:{sec_node.port}</:col>
+      alias SecopService.Sec_Nodes.SEC_Node
+      <:col :let={sec_node} label="Description" field={:description}>
+        {SEC_Node.display_description(sec_node)}
+      </:col>
+      <:col :let={sec_node} label="Actions">
+        <div class="flex flex-col space-y-2 w-full">
+          <.link
+            navigate={~p"/browse/node/#{sec_node.uuid}"}
+            class="bg-purple-500 hover:bg-zinc-600 text-white font-bold py-1 px-2 rounded w-full text-center"
+          >
+            View Node
+          </.link>
+          <button
+            class="bg-zinc-500 hover:bg-zinc-600 text-white font-bold py-1 px-2 rounded w-full text-center"
+            phx-click="open_json_modal"
+            phx-value-uuid={sec_node.uuid}
+          >
+            View JSON Description
+          </button>
+        </div>
+      </:col>
+    </Flop.Phoenix.table>
+
+    <.pagination meta={@meta} path={~p"/browse"} />
+
+    <.modal
+      :if={@show_json_modal}
+      id="json-modal"
+      title={@json_title}
+      show={@show_json_modal}
+      on_cancel={JS.push("close_json_modal")}
+    >
+      <div class="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-auto font-mono text-sm">
+        <pre class="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto dark:text-gray-200"><%= @json_content %></pre>
       </div>
-    </:col>
-  </Flop.Phoenix.table>
-
-  <.pagination meta={@meta} path={~p"/browse"} />
-
-  <.modal
-    :if={@show_json_modal}
-    id="json-modal"
-    title={@json_title}
-    show={@show_json_modal}
-    on_cancel={JS.push("close_json_modal")}
-  >
-    <div class="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-auto font-mono text-sm">
-      <pre class="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto dark:text-gray-200"><%= @json_content %></pre>
-    </div>
-  </.modal>
-</div>
+    </.modal>
+  </div>
+</Layouts.app>

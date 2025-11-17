@@ -1,11 +1,13 @@
-<div class="max-w-[2560px] mx-auto">
-  <%= if @node do %>
-    <div>
-      <.sec_node_view node={@node} />
-    </div>
-  <% else %>
-    <div>
-      Node not found
-    </div>
-  <% end %>
-</div>
+<Layouts.app flash={@flash}>
+  <div class="max-w-[2560px] mx-auto">
+    <%= if @node do %>
+      <div>
+        <.sec_node_view node={@node} />
+      </div>
+    <% else %>
+      <div>
+        Node not found
+      </div>
+    <% end %>
+  </div>
+</Layouts.app>

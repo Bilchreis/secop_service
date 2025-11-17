@@ -13,12 +13,14 @@
 #
 ARG ELIXIR_VERSION=1.19.3
 ARG OTP_VERSION=28.1.1
-ARG DEBIAN_VERSION=bookworm-20250520
+ARG DEBIAN_VERSION=bookworm-20251103
+
+
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
 RUN apt-get update -y && apt-get install -y build-essential git nodejs npm \
@@ -45,9 +47,14 @@ RUN mkdir config
 COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
+RUN mix assets.setup
+
 COPY priv priv
 
 COPY lib lib
+
+# Compile the release
+RUN mix compile
 
 COPY assets assets
 
@@ -59,9 +66,6 @@ WORKDIR /app
 # compile assets
 RUN mix assets.deploy
 
-# Compile the release
-RUN mix compile
-
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
 
@@ -70,8 +74,7 @@ RUN mix release
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
-FROM ${RUNNER_IMAGE}
-
+FROM ${RUNNER_IMAGE} AS final
 RUN apt-get update -y && \
   apt-get install -y libstdc++6 openssl libncurses5 locales ca-certificates \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
@@ -79,9 +82,9 @@ RUN apt-get update -y && \
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 WORKDIR "/app"
 RUN chown nobody /app
