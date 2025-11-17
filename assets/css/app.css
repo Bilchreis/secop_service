@@ -137,7 +137,7 @@
   background-color:  rgb(212, 212, 216);
 }
 
-.dark .command_item { 
+[data-theme="dark"] .command_item { 
   background-color:  rgb(39, 39, 42);
 }
 
