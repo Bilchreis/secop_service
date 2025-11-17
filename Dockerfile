@@ -58,6 +58,11 @@ RUN mix compile
 
 COPY assets assets
 
+# Install npm dependencies
+WORKDIR /app/assets
+RUN npm install
+WORKDIR /app
+
 # compile assets
 RUN mix assets.deploy
 
