@@ -143,7 +143,7 @@ defmodule SECoPComponents do
         <% end %>
       </div>
 
-      <div class="bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-4xl font-bold text-transparent">
+      <div class="text-primary text-4xl font-bold">
         {Util.display_name(@equipment_id)}
       </div>
     </div>
@@ -161,7 +161,7 @@ defmodule SECoPComponents do
   attr :parameter, :string, required: true
   attr :parameter_name, :string, required: true
 
-  def dash_parameter(assigns) do
+  def old_dash_parameter(assigns) do
     assigns =
       assign(assigns, parse_param_value(assigns[:parameter]))
       |> assign(:unit, Map.get(assigns.parameter.datainfo, :unit))
@@ -280,7 +280,7 @@ defmodule SECoPComponents do
       </.accordion>
       <div class="grid grid-cols-3 gap-7 pt-6 content-start">
         <%= for {parameter_name, parameter} <- @module.parameters do %>
-          <.dash_parameter parameter_name={parameter_name} parameter={parameter} />
+          <.old_dash_parameter parameter_name={parameter_name} parameter={parameter} />
         <% end %>
       </div>
     </div>

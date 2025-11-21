@@ -97,7 +97,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
             "readable" -> ["value"]
             "drivable" -> ["value", "target"]
             "communicator" -> []
-            "measurable" -> ["value"]
+            "acquisition" -> ["value"]
             _ -> []
           end
       end

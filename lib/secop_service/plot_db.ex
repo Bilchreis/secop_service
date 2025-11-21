@@ -504,7 +504,7 @@ defmodule SecopService.PlotDB do
         :readable -> readable_plot(module)
         :drivable -> drivable_plot(module)
         :communicator -> not_plottable()
-        :measurable -> readable_plot(module)
+        :acquisition -> readable_plot(module)
         _ -> not_plottable()
       end
 

@@ -1,12 +1,12 @@
 <Layouts.app flash={@flash}>
   <%= if @active_nodes != %{} and @current_node != nil do %>
-    <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400">
+    <ul class="flex flex-wrap text-sm font-medium text-center text-neutral-content">
       <li class="me-2 mb-2">
         <button
           phx-click="open_connect_modal"
           class={[
-            "border-gray-400",
-            "bg-zinc-500 hover:bg-zinc-700",
+            "bg-neutral",
+            "hover:bg-neutral-focus",
             "border-4 text-white text-left font-bold py-2 px-4 rounded"
           ]}
         >

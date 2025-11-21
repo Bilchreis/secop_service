@@ -105,11 +105,6 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
     assigns =
       assigns
       |> assign(:field, Enum.join(assigns.path, "."))
-      |> assign(
-        :popover_id,
-        "popover-" <>
-          assigns.location <> "-" <> assigns.parameter_id <> Enum.join(assigns.path, "-")
-      )
 
     ~H"""
     <.input
@@ -121,7 +116,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       class="flex-1 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 font-mono text-gray-900 dark:text-gray-200 opacity-100"
     />
 
-    <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
+    <.datainfo_tooltip datainfo={@datainfo} />
     """
   end
 
@@ -137,11 +132,6 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
     assigns =
       assigns
       |> assign(:field, Enum.join(assigns.path, "."))
-      |> assign(
-        :popover_id,
-        "popover-" <>
-          assigns.location <> "-" <> assigns.parameter_id <> Enum.join(assigns.path, "-")
-      )
 
     ~H"""
     <.input
@@ -152,7 +142,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       phx-debounce="500"
       class="flex-1 full-w max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
     />
-    <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
+    <.datainfo_tooltip datainfo={@datainfo} />
     """
   end
 
@@ -168,11 +158,6 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
     assigns =
       assigns
       |> assign(:field, Enum.join(assigns.path, "."))
-      |> assign(
-        :popover_id,
-        "popover-" <>
-          assigns.location <> "-" <> assigns.parameter_id <> Enum.join(assigns.path, "-")
-      )
 
     ~H"""
     <.input
@@ -183,7 +168,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       phx-debounce="500"
       class="bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
     />
-    <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
+    <.datainfo_tooltip datainfo={@datainfo} />
     """
   end
 
@@ -210,12 +195,6 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       assigns
       |> assign(:field, Enum.join(assigns.path, "."))
       |> assign(:options, select_options)
-      |> assign(
-        :popover_id,
-        "popover-" <>
-          assigns.location <>
-          "-" <> to_string(assigns.parameter_id) <> Enum.join(assigns.path, "-")
-      )
       |> assign(:class, class)
 
     ~H"""
@@ -230,7 +209,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       class={@class}
     />
     <%= if @show_tooltip do %>
-      <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
+      <.datainfo_tooltip datainfo={@datainfo} />
     <% end %>
     """
   end
@@ -254,11 +233,6 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
           else: "grid-cols-1"
         )
       )
-      |> assign(
-        :popover_id,
-        "popover-" <>
-          assigns.location <> "-" <> assigns.parameter_id <> Enum.join(assigns.path, "-")
-      )
 
     ~H"""
     Struct:
@@ -271,7 +245,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
         phx-debounce="500"
         class="flex-1 full-w max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
       />
-      <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
+      <.datainfo_tooltip datainfo={@datainfo} />
     <% else %>
       <div class={"grid #{@grid_cols} gap-x-2 gap-y-2 items-center border-stone-500 dark:border-stone-500 rounded-lg  border p-2"}>
         <%= for {member_name, member_info} <- @datainfo["members"] do %>
@@ -313,11 +287,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
         :grid_cols,
         if(length(assigns.datainfo["members"]) > 6, do: "grid-cols-3", else: "grid-cols-1")
       )
-      |> assign(
-        :popover_id,
-        "popover-" <>
-          assigns.location <> "-" <> assigns.parameter_id <> Enum.join(assigns.path, "-")
-      )
+
 
     ~H"""
     Tuple:
@@ -330,7 +300,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
         phx-debounce="500"
         class="flex-1 full-w max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
       />
-      <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
+      <.datainfo_tooltip datainfo={@datainfo} />
     <% else %>
       <div class={"grid #{@grid_cols} gap-x-2 gap-y-2 items-center border-stone-500 dark:border-stone-500 rounded-lg p-2"}>
         <%= for {member_info, index} <- Enum.with_index(@datainfo["members"]) do %>
@@ -382,31 +352,30 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       class="w-full bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 font-mono text-gray-900 dark:text-gray-200 opacity-100"
     />
 
-    <.datainfo_tooltip popover_id={@popover_id} datainfo={@datainfo} />
+    <.datainfo_tooltip datainfo={@datainfo} />
     """
   end
 
-  attr :popover_id, :string, required: true
-  attr :datainfo, :string, required: true
 
+  attr :datainfo, :string, required: true
+  attr :position, :string, default: "tooltip-top"
   def datainfo_tooltip(assigns) do
     assigns =
       assigns
       |> assign(:pretty_datainfo, Jason.encode!(assigns.datainfo, pretty: true))
 
     ~H"""
-    <div class="flex-none with-tooltip" aria-describedby={@popover_id}>
-      <.icon name="hero-information-circle" class=" h-6 w-6  mr-1" />
-
-      <div
-        role="tooltip"
-        id={@popover_id}
-        class="absolute z-[20] px-3 py-2 bg-gray-100 dark:bg-gray-600 border  rounded-lg border-stone-500 dark:border-stone-500 "
-      >
-        <span class="text-gray-800 dark:text-gray-200">Datainfo:</span>
-        <pre class="break-words max-h-[60vh] overflow-y-auto bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-xs p-2 rounded-lg">{@pretty_datainfo}</pre>
+    <div class={["tooltip",@position]}>
+      <div class="tooltip-content text-left bg-transparent ">
+        <div class="card bg-base-100 border-base-content/30 border-3 p-3 ">
+        <span class="text-base-content">Datainfo:</span>
+        <pre class="card mt-2 card-border border-neutral-content/10  break-words max-h-[60vh] overflow-y-auto bg-neutral text-base-content font-mono text-xs p-2">{@pretty_datainfo}</pre>
       </div>
+
+      </div>
+      <.icon name="hero-information-circle" class="bg-neutral-content h-5 w-5  mr-1" />
     </div>
+
     """
   end
 end
