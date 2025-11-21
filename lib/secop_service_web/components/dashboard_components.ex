@@ -216,7 +216,7 @@ defmodule SecopServiceWeb.DashboardComponents do
 
 
     ~H"""
-    <div class="flex mt-3 items-start">
+    <div class="flex mt-3 items-stretch gap-3">
       <div class="flex-1">
         <%!-- Module header and interactive elements (outside collapse) --%>
         <div class={["bg-base-100 rounded-t-lg p-4", @styles.bg, @styles.border,"border-t-2 border-l-2 border-r-2"]}>

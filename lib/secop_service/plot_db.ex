@@ -122,7 +122,9 @@ defmodule SecopService.PlotDB do
       ## background color of plot area
       plot_bgcolor: "rgba(0,0,0,0)",
       autosize: true,
-      height: 310,
+      height: 340,
+
+
 
       # Add range slider toggle buttons positioned next to rangeselector
       updatemenus: [
