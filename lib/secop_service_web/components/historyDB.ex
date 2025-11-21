@@ -234,9 +234,8 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   def render(assigns) do
     ~H"""
     <div class={["h-full", assigns[:class]]}>
-      <div class="flex h-full">
         <%= if @display_mode != :empty  do %>
-          <div class="flex flex-col space-y-2 pl-2 pr-2">
+          <div class="flex space-x-2 px-2 mb-2">
             <button
               class={[
                 "px-4 py-2 rounded-lg focus:outline-none",
@@ -266,41 +265,10 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                 <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
               </div>
             </button>
-            <!--
-          <button
-            class={[
-              "px-4 py-2 rounded-lg focus:outline-none",
-              @display_mode == :table &&
-                "bg-stone-500 text-white hover:bg-stone-600 dark:bg-purple-700 dark:hover:bg-stone-800",
-              @display_mode != :table &&
-                "bg-stone-300 dark:bg-stone-600 dark:text-white hover:bg-stone-400 dark:hover:bg-stone-700"
-            ]}
-            phx-click={JS.push("get-csv", value: %{get: "csv"}, target: @myself)}
-          >
-            <div class="flex items-center">
-              <.icon name="hero-arrow-down-tray" class="h-5 w-5 flex-none mr-1" /> CSV
-            </div>
-          </button>
-          -->
-          <!--
-        <button
-          class={[
-            "px-4 py-2 rounded-lg focus:outline-none",
-            @display_mode == :table &&
-              "bg-stone-500 text-white hover:bg-stone-600 dark:bg-purple-700 dark:hover:bg-stone-800",
-            @display_mode != :table &&
-              "bg-stone-300 dark:bg-stone-600 dark:text-white hover:bg-stone-400 dark:hover:bg-stone-700"
-          ]}
-          phx-click={JS.push("get-nexus", value: %{get: "nexus"}, target: @myself)}
-        >
-          <div class="flex items-center">
-            <img src="/images/nexus-fav.svg"  class="h-5 w-5 flex-none mr-1" alt="CSV" /> NeXus
-          </div>
-        </button>
-        -->
+
           </div>
         <% end %>
-
+      <div class=" pl-2 flex h-full">
         <div class="flex-1">
           <%= case @display_mode do %>
             <% :graph -> %>

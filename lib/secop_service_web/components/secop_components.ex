@@ -27,8 +27,8 @@ defmodule SECoPComponents do
 
     assigns =
       case assigns.current do
-        true -> assign(assigns, :button_col, "bg-purple-500 hover:bg-purple-700")
-        false -> assign(assigns, :button_col, "bg-zinc-500 hover:bg-zinc-700")
+        true -> assign(assigns, :button_col, "bg-primary hover:bg-primary/80")
+        false -> assign(assigns, :button_col, "bg-neutral hover:bg-neutral/80")
       end
 
     ~H"""
@@ -38,17 +38,17 @@ defmodule SECoPComponents do
       class={[
         @button_col,
         @border_col,
-        "min-w-[240px] border-4 text-white text-left font-bold py-2 px-4 rounded",
+        "min-w-[240px] border-4 text-neutral-content text-left font-bold py-2 px-4 rounded",
         "font-mono"
       ]}
     >
       <div class="text-xl font-sans">{@display_name}</div>
-      <div class="text-sm text-white-400 opacity-60">{@pubsub_topic}</div>
+      <div class="text-sm text-neutral-content/80 opacity-60">{@pubsub_topic}</div>
       <div class="flex gap-2">
-        <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-zinc-600 font-mono">
+        <div class="px-2 py-0.5 rounded-full text-base-content bg-base-200/80 font-mono">
           {@state}
         </div>
-        <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-zinc-600 font-mono">
+        <div class="px-2 py-0.5 rounded-full text-base-content bg-base-200/80 font-mono">
           <%= if @connstate do %>
             <span class="text-green-500">active </span>
           <% else %>

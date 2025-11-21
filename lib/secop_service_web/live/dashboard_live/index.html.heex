@@ -1,20 +1,6 @@
 <Layouts.app flash={@flash}>
   <%= if @active_nodes != %{} and @current_node != nil do %>
-    <ul class="flex flex-wrap text-sm font-medium text-center text-neutral-content">
-      <li class="me-2 mb-2">
-        <button
-          phx-click="open_connect_modal"
-          class={[
-            "bg-neutral",
-            "hover:bg-neutral-focus",
-            "border-4 text-white text-left font-bold py-2 px-4 rounded"
-          ]}
-        >
-          <div class="text-xl">Connect Node</div>
-          <div class="text-sm text-white-400 invisible">placeholder</div>
-          <div class="invisible">placeholder</div>
-        </button>
-      </li>
+    <ul class="flex flex-wrap text-sm font-medium text-center text-neutral-content items-center">
       <%= for {_addr,node} <- @active_nodes do %>
         <li class="me-2 mb-2">
           <.node_button
@@ -27,6 +13,15 @@
           />
         </li>
       <% end %>
+      <li class="me-2 mb-2">
+        <button
+          phx-click="open_connect_modal"
+          class="btn btn-primary p-5"
+        >
+          <.icon name="hero-link" class="me-2" />
+          <div class="text-xl">Connect Node </div>
+        </button>
+      </li>
     </ul>
 
     <div class="flex">
