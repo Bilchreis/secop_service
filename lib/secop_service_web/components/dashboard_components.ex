@@ -117,7 +117,7 @@ defmodule SecopServiceWeb.DashboardComponents do
       </div>
 
     <!--Modules -->
-      <div class="mt-3 card bg-base-100 card-border border-base-300  ">
+      <div class="mt-3 card  ">
         <%= for {group_name, modules} <- @grouped_modules do %>
           <div class="collapse  collapse-arrow bg-base-100 border-base-300 border">
             <input
