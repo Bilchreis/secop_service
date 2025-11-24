@@ -112,8 +112,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       type="number"
       field={@modal_form[@field]}
       value={Phoenix.HTML.Form.input_value(@modal_form, @field)}
-      phx-debounce="500"
-      class="flex-1 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 font-mono text-gray-900 dark:text-gray-200 opacity-100"
+      class="input flex-1"
     />
 
     <.datainfo_tooltip datainfo={@datainfo} />
@@ -139,8 +138,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       type="text"
       field={@modal_form[@field]}
       value={Phoenix.HTML.Form.input_value(@modal_form, @field)}
-      phx-debounce="500"
-      class="flex-1 full-w max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+      class="input flex-1"
     />
     <.datainfo_tooltip datainfo={@datainfo} />
     """
@@ -165,8 +163,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       type="checkbox"
       field={@modal_form[@field]}
       value={Phoenix.HTML.Form.input_value(@modal_form, @field)}
-      phx-debounce="500"
-      class="bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+      class="input"
     />
     <.datainfo_tooltip datainfo={@datainfo} />
     """
@@ -187,7 +184,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
     select_options = assigns.datainfo["members"]
 
     base_class =
-      "flex-1 full-w bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 font-mono text-gray-900 dark:text-gray-200 opacity-100"
+      "select flex-1"
 
     class = if assigns[:class], do: "#{base_class} #{assigns[:class]}", else: base_class
 
@@ -205,7 +202,6 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       options={@options}
       field={@modal_form[@field]}
       value={Phoenix.HTML.Form.input_value(@modal_form, @field)}
-      phx-debounce="500"
       class={@class}
     />
     <%= if @show_tooltip do %>
@@ -242,8 +238,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
         type="text"
         field={@modal_form[@field]}
         value={Phoenix.HTML.Form.input_value(@modal_form, @field)}
-        phx-debounce="500"
-        class="flex-1 full-w max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+        class="input flex-1"
       />
       <.datainfo_tooltip datainfo={@datainfo} />
     <% else %>
@@ -297,8 +292,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
         type="text"
         field={@modal_form[@field]}
         value={Phoenix.HTML.Form.input_value(@modal_form, @field)}
-        phx-debounce="500"
-        class="flex-1 full-w max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+        class="input flex-1"
       />
       <.datainfo_tooltip datainfo={@datainfo} />
     <% else %>
@@ -348,8 +342,7 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       type="text"
       field={@modal_form[@field]}
       value={Phoenix.HTML.Form.input_value(@modal_form, @field)}
-      phx-debounce="500"
-      class="w-full bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 font-mono text-gray-900 dark:text-gray-200 opacity-100"
+      class="input w-full"
     />
 
     <.datainfo_tooltip datainfo={@datainfo} />

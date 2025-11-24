@@ -367,24 +367,24 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                   meta={table_data.meta}
                   on_paginate={JS.push("paginate", target: @myself)}
                   page_links={10}
-                  class="flex flex-wrap items-center justify-center gap-y-5 gap-x-2 p-4 bg-neutral shadow-md text-neutral-content z-50"
-                  page_list_attrs={[class: "order-1 flex gap-2 basis-full justify-center"]}
-                  current_page_link_attrs={[class: "p-2 border border-base-200 rounded bg-primary text-primary-content"]}
+                  class="flex flex-wrap items-center justify-center gap-y-2 gap-x-2 p-2 bg-neutral text-neutral-content "
+                  page_list_attrs={[class: "order-1 flex gap-1 basis-full justify-center"]}
+                  current_page_link_attrs={[class: "btn btn-primary"]}
                   page_link_attrs={[
                     class:
-                      "p-2 border rounded border-base-200 bg-base-100/70 "
+                      "btn btn-base-100"
                   ]}
                 >
                   <:previous attrs={[
                     class:
-                      "order-2 p-2 border rounded border-base-200 bg-base-100/70 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      "order-2 btn btn-base-100"
                   ]}>
                     Prev
                   </:previous>
 
                   <:next attrs={[
                     class:
-                       "order-2 p-2 border rounded border-base-200 bg-base-100/70 hover:bg-gray-100 dark:hover:bg-gray-600"
+                       "order-2 btn btn-base-100"
                   ]}>
                     Next
                   </:next>

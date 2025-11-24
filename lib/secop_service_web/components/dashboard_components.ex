@@ -103,7 +103,7 @@ defmodule SecopServiceWeb.DashboardComponents do
                 type="checkbox"
                 checked={@state_map.active}
                 phx-click="toggle-conn-state"
-                class="toggle toggle-lg border-orange-600 bg-orange-500 checked:border-green-500 checked:bg-green-400 checked:text-green-800"
+                class="toggle toggle-lg border-warning bg-warning checked:bg-success checked:border-success "
               />
                 Async update Messages
               </label>

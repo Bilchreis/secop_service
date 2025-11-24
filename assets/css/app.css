@@ -106,6 +106,15 @@
 
 
 
+.modal-box {
+  width: 100%;
+}
+@media (min-width: 640px){
+  .modal-box {
+      max-width: 50rem;
+  }
+}
+
 
 /*div {
   border: 1px solid red !important;

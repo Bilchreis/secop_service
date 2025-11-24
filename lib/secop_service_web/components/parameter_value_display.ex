@@ -278,15 +278,15 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   @impl true
   def update(%{value_update: data_report} = _assigns, socket) do
-    data_report = data_report.data_report
+
 
     socket =
       case data_report do
-        {:error_report, [error_cls, error_msg, qualifiers]} ->
+        %{error_report: [error_cls, error_msg, qualifiers]} ->
           Logger.warning("Error Update: #{error_cls}, #{error_msg}, #{inspect(qualifiers)}")
           assign(socket, :parameter_error, [error_cls, error_msg])
 
-        [value, _qualifiers] ->
+        %{data_report: [value, _qualifiers]} ->
           assign(socket, :parameter_value, value)
           |> assign(:parameter_error, nil)
 
@@ -384,7 +384,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
                 validated_form
               )
 
-            socket = assign(socket, :change_success, "done")
+            socket = assign(socket, :change_success, "btn-success")
 
             case unsigned_params["form_type"] do
               "simple" ->
@@ -404,7 +404,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
               | errors: [value: {"#{error_class}, #{error_message}", []}]
             }
 
-            socket = assign(socket, :change_success, "error")
+            socket = assign(socket, :change_success, "btn-error")
 
             case unsigned_params["form_type"] do
               "simple" ->
@@ -643,24 +643,24 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
   def render(assigns) do
     ~H"""
     <div>
-      <div class="flex gap-2 mt-2 ">
+      <div class="flex gap-2 ">
         <div class={[
-          "flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-800 border rounded-lg p-2 border-stone-500 overflow-scroll",
+          "flex-1 max-h-80 bg-base-100 border border-base-content/50 rounded-lg p-2 overflow-scroll mb-2",
           @class
         ]}>
-          <div class="font-mono text-gray-900 dark:text-gray-200 opacity-100">
+          <div class="font-mono text-base-content opacity-100">
             <.display_parameter parameter_value={@parameter_value} datainfo={@parameter.datainfo} />
           </div>
           <div>
             <%= if @parameter_error != nil do %>
-              <div class="text-red-500 mt-2">
+              <div class="text-error mt-2">
                 Error: {Enum.at(@parameter_error, 0)} - {Enum.at(@parameter_error, 1)}
               </div>
             <% end %>
           </div>
         </div>
         <%= if not @parameter.readonly  and not @is_composite do %>
-          <div class="flex justify-between items-center">
+          <div class="flex ">
             <.form
               for={@set_form}
               phx-submit="set_parameter"
@@ -711,13 +711,12 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
                     placeholder="new value"
                     phx-debounce="500"
                     id={"form:" <> to_string(@parameter.id) <> @location}
-                    class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+                    class=" input"
                   />
               <% end %>
               <button
                 type="submit"
-                class="font-semibold pr-4 pl-4 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100 command_item"
-                mod-highlight={@change_success}
+                class={["btn btn-accent mt-1",@change_success]}
               >
                 Set
               </button>
@@ -727,7 +726,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
       </div>
 
       <%= if not @parameter.readonly and @is_composite do %>
-        <div class="flex gap-2 mt-2 ">
+        <div class="flex gap-2  ">
           <.form
             for={@set_form}
             phx-submit="set_parameter"
@@ -760,31 +759,33 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
               placeholder="new value"
               phx-debounce="500"
               id={"form:" <> to_string(@parameter.id) <> @location}
-              class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+              class="input"
             />
 
             <button
               type="submit"
-              class="font-semibold pr-4 pl-4 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100 command_item"
+              class="btn btn-accent mt-1"
             >
               Set
             </button>
+
           </.form>
+
           <button
+            onclick={"modal_" <> to_string(@parameter.id) <> @location <> ".showModal()"}
             phx-click="open_parameter_value_modal"
             phx-target={@myself}
-            class="font-semibold pr-4 pl-4 bg-zinc-300 dark:bg-zinc-800 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100"
+            class="btn mt-1"
           >
             Edit Value
           </button>
+
         </div>
 
         <.modal
-          :if={@show_parameter_value_modal}
-          id="parameter-value-modal"
+          id={"modal_" <> to_string(@parameter.id) <> @location}
           title="Change Request Editor"
           show={@show_parameter_value_modal}
-          on_cancel={JS.push("close_parameter_value_modal", target: @myself)}
         >
           <.form for={@modal_form} phx-submit="set_parameter" phx-change="validate_parameter" class="">
             <input
@@ -830,18 +831,18 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
                 placeholder={Phoenix.HTML.Form.input_value(@modal_form, :value)}
                 value={Phoenix.HTML.Form.input_value(@modal_form, :value)}
                 rows="20"
-                class="flex-1 min-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2  border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+                class="input flex-1 min-h-80  font-mono "
               />
             </div>
             <button
               type="submit"
-              class="mt-2 font-semibold pr-4 pl-4 rounded-lg p-1 border border-stone-500 hover:bg-zinc-700 dark:hover:bg-zinc-700 opacity-100 command_item"
-              mod-highlight={@change_success}
+              class={["btn btn-accent",@change_success]}
             >
               Set
             </button>
           </.form>
         </.modal>
+
       <% end %>
     </div>
     """

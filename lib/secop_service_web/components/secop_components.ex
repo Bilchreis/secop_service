@@ -50,9 +50,9 @@ defmodule SECoPComponents do
         </div>
         <div class="px-2 py-0.5 rounded-full text-base-content bg-base-200/80 font-mono">
           <%= if @connstate do %>
-            <span class="text-green-500">active </span>
+            <span class="text-success">active </span>
           <% else %>
-            <span class="text-orange-500">inactive</span>
+            <span class="text-warning">inactive</span>
           <% end %>
         </div>
       </div>
@@ -63,9 +63,9 @@ defmodule SECoPComponents do
   defp state_to_col(state) do
     col =
       case state do
-        :connected -> "border-orange-500"
-        :disconnected -> "border-red-500"
-        :initialized -> "border-green-500"
+        :connected -> "border-warning"
+        :disconnected -> "border-error"
+        :initialized -> "border-success"
         _ -> "border-gray-500"
       end
 
