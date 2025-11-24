@@ -9,6 +9,7 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
       socket
       |> assign(:show_json_modal, false)
       |> assign(:json_content, "")
+      |> assign(:json_title, "")
 
     {:ok, socket}
   end

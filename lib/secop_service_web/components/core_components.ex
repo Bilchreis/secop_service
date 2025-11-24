@@ -657,23 +657,23 @@ defmodule SecopServiceWeb.CoreComponents do
       page_links={10}
       on_paginate={@on_paginate}
       target={@target}
-      class="fixed bottom-0 left-0 right-0 flex flex-wrap items-center justify-center gap-y-5 gap-x-2 p-4 bg-white dark:bg-gray-700 shadow-md text-gray-700 dark:text-gray-200 z-50"
+      class="fixed bottom-0 left-0 right-0 flex flex-wrap items-center justify-center gap-y-5 gap-x-2 p-4 bg-neutral text-neutral-content z-50"
       page_list_attrs={[class: "order-1 flex gap-2 basis-full justify-center"]}
-      current_page_link_attrs={[class: "p-2 border rounded bg-purple-500 text-white"]}
+      current_page_link_attrs={[class: "p-2 btn btn-primary"]}
       page_link_attrs={[
         class:
-          "p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+          "btn btn-base-100"
       ]}
     >
       <:previous attrs={[
         class:
-          "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+          "order-2 btn btn-base-100"
       ]}>
         Prev
       </:previous>
       <:next attrs={[
         class:
-          "order-2 p-2 border rounded border-gray-400 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+          "order-2 btn btn-base-100"
       ]}>
         Next
       </:next>
@@ -753,10 +753,10 @@ defmodule SecopServiceWeb.CoreComponents do
             "text-neutral-content table-fixed"
       ],
       thead_th_attrs: [
-        class: "p-2 bg-base-100 border border-base-200 "
+        class: "p-2 bg-base-100 border border-base-200 text-neutral-content"
       ],
       tbody_td_attrs: [
-        class: "p-2 border border-base-200"
+        class: "p-2 border border-base-200 text-neutral-content"
       ]
     ]
   end
