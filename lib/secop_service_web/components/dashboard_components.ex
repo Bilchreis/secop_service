@@ -1,8 +1,6 @@
 defmodule SecopServiceWeb.DashboardComponents do
   use Phoenix.Component
 
-  alias SecopServiceWeb.DashboardComponents
-  alias SecopService.Sec_Nodes.SEC_Node
   alias SecopService.Sec_Nodes.Module
 
   alias SecopService.Util
@@ -13,7 +11,6 @@ defmodule SecopServiceWeb.DashboardComponents do
 
   import SecopServiceWeb.SECoPComponents
   import SecopServiceWeb.Components.ParameterFormFieldComponents
-  import SecopServiceWeb.CoreComponents
 
   attr :node, :map, required: true
   attr :state_map, :map, required: true
