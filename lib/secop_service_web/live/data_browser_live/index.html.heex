@@ -1,50 +1,50 @@
 <Layouts.app flash={@flash}>
   <div class="container mx-auto">
-    <div class = "card bg-neutral p-2 ">
-    <Flop.Phoenix.table items={@sec_nodes} meta={@meta} path={~p"/browse"} opts={table_opts()}>
-      <:col :let={sec_node} label="Created at" field={:inserted_at}>
-        {sec_node.inserted_at
-        |> DateTime.from_naive!("Etc/UTC")
-        |> DateTime.shift_zone!("Europe/Berlin")
-        |> Calendar.strftime("%d.%m.%Y %H:%M")}
-      </:col>
-      <:col :let={sec_node} label="UUID" field={:uuid}>
-        <span class="font-mono ">{sec_node.uuid}</span>
-      </:col>
-      <:col :let={sec_node} label="Equipment ID" field={:equipment_id}>
-        {sec_node.equipment_id}
-      </:col>
-      <:col :let={sec_node} label="URI" field={:uri}>{sec_node.host}:{sec_node.port}</:col>
+    <div class="card bg-neutral p-2 ">
+      <Flop.Phoenix.table items={@sec_nodes} meta={@meta} path={~p"/browse"} opts={table_opts()}>
+        <:col :let={sec_node} label="Created at" field={:inserted_at}>
+          {sec_node.inserted_at
+          |> DateTime.from_naive!("Etc/UTC")
+          |> DateTime.shift_zone!("Europe/Berlin")
+          |> Calendar.strftime("%d.%m.%Y %H:%M")}
+        </:col>
+        <:col :let={sec_node} label="UUID" field={:uuid}>
+          <span class="font-mono ">{sec_node.uuid}</span>
+        </:col>
+        <:col :let={sec_node} label="Equipment ID" field={:equipment_id}>
+          {sec_node.equipment_id}
+        </:col>
+        <:col :let={sec_node} label="URI" field={:uri}>{sec_node.host}:{sec_node.port}</:col>
 
-      <:col :let={sec_node} label="Description" field={:description}>
-        {SEC_Node.display_description(sec_node)}
-      </:col>
-      <:col :let={sec_node} label="Actions">
-        <div class="flex flex-col space-y-2 w-full">
-          <.link
-            navigate={~p"/browse/node/#{sec_node.uuid}"}
-            class="btn btn-primary"
-          >
-            View Node
-          </.link>
-          <button
-            onclick={"json-modal.showModal()"}
-            class="btn"
-            phx-click="open_json_modal"
-            phx-value-uuid={sec_node.uuid}
-          >
-            View JSON Description
-          </button>
-        </div>
-      </:col>
-    </Flop.Phoenix.table>
+        <:col :let={sec_node} label="Description" field={:description}>
+          {SEC_Node.display_description(sec_node)}
+        </:col>
+        <:col :let={sec_node} label="Actions">
+          <div class="flex flex-col space-y-2 w-full">
+            <.link
+              navigate={~p"/browse/node/#{sec_node.uuid}"}
+              class="btn btn-primary"
+            >
+              View Node
+            </.link>
+            <button
+              onclick="json-modal.showModal()"
+              class="btn"
+              phx-click="open_json_modal"
+              phx-value-uuid={sec_node.uuid}
+            >
+              View JSON Description
+            </button>
+          </div>
+        </:col>
+      </Flop.Phoenix.table>
 
-    <.pagination meta={@meta} path={~p"/browse"} />
+      <.pagination meta={@meta} path={~p"/browse"} />
     </div>
     <.modal
       id="json-modal"
       title={@json_title}
-      show={@show_json_modal}      
+      show={@show_json_modal}
     >
       <div class="card border border-2 border-base-300 bg-base-200 p-2 text-base-content overflow-auto font-mono text-sm">
         <pre class="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto"><%= @json_content %></pre>

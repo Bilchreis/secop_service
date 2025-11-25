@@ -13,7 +13,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   require Logger
 
   alias SEC_Node_Statem
-  import SECoPComponents
+  import SecopServiceWeb.SECoPComponents
   import SecopServiceWeb.DashboardComponents
 
   defp subscribe_to_node(node_id) do

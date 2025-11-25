@@ -283,7 +283,6 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
         if(length(assigns.datainfo["members"]) > 6, do: "grid-cols-3", else: "grid-cols-1")
       )
 
-
     ~H"""
     Tuple:
     <%= if @depth >= @max_depth do %>
@@ -349,26 +348,24 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
     """
   end
 
-
   attr :datainfo, :string, required: true
   attr :position, :string, default: "tooltip-top"
+
   def datainfo_tooltip(assigns) do
     assigns =
       assigns
       |> assign(:pretty_datainfo, Jason.encode!(assigns.datainfo, pretty: true))
 
     ~H"""
-    <div class={["tooltip",@position]}>
+    <div class={["tooltip", @position]}>
       <div class="tooltip-content text-left bg-transparent ">
         <div class="card bg-base-100 border-base-content/30 border-3 p-3 ">
-        <span class="text-base-content">Datainfo:</span>
-        <pre class="card mt-2 card-border border-neutral-content/10  break-words max-h-[60vh] overflow-y-auto bg-neutral text-base-content font-mono text-xs p-2">{@pretty_datainfo}</pre>
-      </div>
-
+          <span class="text-base-content">Datainfo:</span>
+          <pre class="card mt-2 card-border border-neutral-content/10  break-words max-h-[60vh] overflow-y-auto bg-neutral text-base-content font-mono text-xs p-2">{@pretty_datainfo}</pre>
+        </div>
       </div>
       <.icon name="hero-information-circle" class="bg-neutral-content h-5 w-5  mr-1" />
     </div>
-
     """
   end
 end

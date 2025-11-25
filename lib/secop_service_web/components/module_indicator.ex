@@ -87,7 +87,7 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
       <div class="flex-shrink-0">
         <span class={[
           @status_value.stat_color,
-            "inline-block w-5 h-5 mr-2 rounded-full border-3 border-gray-500/70"
+          "inline-block w-5 h-5 mr-2 rounded-full border-3 border-gray-500/70"
         ]}>
         </span>
       </div>

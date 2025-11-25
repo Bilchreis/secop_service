@@ -15,11 +15,12 @@
       <% end %>
       <li class="me-2 mb-2">
         <button
+          onclick="connect_modal.showModal()"
           phx-click="open_connect_modal"
           class="btn btn-primary p-5"
         >
           <.icon name="hero-link" class="me-2" />
-          <div class="text-xl">Connect Node </div>
+          <div class="text-xl">Connect Node</div>
         </button>
       </li>
     </ul>
@@ -43,8 +44,7 @@
   <% end %>
 
   <.modal
-    :if={@show_connect_modal}
-    id="connect-modal"
+    id="connect_modal"
     title=""
     show={@show_connect_modal}
   >

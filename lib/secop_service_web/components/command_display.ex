@@ -142,22 +142,21 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
     <div>
       <%= if @has_arg  do %>
         <button
+          onclick={"arg_modal_" <> to_string(@command.id)<> ".showModal()"}
           phx-click="open_arg_modal"
           phx-target={@myself}
-          class="font-mono font-semibold pr-4 pl-4 rounded-lg p-1  border border-stone-500 text-gray-700 dark:text-gray-300  hover:bg-zinc-400 dark:hover:bg-zinc-700 command_item"
+          class="btn border border-base-300"
         >
           {Util.display_name(@command.name)}
         </button>
 
         <.modal
-          :if={@show_arg_modal}
-          id="arg-modal"
+          id={"arg_modal_" <> to_string(@command.id)}
           title={Util.display_name(@command.name)}
           show={@show_arg_modal}
-          on_cancel={JS.push("close_arg_modal", target: @myself)}
         >
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl  p-6">
-            <pre class="break-words max-h-[60vh] border p-4 m-2 overflow-y-auto bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-gray-200 font-mono text-xs p-2 rounded-lg ">{@arg_dtype}</pre>
+          <div class="card bg-base-200 shadow-xl  p-4">
+            <pre class="card bg-base-100 border border-base-content/50 break-words max-h-[60vh] border p-4 m-2 overflow-y-auto font-mono text-xs p-2 ">{@arg_dtype}</pre>
             <.form
               for={@arg_form}
               phx-submit="set_arg"
@@ -193,11 +192,11 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
                 placeholder="arg value"
                 phx-debounce="500"
                 id={"form:" <> to_string(@command.id)}
-                class="flex-1 max-h-80 bg-zinc-300 dark:bg-zinc-600 border rounded-lg p-2 border-stone-500 dark:border-stone-500 overflow-scroll font-mono text-gray-900 dark:text-gray-200 opacity-100"
+                class="ml-2 input flex-1 max-h-80 overflow-scroll font-mono opacity-100"
               />
               <button
                 type="submit"
-                class="font-mono font-semibold pr-4 pl-4 rounded-lg p-1  border border-stone-500 text-gray-700 dark:text-gray-300  hover:bg-zinc-400 dark:hover:bg-zinc-700 command_item"
+                class="ml-2 btn btn-primary border border-base-300 mt-1"
               >
                 Send
               </button>
@@ -228,7 +227,7 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
           <input type="hidden" name="value" value={nil} />
           <button
             type="submit"
-            class="font-mono font-semibold pr-4 pl-4 rounded-lg p-1  border border-stone-500 text-gray-700 dark:text-gray-300  hover:bg-zinc-400 dark:hover:bg-zinc-700 command_item"
+            class="btn border border-base-300"
             mod-highlight={@command_success}
           >
             {Util.display_name(@command.name)}

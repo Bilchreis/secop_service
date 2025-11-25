@@ -124,8 +124,6 @@ defmodule SecopService.PlotDB do
       autosize: true,
       height: 340,
 
-
-
       # Add range slider toggle buttons positioned next to rangeselector
       updatemenus: [
         %{

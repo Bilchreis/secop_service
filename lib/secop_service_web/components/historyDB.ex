@@ -234,173 +234,161 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   def render(assigns) do
     ~H"""
     <div class={["flex flex-1", assigns[:class]]}>
-        <%= if @display_mode != :empty  do %>
-          <div class="flex space-x-2 mb-2">
-            <button
-              class={[
-                "btn btn-neutral",
-                @display_mode == :graph &&
-                  "btn-active btn-primary",
-                @plottable == false &&
-                  "btn-disabled",
+      <%= if @display_mode != :empty  do %>
+        <div class="flex space-x-2 mb-2">
+          <button
+            class={[
+              "btn btn-neutral",
+              @display_mode == :graph &&
+                "btn-active btn-primary",
+              @plottable == false &&
+                "btn-disabled"
+            ]}
+            phx-click={JS.push("set-display-mode", value: %{mode: "graph"}, target: @myself)}
+          >
+            <div class="flex items-center">
+              <.icon name="hero-chart-bar-solid" class="h-5 w-5 flex-none mr-1" /> Graph
+            </div>
+          </button>
 
+          <button
+            class={[
+              "btn btn-neutral",
+              @display_mode == :table &&
+                "btn-active btn-primary"
+            ]}
+            phx-click={JS.push("set-display-mode", value: %{mode: "table"}, target: @myself)}
+          >
+            <div class="flex items-center">
+              <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
+            </div>
+          </button>
+        </div>
+      <% end %>
 
-              ]}
-              phx-click={JS.push("set-display-mode", value: %{mode: "graph"}, target: @myself)}
-            >
-              <div class="flex items-center">
-                <.icon name="hero-chart-bar-solid" class="h-5 w-5 flex-none mr-1" /> Graph
-              </div>
-            </button>
-
-            <button
-              class={[
-                "btn btn-neutral",
-                @display_mode == :table &&
-                  "btn-active btn-primary",
-              ]}
-              phx-click={JS.push("set-display-mode", value: %{mode: "table"}, target: @myself)}
-            >
-              <div class="flex items-center">
-                <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
-              </div>
-            </button>
-
-          </div>
-        <% end %>
-
-        <%= case @display_mode do %>
-          <% :graph -> %>
-            <%= if @plottable do %>
-              <.async_result :let={_plot} assign={@plot}>
-                <:loading>
-                  <div class="flex flex-1 h-[340px] animate-pulse items-center justify-center text-center bg-gray-300 p-4 rounded-lg">
-                    <span class="text-gray-700">Waiting for valid Plot Data...</span>
-                  </div>
-                </:loading>
-                <:failed>
-                  ERROR
-                </:failed>
-
-                <div class="flex-1 bg-gray-300 p-1 rounded-lg">
-                  <!-- Loading overlay - will be hidden by the JS hook when Plotly is ready -->
-                  <div
-                    id={"#{@id}-loading"}
-                    class="flex flex-1 h-[340px] items-center justify-center bg-gray-300  rounded-lg"
-                  >
-                    <div class="text-center animate-pulse">
-                      <p class="text-gray-700">Initializing chart...</p>
-                    </div>
-                  </div>
-
-                  <div
-                    id={@id}
-                    class=""
-                    phx-hook="PlotlyChart"
-                    phx-update="ignore"
-                    data-loading-id={"#{@id}-loading"}
-                  >
-
-                  </div>
-
-                </div>
-              </.async_result>
-            <% else %>
-              <div class="flex items-center justify-center h-[340px] text-center bg-gray-300 p-4 rounded-lg">
-                <span class="text-gray-800">Data not plottable</span>
-              </div>
-            <% end %>
-          <% :table -> %>
-            <.async_result :let={table_data} assign={@table_data}>
+      <%= case @display_mode do %>
+        <% :graph -> %>
+          <%= if @plottable do %>
+            <.async_result :let={_plot} assign={@plot}>
               <:loading>
-                <div
-                  class="animate-pulse w-full border-collapse border border-slate-300 dark:border-slate-600 text-gray-700 dark:text-gray-200"
-
-                >
-                  <table class="w-full">
-                    <thead class="p-2 bg-gray-50 dark:bg-gray-800 border border-slate-300 dark:border-slate-600">
-                      <tr>
-                        <th class="p-2">Time</th>
-                        <th class="p-2">Value</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <%= for _i <- 1..10 do %>
-                        <tr class="border-b border-gray-200">
-                          <td class="p-2">
-                            <div class="h-6 bg-gray-400 rounded w-28"></div>
-                          </td>
-                          <td class="p-2">
-                            <div class="h-6 bg-gray-400 rounded w-20"></div>
-                          </td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
+                <div class="flex flex-1 h-[340px] animate-pulse items-center justify-center text-center bg-gray-300 p-4 rounded-lg">
+                  <span class="text-gray-700">Waiting for valid Plot Data...</span>
                 </div>
               </:loading>
               <:failed>
                 ERROR
               </:failed>
-              <div class = "card bg-neutral rounded-lg  p-2">
-                <Flop.Phoenix.table
-                  items={table_data.parameter_values}
-                  meta={table_data.meta}
-                  on_sort={JS.push("sort", target: @myself)}
-                  opts={table_opts()}
-                  id={"#{@id}-table"}
-                >
-                  <:col :let={parameter_value} label="Time" field={:timestamp}>
-                    {parameter_value.timestamp
-                    |> DateTime.from_naive!("Etc/UTC")
-                    |> DateTime.shift_zone!("Europe/Berlin")
-                    |> Calendar.strftime("%d.%m.%Y %H:%M:%S.%f")}
-                  </:col>
-                  <:col :let={parameter_value} label="Value" field={:value}>
-                    <div class="w-full max-w-1/2 font-mono truncate">
-                      {ParameterValue.get_display_value(parameter_value, @parameter)}
-                    </div>
-                  </:col>
-                </Flop.Phoenix.table>
 
-                <Flop.Phoenix.pagination
-                  meta={table_data.meta}
-                  on_paginate={JS.push("paginate", target: @myself)}
-                  page_links={10}
-                  class="flex flex-wrap items-center justify-center gap-y-2 gap-x-2 p-2 bg-neutral text-neutral-content "
-                  page_list_attrs={[class: "order-1 flex gap-1 basis-full justify-center"]}
-                  current_page_link_attrs={[class: "btn btn-primary"]}
-                  page_link_attrs={[
-                    class:
-                      "btn btn-base-100"
-                  ]}
+              <div class="flex-1 bg-gray-300 p-1 rounded-lg">
+                <!-- Loading overlay - will be hidden by the JS hook when Plotly is ready -->
+                <div
+                  id={"#{@id}-loading"}
+                  class="flex flex-1 h-[340px] items-center justify-center bg-gray-300  rounded-lg"
                 >
-                  <:previous attrs={[
-                    class:
-                      "order-2 btn btn-base-100"
-                  ]}>
-                    Prev
-                  </:previous>
+                  <div class="text-center animate-pulse">
+                    <p class="text-gray-700">Initializing chart...</p>
+                  </div>
+                </div>
 
-                  <:next attrs={[
-                    class:
-                       "order-2 btn btn-base-100"
-                  ]}>
-                    Next
-                  </:next>
-                </Flop.Phoenix.pagination>
+                <div
+                  id={@id}
+                  class=""
+                  phx-hook="PlotlyChart"
+                  phx-update="ignore"
+                  data-loading-id={"#{@id}-loading"}
+                >
+                </div>
               </div>
             </.async_result>
-          <% :empty -> %>
-            <!-- Nothing is rendered here, for example communicator modules
+          <% else %>
+            <div class="flex items-center justify-center h-[340px] text-center bg-gray-300 p-4 rounded-lg">
+              <span class="text-gray-800">Data not plottable</span>
+            </div>
+          <% end %>
+        <% :table -> %>
+          <.async_result :let={table_data} assign={@table_data}>
+            <:loading>
+              <div class="animate-pulse w-full border-collapse border border-slate-300 dark:border-slate-600 text-gray-700 dark:text-gray-200">
+                <table class="w-full">
+                  <thead class="p-2 bg-gray-50 dark:bg-gray-800 border border-slate-300 dark:border-slate-600">
+                    <tr>
+                      <th class="p-2">Time</th>
+                      <th class="p-2">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <%= for _i <- 1..10 do %>
+                      <tr class="border-b border-gray-200">
+                        <td class="p-2">
+                          <div class="h-6 bg-gray-400 rounded w-28"></div>
+                        </td>
+                        <td class="p-2">
+                          <div class="h-6 bg-gray-400 rounded w-20"></div>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </:loading>
+            <:failed>
+              ERROR
+            </:failed>
+            <div class="card bg-neutral rounded-lg  p-2">
+              <Flop.Phoenix.table
+                items={table_data.parameter_values}
+                meta={table_data.meta}
+                on_sort={JS.push("sort", target: @myself)}
+                opts={table_opts()}
+                id={"#{@id}-table"}
+              >
+                <:col :let={parameter_value} label="Time" field={:timestamp}>
+                  {parameter_value.timestamp
+                  |> DateTime.from_naive!("Etc/UTC")
+                  |> DateTime.shift_zone!("Europe/Berlin")
+                  |> Calendar.strftime("%d.%m.%Y %H:%M:%S.%f")}
+                </:col>
+                <:col :let={parameter_value} label="Value" field={:value}>
+                  <div class="w-full max-w-1/2 font-mono truncate">
+                    {ParameterValue.get_display_value(parameter_value, @parameter)}
+                  </div>
+                </:col>
+              </Flop.Phoenix.table>
+
+              <Flop.Phoenix.pagination
+                meta={table_data.meta}
+                on_paginate={JS.push("paginate", target: @myself)}
+                page_links={10}
+                class="flex flex-wrap items-center justify-center gap-y-2 gap-x-2 p-2 bg-neutral text-neutral-content "
+                page_list_attrs={[class: "order-1 flex gap-1 basis-full justify-center"]}
+                current_page_link_attrs={[class: "btn btn-primary"]}
+                page_link_attrs={[
+                  class: "btn btn-base-100"
+                ]}
+              >
+                <:previous attrs={[
+                  class: "order-2 btn btn-base-100"
+                ]}>
+                  Prev
+                </:previous>
+
+                <:next attrs={[
+                  class: "order-2 btn btn-base-100"
+                ]}>
+                  Next
+                </:next>
+              </Flop.Phoenix.pagination>
+            </div>
+          </.async_result>
+        <% :empty -> %>
+          <!-- Nothing is rendered here, for example communicator modules
             that do not have a main param like value -->
 
-          <% _ -> %>
-            <div class="flex items-center justify-center h-full text-center bg-gray-300 p-4 rounded-lg">
-              <span class="text-gray-800">Unknown display mode</span>
-            </div>
-        <% end %>
-
+        <% _ -> %>
+          <div class="flex items-center justify-center h-full text-center bg-gray-300 p-4 rounded-lg">
+            <span class="text-gray-800">Unknown display mode</span>
+          </div>
+      <% end %>
     </div>
     """
   end

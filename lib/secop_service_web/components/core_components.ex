@@ -19,9 +19,6 @@ defmodule SecopServiceWeb.CoreComponents do
   alias Phoenix.LiveView.JS
   use Gettext, backend: SecopServiceWeb.Gettext
 
-
-
-
   @doc """
   Renders a modal.
 
@@ -46,12 +43,12 @@ defmodule SecopServiceWeb.CoreComponents do
   slot :inner_block, required: true
 
   def modal(assigns) do
-
-    modal_open = if assigns.show do
-      "modal-open"
-    else
-      nil
-    end
+    modal_open =
+      if assigns.show do
+        "modal-open"
+      else
+        nil
+      end
 
     assigns = assign(assigns, :modal_open, modal_open)
 
@@ -79,10 +76,9 @@ defmodule SecopServiceWeb.CoreComponents do
           ✕
         </button>
         <div :if={@title} class="modal-header mb-4">
-          <h3 class="text-lg font-bold"><%= @title %></h3>
+          <h3 class="text-lg font-bold">{@title}</h3>
         </div>
         {render_slot(@inner_block)}
-
       </div>
       <div class="modal-backdrop">
         <button phx-click={JS.dispatch("myapp:close-modal")}>
@@ -90,7 +86,6 @@ defmodule SecopServiceWeb.CoreComponents do
         </button>
       </div>
     </dialog>
-
     """
   end
 
@@ -661,19 +656,16 @@ defmodule SecopServiceWeb.CoreComponents do
       page_list_attrs={[class: "order-1 flex gap-2 basis-full justify-center"]}
       current_page_link_attrs={[class: "p-2 btn btn-primary"]}
       page_link_attrs={[
-        class:
-          "btn btn-base-100"
+        class: "btn btn-base-100"
       ]}
     >
       <:previous attrs={[
-        class:
-          "order-2 btn btn-base-100"
+        class: "order-2 btn btn-base-100"
       ]}>
         Prev
       </:previous>
       <:next attrs={[
-        class:
-          "order-2 btn btn-base-100"
+        class: "order-2 btn btn-base-100"
       ]}>
         Next
       </:next>

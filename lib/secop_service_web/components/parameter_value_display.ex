@@ -278,8 +278,6 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
 
   @impl true
   def update(%{value_update: data_report} = _assigns, socket) do
-
-
     socket =
       case data_report do
         %{error_report: [error_cls, error_msg, qualifiers]} ->
@@ -716,7 +714,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
               <% end %>
               <button
                 type="submit"
-                class={["btn btn-accent mt-1",@change_success]}
+                class={["btn btn-accent mt-1", @change_success]}
               >
                 Set
               </button>
@@ -768,7 +766,6 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
             >
               Set
             </button>
-
           </.form>
 
           <button
@@ -779,7 +776,6 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
           >
             Edit Value
           </button>
-
         </div>
 
         <.modal
@@ -836,13 +832,12 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
             </div>
             <button
               type="submit"
-              class={["btn btn-accent",@change_success]}
+              class={["btn btn-accent", @change_success]}
             >
               Set
             </button>
           </.form>
         </.modal>
-
       <% end %>
     </div>
     """
