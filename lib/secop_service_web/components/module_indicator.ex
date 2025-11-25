@@ -6,6 +6,7 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
   alias NodeTable
   alias SecopService.Util
   alias SecopService.NodeValues
+  alias SecopServiceWeb.SECoPComponents
 
   @impl true
   def mount(socket) do
@@ -77,20 +78,18 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
   def inner_status_indicator(assigns) do
     assigns =
       if assigns.status_value.data_report == nil do
-        assign(assigns, :stat_color, "bg-neutral")
+        assign(assigns, :stat_col, "bg-neutral")
       else
-        assigns
+        assign(
+          assigns,
+          :stat_col,
+          SECoPComponents.status_to_color(assigns.status_value.stat_color)
+        )
       end
 
     ~H"""
     <div class="flex items-center">
-      <div class="flex-shrink-0">
-        <span class={[
-          @status_value.stat_color,
-          "inline-block w-5 h-5 mr-2 rounded-full border-3 border-gray-500/70"
-        ]}>
-        </span>
-      </div>
+      <div class={[@stat_col,"w-6 h-6 mr-2 rounded-full border-3 border-gray-500/70"]}></div>
       <div class="mb-1">
         <%= if @status_value.data_report != nil do %>
           <div class="text-lg font-semibold text-neutral-content truncate">
@@ -120,6 +119,8 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
     # Adjust this threshold based on your needs (characters that fit in w-48)
     text_too_long = String.length(display_name) > 20
 
+
+
     color =
       case assigns.node_state do
         :connected -> "bg-warning text-warning-content"
@@ -131,7 +132,7 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
 
     stat_col =
       if assigns.status_value.data_report != nil do
-        assigns.status_value.stat_color
+        SECoPComponents.status_to_color(assigns.status_value.stat_color)
       else
         "bg-warning text-warning-content"
       end
@@ -150,6 +151,9 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
         ""
       end
 
+
+
+
     assigns =
       assigns
       |> assign(:display_name, display_name)
@@ -157,6 +161,7 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
       |> assign(:stat_col, stat_col)
       |> assign(:show, show)
       |> assign(:animate_marquee, animate_marquee)
+
 
     ~H"""
     <div class={[
@@ -166,13 +171,8 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
       @color
     ]}>
       <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <span class={[
-            @stat_col,
-            "inline-block w-6 h-6 mr-2 rounded-full border-3 border-gray-500/70"
-          ]}>
-          </span>
-        </div>
+        <div class={[@stat_col,"w-6 h-6 mr-2 rounded-full border-3 border-gray-500/70"]}></div>
+
         <div class="flex-1 min-w-0">
           <div class={[
             "text-xl",
@@ -220,11 +220,11 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
         "w-65 min-w-65 max-w-65",
         "text-white text-left font-bold py-2 px-4 rounded",
         case @node_state do
-          :connected -> "bg-orange-500"
-          :disconnected -> "bg-red-500"
+          :connected -> "bg-warning"
+          :disconnected -> "bg-error"
           :initialized -> "bg-zinc-500"
           # default fallback
-          _ -> "bg-red-500"
+          _ -> "bg-error"
         end
       ]
     }>

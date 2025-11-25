@@ -3,13 +3,23 @@ defmodule SecopServiceWeb.SECoPComponents do
 
   alias SecopService.Sec_Nodes.SEC_Node
   alias SecopService.Sec_Nodes.Module
-  alias Phoenix.LiveView.JS
   alias Jason
   alias SecopService.Util
   import SecopServiceWeb.CoreComponents
   alias SecopServiceWeb.Components.ModuleIndicator
 
   # Helper function to get class-specific styles
+  def status_to_color(status) do
+    case status do
+      :disabled -> "bg-gray-500"
+      :idle -> "bg-success"
+      :warning -> "bg-info"
+      :busy -> "bg-warning"
+      :error -> "bg-error"
+      :unknown -> "bg-white"
+    end
+  end
+
   def get_class_styles(interface_class) do
     case interface_class do
       "communicator" ->
@@ -168,13 +178,13 @@ defmodule SecopServiceWeb.SECoPComponents do
           Enum.map(result_list, fn diag ->
             col =
               case diag["severity"] do
-                "FATAL" -> "border-red-400/70"
-                "CATASTROPHIC" -> "border-red-400/70"
-                "ERROR" -> "border-red-400/70"
-                "WARNING" -> "border-orange-400/70"
-                "HINT" -> "border-yellow-400/70"
-                "PASS" -> "border-green-400/70"
-                _ -> "border-gray-400/70"
+                "FATAL" -> "border-error"
+                "CATASTROPHIC" -> "border-error"
+                "ERROR" -> "border-error"
+                "WARNING" -> "border-warning"
+                "HINT" -> "border-info"
+                "PASS" -> "border-success"
+                _ -> "border-base-100"
               end
 
             Map.put(diag, :color, col)
@@ -188,19 +198,19 @@ defmodule SecopServiceWeb.SECoPComponents do
       <div>
         <%= case @highest_error_class do %>
           <% "PASS" -> %>
-            <.icon name="hero-check-badge-solid" class="bg-green-400/70 h-10 w-10" />
+            <.icon name="hero-check-badge-solid" class="bg-success h-10 w-10" />
           <% "HINT" -> %>
-            <.icon name="hero-check-badge-solid" class="bg-yellow-400/70 h-10 w-10" />
+            <.icon name="hero-check-badge-solid" class="bg-info h-10 w-10" />
           <% "WARNING" -> %>
-            <.icon name="hero-exclamation-triangle-solid" class="bg-orange-400/70 h-10 w-10" />
+            <.icon name="hero-exclamation-triangle-solid" class="bg-warning h-10 w-10" />
           <% "ERROR" -> %>
-            <.icon name="hero-exclamation-circle-solid" class="bg-red-400 /70 h-10 w-10" />
+            <.icon name="hero-exclamation-circle-solid" class="bg-error h-10 w-10" />
           <% "CATASTROPHIC" -> %>
-            <.icon name="hero-exclamation-circle-solid" class="bg-red-400/70 h-10 w-10" />
+            <.icon name="hero-exclamation-circle-solid" class="bg-error h-10 w-10" />
           <% "FATAL" -> %>
-            <.icon name="hero-exclamation-circle-solid" class="bg-red-400/70 h-10 w-10" />
+            <.icon name="hero-exclamation-circle-solid" class="bg-error h-10 w-10" />
           <% _ -> %>
-            <.icon name="hero-question-mark-circle-solid" class="bg-gray-400/70 h-10 w-10" />
+            <.icon name="hero-question-mark-circle-solid" class="bg-base-200 h-10 w-10" />
         <% end %>
       </div>
 

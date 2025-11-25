@@ -285,16 +285,16 @@ defmodule SecopService.NodeValues do
   def stat_code_to_color(stat_code) do
     cond do
       # Disabled
-      0 <= stat_code and stat_code < 100 -> "bg-gray-500"
+      0 <= stat_code and stat_code < 100 -> :disabled
       # IDLE
-      100 <= stat_code and stat_code < 200 -> "bg-green-500"
+      100 <= stat_code and stat_code < 200 -> :idle
       # WARNING
-      200 <= stat_code and stat_code < 300 -> "bg-yellow-500"
+      200 <= stat_code and stat_code < 300 -> :warning
       # BUSY
-      300 <= stat_code and stat_code < 400 -> "bg-orange-500"
+      300 <= stat_code and stat_code < 400 -> :busy
       # ERROR
-      400 <= stat_code and stat_code < 500 -> "bg-red-500"
-      true -> "bg-white"
+      400 <= stat_code and stat_code < 500 -> :error
+      true -> :unknown
     end
   end
 end

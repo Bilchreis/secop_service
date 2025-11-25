@@ -6,7 +6,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
   alias SecopService.NodeControl
   alias NodeTable
   import SecopServiceWeb.CoreComponents
-  alias Phoenix.LiveView.JS
+
   import SecopServiceWeb.Components.ParameterFormFieldComponents
   alias SecopService.NodeValues
 

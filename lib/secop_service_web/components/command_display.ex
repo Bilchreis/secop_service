@@ -7,7 +7,7 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
   alias NodeTable
   import SecopServiceWeb.CoreComponents
   alias SecopService.Util
-  alias Phoenix.LiveView.JS
+
 
   @impl true
   def mount(socket) do
