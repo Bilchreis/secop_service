@@ -122,7 +122,7 @@ defmodule SecopService.PlotDB do
       ## background color of plot area
       plot_bgcolor: "rgba(0,0,0,0)",
       autosize: true,
-      height: 310,
+      height: 340,
 
       # Add range slider toggle buttons positioned next to rangeselector
       updatemenus: [
@@ -504,7 +504,7 @@ defmodule SecopService.PlotDB do
         :readable -> readable_plot(module)
         :drivable -> drivable_plot(module)
         :communicator -> not_plottable()
-        :measurable -> readable_plot(module)
+        :acquisition -> readable_plot(module)
         _ -> not_plottable()
       end
 

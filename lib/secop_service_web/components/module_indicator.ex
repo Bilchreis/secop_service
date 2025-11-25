@@ -6,6 +6,7 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
   alias NodeTable
   alias SecopService.Util
   alias SecopService.NodeValues
+  alias SecopServiceWeb.SECoPComponents
 
   @impl true
   def mount(socket) do
@@ -77,34 +78,32 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
   def inner_status_indicator(assigns) do
     assigns =
       if assigns.status_value.data_report == nil do
-        assign(assigns, :stat_color, "bg-gray-500")
+        assign(assigns, :stat_col, "bg-neutral")
       else
-        assigns
+        assign(
+          assigns,
+          :stat_col,
+          SECoPComponents.status_to_color(assigns.status_value.stat_color)
+        )
       end
 
     ~H"""
     <div class="flex items-center">
-      <div class="flex-shrink-0">
-        <span class={[
-          @status_value.stat_color,
-          "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
-        ]}>
-        </span>
-      </div>
+      <div class={[@stat_col, "w-6 h-6 mr-2 rounded-full border-3 border-gray-500/70"]}></div>
       <div class="mb-1">
         <%= if @status_value.data_report != nil do %>
-          <div class="text-lg font-semibold dark:text-white truncate">
+          <div class="text-lg font-semibold text-neutral-content truncate">
             {@status_value.stat_code}
           </div>
         <% end %>
       </div>
     </div>
     <%= if @status_value.data_report != nil do %>
-      <div class="dark:text-white ">
+      <div class="text-neutral-content">
         {@status_value.stat_string}
       </div>
     <% else %>
-      <div class="text-sm dark:text-white opacity-60">
+      <div class="text-sm text-neutral-content opacity-60">
         waiting for data...
       </div>
     <% end %>
@@ -120,20 +119,20 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
     # Adjust this threshold based on your needs (characters that fit in w-48)
     text_too_long = String.length(display_name) > 20
 
-    bg_col =
+    color =
       case assigns.node_state do
-        :connected -> "bg-orange-500"
-        :disconnected -> "bg-red-500"
-        :initialized -> "bg-zinc-400 dark:bg-zinc-500"
+        :connected -> "bg-warning text-warning-content"
+        :disconnected -> "bg-error text-error-content"
+        :initialized -> "bg-neutral text-neutral-content"
         # default fallback
-        _ -> "bg-red-500"
+        _ -> "bg-error text-error-content"
       end
 
     stat_col =
       if assigns.status_value.data_report != nil do
-        assigns.status_value.stat_color
+        SECoPComponents.status_to_color(assigns.status_value.stat_color)
       else
-        "bg-gray-500"
+        "bg-warning text-warning-content"
       end
 
     show =
@@ -153,25 +152,21 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
     assigns =
       assigns
       |> assign(:display_name, display_name)
-      |> assign(:bg_col, bg_col)
+      |> assign(:color, color)
       |> assign(:stat_col, stat_col)
       |> assign(:show, show)
       |> assign(:animate_marquee, animate_marquee)
 
     ~H"""
     <div class={[
+      "card",
       "w-[300px]",
-      "text-white text-left font-bold py-2 px-4 rounded",
-      @bg_col
+      "text-left font-bold py-2 px-4",
+      @color
     ]}>
       <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <span class={[
-            @stat_col,
-            "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
-          ]}>
-          </span>
-        </div>
+        <div class={[@stat_col, "w-6 h-6 mr-2 rounded-full border-3 border-gray-500/70"]}></div>
+
         <div class="flex-1 min-w-0">
           <div class={[
             "text-xl",
@@ -188,11 +183,11 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
             </div>
           </div>
           <%= if @status_value.data_report != nil do %>
-            <div class="text-sm text-white-400 opacity-60 truncate">
+            <div class="text-sm opacity-60 truncate">
               {@status_value.stat_code} : {@status_value.stat_string}
             </div>
           <% else %>
-            <div class="text-sm text-white-400 opacity-60">
+            <div class="text-sm opacity-60">
               waiting for data...
             </div>
           <% end %>
@@ -219,11 +214,11 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
         "w-65 min-w-65 max-w-65",
         "text-white text-left font-bold py-2 px-4 rounded",
         case @node_state do
-          :connected -> "bg-orange-500"
-          :disconnected -> "bg-red-500"
+          :connected -> "bg-warning"
+          :disconnected -> "bg-error"
           :initialized -> "bg-zinc-500"
           # default fallback
-          _ -> "bg-red-500"
+          _ -> "bg-error"
         end
       ]
     }>

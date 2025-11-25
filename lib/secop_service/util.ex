@@ -8,8 +8,13 @@ defmodule SecopService.Util do
 
   def get_highest_if_class(iflist) do
     cond do
-      Enum.member?(iflist, "Triggerable") -> :measurable
-      Enum.member?(iflist, "Measurable") -> :measurable
+      Enum.member?(iflist, "AcquisitionController") -> :acquisition_controller
+      Enum.member?(iflist, "AcquisitionChannel") -> :acquisition_channel
+      # removed later
+      Enum.member?(iflist, "Triggerable") -> :acquisition
+      # removed later
+      Enum.member?(iflist, "Measurable") -> :acquisition
+      Enum.member?(iflist, "Acquisition") -> :acquisition
       Enum.member?(iflist, "Drivable") -> :drivable
       Enum.member?(iflist, "Readable") -> :readable
       Enum.member?(iflist, "Communicator") -> :communicator

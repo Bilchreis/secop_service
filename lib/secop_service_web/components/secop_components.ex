@@ -1,10 +1,81 @@
-defmodule SECoPComponents do
+defmodule SecopServiceWeb.SECoPComponents do
   use Phoenix.Component
 
-  alias Phoenix.LiveView.JS
+  alias SecopService.Sec_Nodes.SEC_Node
+  alias SecopService.Sec_Nodes.Module
   alias Jason
   alias SecopService.Util
   import SecopServiceWeb.CoreComponents
+  alias SecopServiceWeb.Components.ModuleIndicator
+
+  # Helper function to get class-specific styles
+  def status_to_color(status) do
+    case status do
+      :disabled -> "bg-gray-500"
+      :idle -> "bg-success"
+      :warning -> "bg-info"
+      :busy -> "bg-warning"
+      :error -> "bg-error"
+      :unknown -> "bg-white"
+    end
+  end
+
+  def get_class_styles(interface_class) do
+    case interface_class do
+      "communicator" ->
+        %{
+          border: "border-blue-500 dark:border-blue-600/40",
+          bg:
+            "bg-gradient-to-r from-blue-200 to-blue-300 dark:from-blue-900/30 dark:to-blue-900/40",
+          header_bg: "bg-blue-300 dark:bg-blue-800/50",
+          icon: "hero-chat-bubble-left-right"
+        }
+
+      "readable" ->
+        %{
+          border: "border-green-500 dark:border-green-600/40",
+          bg:
+            "bg-gradient-to-r from-green-200 to-green-300 dark:from-green-900/30 dark:to-green-900/40",
+          header_bg: "bg-green-300 dark:bg-green-800/50",
+          icon: "hero-eye"
+        }
+
+      "writable" ->
+        %{
+          border: "border-amber-500 dark:border-amber-600/40",
+          bg:
+            "bg-gradient-to-r from-amber-200 to-amber-300 dark:from-amber-900/30 dark:to-amber-900/40",
+          header_bg: "bg-amber-300 dark:bg-amber-800/50",
+          icon: "hero-pencil-square"
+        }
+
+      "drivable" ->
+        %{
+          border: "border-purple-500 dark:border-purple-600/40",
+          bg:
+            "bg-gradient-to-r from-purple-200 to-purple-300 dark:from-purple-900/30 dark:to-purple-900/40",
+          header_bg: "bg-purple-300 dark:bg-purple-800/50",
+          icon: "hero-cog"
+        }
+
+      "acquisition" ->
+        %{
+          border: "border-blue-500 dark:border-blue-600/40",
+          bg:
+            "bg-gradient-to-r from-blue-200 to-blue-300 dark:from-blue-900/30 dark:to-blue-900/40",
+          header_bg: "bg-blue-300 dark:bg-blue-800/50",
+          icon: "hero-clock"
+        }
+
+      _ ->
+        %{
+          border: "border-gray-500 dark:border-gray-600/40",
+          bg: "bg-gray-200 dark:bg-gray-800/50",
+          header_bg: "bg-gray-300 dark:bg-gray-700/50",
+          icon: "hero-cube"
+        }
+    end
+  end
 
   attr :equipment_id, :string, required: true
   attr :pubsub_topic, :string, required: true
@@ -27,8 +98,8 @@ defmodule SECoPComponents do
 
     assigns =
       case assigns.current do
-        true -> assign(assigns, :button_col, "bg-purple-500 hover:bg-purple-700")
-        false -> assign(assigns, :button_col, "bg-zinc-500 hover:bg-zinc-700")
+        true -> assign(assigns, :button_col, "bg-primary hover:bg-primary/80")
+        false -> assign(assigns, :button_col, "bg-neutral hover:bg-neutral/80")
       end
 
     ~H"""
@@ -38,21 +109,21 @@ defmodule SECoPComponents do
       class={[
         @button_col,
         @border_col,
-        "min-w-[240px] border-4 text-white text-left font-bold py-2 px-4 rounded",
+        "min-w-[240px] border-4 text-neutral-content text-left font-bold py-2 px-4 rounded",
         "font-mono"
       ]}
     >
       <div class="text-xl font-sans">{@display_name}</div>
-      <div class="text-sm text-white-400 opacity-60">{@pubsub_topic}</div>
+      <div class="text-sm text-neutral-content/80 opacity-60">{@pubsub_topic}</div>
       <div class="flex gap-2">
-        <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-zinc-600 font-mono">
+        <div class="px-2 py-0.5 rounded-full text-base-content bg-base-200/80 font-mono">
           {@state}
         </div>
-        <div class="px-2 py-0.5 rounded-full text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-zinc-600 font-mono">
+        <div class="px-2 py-0.5 rounded-full text-base-content bg-base-200/80 font-mono">
           <%= if @connstate do %>
-            <span class="text-green-500">active </span>
+            <span class="text-success">active </span>
           <% else %>
-            <span class="text-orange-500">inactive</span>
+            <span class="text-warning">inactive</span>
           <% end %>
         </div>
       </div>
@@ -63,9 +134,9 @@ defmodule SECoPComponents do
   defp state_to_col(state) do
     col =
       case state do
-        :connected -> "border-orange-500"
-        :disconnected -> "border-red-500"
-        :initialized -> "border-green-500"
+        :connected -> "border-warning"
+        :disconnected -> "border-error"
+        :initialized -> "border-success"
         _ -> "border-gray-500"
       end
 
@@ -107,16 +178,16 @@ defmodule SECoPComponents do
           Enum.map(result_list, fn diag ->
             col =
               case diag["severity"] do
-                "FATAL" -> "red-500"
-                "CATASTROPHIC" -> "red-500"
-                "ERROR" -> "red-500"
-                "WARNING" -> "orange-500"
-                "HINT" -> "yellow-500"
-                "PASS" -> "green-500"
-                _ -> "gray-500"
+                "FATAL" -> "border-error"
+                "CATASTROPHIC" -> "border-error"
+                "ERROR" -> "border-error"
+                "WARNING" -> "border-warning"
+                "HINT" -> "border-info"
+                "PASS" -> "border-success"
+                _ -> "border-base-100"
               end
 
-            Map.put(diag, "col", col)
+            Map.put(diag, :color, col)
           end)
 
         assign(assigns, :check_result, Map.put(check_result, "result", new_result_list))
@@ -127,30 +198,30 @@ defmodule SECoPComponents do
       <div>
         <%= case @highest_error_class do %>
           <% "PASS" -> %>
-            <.icon name="hero-check-badge-solid" class="bg-green-500 h-10 w-10" />
+            <.icon name="hero-check-badge-solid" class="bg-success h-10 w-10" />
           <% "HINT" -> %>
-            <.icon name="hero-check-badge-solid" class="bg-yellow-500 h-10 w-10" />
+            <.icon name="hero-check-badge-solid" class="bg-info h-10 w-10" />
           <% "WARNING" -> %>
-            <.icon name="hero-exclamation-triangle-solid" class="bg-orange-500 h-10 w-10" />
+            <.icon name="hero-exclamation-triangle-solid" class="bg-warning h-10 w-10" />
           <% "ERROR" -> %>
-            <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-10 w-10" />
+            <.icon name="hero-exclamation-circle-solid" class="bg-error h-10 w-10" />
           <% "CATASTROPHIC" -> %>
-            <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-10 w-10" />
+            <.icon name="hero-exclamation-circle-solid" class="bg-error h-10 w-10" />
           <% "FATAL" -> %>
-            <.icon name="hero-exclamation-circle-solid" class="bg-red-500 h-10 w-10" />
+            <.icon name="hero-exclamation-circle-solid" class="bg-error h-10 w-10" />
           <% _ -> %>
-            <.icon name="hero-question-mark-circle-solid" class="bg-gray-500 h-10 w-10" />
+            <.icon name="hero-question-mark-circle-solid" class="bg-base-200 h-10 w-10" />
         <% end %>
       </div>
 
-      <div class="bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-4xl font-bold text-transparent">
+      <div class="text-primary text-4xl font-bold">
         {Util.display_name(@equipment_id)}
       </div>
     </div>
     <div class="mb-2">checked against SECoP v{@check_result["version"]}</div>
     <ul class="text-sm font-medium">
       <%= for diag <- Map.get(@check_result,"result") do %>
-        <li class={["p-1 mb-1 border-4 rounded-lg", "border-#{diag["col"]}"]}>
+        <li class={["p-1 mb-1 border-4 rounded-lg", diag.color]}>
           {diag["text"]}
         </li>
       <% end %>
@@ -161,7 +232,7 @@ defmodule SECoPComponents do
   attr :parameter, :string, required: true
   attr :parameter_name, :string, required: true
 
-  def dash_parameter(assigns) do
+  def old_dash_parameter(assigns) do
     assigns =
       assign(assigns, parse_param_value(assigns[:parameter]))
       |> assign(:unit, Map.get(assigns.parameter.datainfo, :unit))
@@ -233,272 +304,18 @@ defmodule SECoPComponents do
     string_val
   end
 
-  attr :mod_name, :string, required: true
-  attr :module, :map, required: true
-  attr :state, :atom, required: true
-  attr :box_color, :string, default: "bg-gray-50 dark:bg-gray-900"
+  attr :prop_key, :string, required: true
+  attr :class, :any
+  attr :key_class, :any
+  attr :value_class, :any
+  slot :inner_block, required: true
 
-  def module_box(assigns) do
-    assigns =
-      case assigns.state do
-        :initialized -> assigns
-        _ -> assign(assigns, :box_color, "border-4 border-red-500")
-      end
-
+  def property(assigns) do
     ~H"""
-    <div class={[
-      @box_color,
-      "bg-gray-50  p-5 bg-gray-50 text-medium text-gray-500 dark:text-gray-400 dark:bg-gray-900 rounded-lg w-full mb-4"
-    ]}>
-      <.accordion
-        id={@mod_name}
-        class="mb-2 bg-white dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg  "
-      >
-        <:trigger class="p-4 pr-10 text-lg">
-          <h3 class="text-lg text-left font-bold text-gray-900 dark:text-white">
-            {@mod_name} :
-            <span class=" dark:text-gray-400 text-medium">
-              {Enum.at(@module.properties.interface_classes, 0)}
-            </span>
-          </h3>
-          <div>
-            <div class="text-left dark:text-gray-400">
-              {@module.properties.description}
-            </div>
-          </div>
-        </:trigger>
-        <:panel class="p-4 ">
-          <%= for {prop_name, prop_value} <- @module.properties, prop_name != :description do %>
-            <div>
-              <div class="mt-2 dark:bg-gray-800  text-gray-300 text-left  py-2 px-4 rounded">
-                <span class=" font-bold  text-black dark:text-white ">{prop_name}:</span> <br />
-                {prop_value}
-              </div>
-            </div>
-          <% end %>
-        </:panel>
-      </.accordion>
-      <div class="grid grid-cols-3 gap-7 pt-6 content-start">
-        <%= for {parameter_name, parameter} <- @module.parameters do %>
-          <.dash_parameter parameter_name={parameter_name} parameter={parameter} />
-        <% end %>
-      </div>
-    </div>
-    """
-  end
-
-  attr :parameter, :string, required: true
-  attr :module, :string, required: true
-  attr :parameter_map, :map, required: true
-
-  def hist_widget(assigns) do
-    ~H"""
-    <div class=" h-full pt-5 "></div>
-    """
-  end
-
-  attr :module_name, :string, required: true
-  attr :node_status, :atom, required: true
-  attr :status_value, :map, required: true
-
-  def module_indicator_status(assigns) do
-    display_name = Util.display_name(assigns.module_name)
-    # Adjust this threshold based on your needs (characters that fit in w-48)
-    text_too_long = String.length(display_name) > 20
-
-    bg_col =
-      case assigns.node_status do
-        :connected -> "bg-orange-500"
-        :disconnected -> "bg-red-500"
-        :initialized -> "bg-zinc-400 dark:bg-zinc-500"
-        # default fallback
-        _ -> "bg-red-500"
-      end
-
-    stat_col =
-      if assigns.status_value.data_report != nil do
-        assigns.status_value.stat_color
-      else
-        "bg-gray-500"
-      end
-
-    show =
-      if text_too_long do
-        "overflow-hidden"
-      else
-        "truncate"
-      end
-
-    animate_marquee =
-      if text_too_long do
-        "animate-marquee hover:pause-animation"
-      else
-        ""
-      end
-
-    assigns =
-      assigns
-      |> assign(:display_name, display_name)
-      |> assign(:bg_col, bg_col)
-      |> assign(:stat_col, stat_col)
-      |> assign(:show, show)
-      |> assign(:animate_marquee, animate_marquee)
-
-    ~H"""
-    <div class={[
-      "w-[300px]",
-      "text-white text-left font-bold py-2 px-4 rounded",
-      @bg_col
-    ]}>
-      <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <span class={[
-            @stat_col,
-            "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
-          ]}>
-          </span>
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class={[
-            "text-xl",
-            @show
-          ]}>
-            <div
-              class={[
-                "whitespace-nowrap",
-                @animate_marquee
-              ]}
-              title={@display_name}
-            >
-              {@display_name}
-            </div>
-          </div>
-          <%= if @status_value.data_report != nil do %>
-            <div class="text-sm text-white-400 opacity-60 truncate">
-              {@status_value.stat_code} : {@status_value.stat_string}
-            </div>
-          <% else %>
-            <div class="text-sm text-white-400 opacity-60">
-              waiting for data...
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  attr :module_name, :string, required: true
-  attr :node_status, :atom, required: true
-
-  def module_indicator(assigns) do
-    display_name = Util.display_name(assigns.module_name)
-    # Adjust this threshold based on your needs (characters that fit in w-48)
-    text_too_long = String.length(display_name) > 20
-
-    assigns = assign(assigns, :display_name, display_name)
-    assigns = assign(assigns, :text_too_long, text_too_long)
-
-    ~H"""
-    <div class={
-      [
-        "w-65 min-w-65 max-w-65",
-        "text-white text-left font-bold py-2 px-4 rounded",
-        case @node_status do
-          :connected -> "bg-orange-500"
-          :disconnected -> "bg-red-500"
-          :initialized -> "bg-zinc-500"
-          # default fallback
-          _ -> "bg-red-500"
-        end
-      ]
-    }>
-      <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <span class={[
-            "opacity-0",
-            "bg-gray-500",
-            "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
-          ]}>
-          </span>
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class={[
-            "text-xl",
-            if(@text_too_long, do: "overflow-hidden", else: "truncate")
-          ]}>
-            <div
-              class={[
-                "whitespace-nowrap",
-                if(@text_too_long, do: "animate-marquee hover:pause-animation", else: "")
-              ]}
-              title={@display_name}
-            >
-              {@display_name}
-            </div>
-          </div>
-          <div class="text-sm text-white-400 opacity-0">
-            placeholder
-          </div>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  attr :class, :any, doc: "Extend existing component styles"
-  attr :controlled, :boolean, default: false
-  attr :id, :string, required: true
-  attr :rest, :global
-
-  slot :trigger, validate_attrs: false
-  slot :panel, validate_attrs: false
-
-  def accordion(assigns) do
-    ~H"""
-    <div class={["accordion", assigns[:class]]} id={@id} {@rest}>
-      <%= for {{trigger, panel}, idx} <- @trigger |> Enum.zip(@panel) |> Enum.with_index() do %>
-        <div class="flex">
-          <div class="flex-1">
-            {render_slot(trigger)}
-          </div>
-
-          <button
-            aria-controls={panel_id(@id, idx)}
-            aria-expanded={to_string(panel[:default_expanded] == true)}
-            class={[
-              "accordion-trigger  w-10 rounded-lg  [&_.accordion-trigger-icon]:aria-expanded:rotate-180",
-              trigger[:class]
-            ]}
-            id={trigger_id(@id, idx)}
-            phx-click={handle_click(assigns, idx)}
-            type="button"
-            {assigns_to_attributes(trigger, [:class, :icon_name])}
-          >
-            <.icon
-              class="accordion-trigger-icon h-5 w-5 transition-all ease-in-out duration-300 top-1/2 translate-x-5"
-              name={trigger[:icon_name] || "hero-chevron-down"}
-            />
-          </button>
-        </div>
-
-        <div
-          class="accordion-panel grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all transform ease-in duration-200"
-          data-expanded={panel[:default_expanded]}
-          id={panel_id(@id, idx)}
-          role="region"
-        >
-          <div class="overflow-hidden">
-            <div
-              class={["accordion-panel-content", panel[:class]]}
-              {assigns_to_attributes(panel, [:class, :default_expanded ])}
-            >
-              {render_slot(panel)}
-            </div>
-          </div>
-        </div>
-      <% end %>
-    </div>
+    <li class={["", assigns[:class]]}>
+      <span class={["font-bold", assigns[:key_class]]}>{@prop_key}:</span>
+      <span class={["", assigns[:value_class]]}>{render_slot(@inner_block)}</span>
+    </li>
     """
   end
 
@@ -567,25 +384,261 @@ defmodule SECoPComponents do
     """
   end
 
-  defp trigger_id(id, idx), do: "#{id}_trigger#{idx}"
-  defp panel_id(id, idx), do: "#{id}_panel#{idx}"
+  attr :node, :map, required: true
+  attr :state_map, :map, default: nil
 
-  defp handle_click(%{controlled: controlled, id: id}, idx) do
-    op =
-      {"aria-expanded", "true", "false"}
-      |> JS.toggle_attribute(to: "##{trigger_id(id, idx)}")
-      |> JS.toggle_attribute({"data-expanded", ""}, to: "##{panel_id(id, idx)}")
+  slot :inner_block
 
-    if controlled do
-      op
-      |> JS.set_attribute({"aria-expanded", "false"},
-        to: "##{id} .accordion-trigger:not(##{trigger_id(id, idx)})"
-      )
-      |> JS.remove_attribute("data-expanded",
-        to: "##{id} .accordion-panel:not(##{panel_id(id, idx)})"
-      )
-    else
-      op
-    end
+  def sec_node(assigns) do
+    ~H"""
+    <div class="card bg-base-200 flex-1 mt-4 ml-3 p-3  ">
+      <div class="card bg-base-100 card-border border-base-300 card-sm p-4 ">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <.node_title check_result={@node.check_result} equipment_id={@node.equipment_id} />
+
+            <div class="grid grid-cols-2 gap-2 mt-2">
+              <div class="card bg-neutral text-neutral-content card-sm p-3 overflow-hidden">
+                <ul class="text-sm font-medium">
+                  <.property
+                    prop_key="Description"
+                    key_class="text-lg"
+                  >
+                    <div class="">{SEC_Node.display_description(@node)}</div>
+                  </.property>
+                </ul>
+              </div>
+              <div class="card bg-neutral text-neutral-content card-sm p-3 overflow-hidden">
+                <p class="text-lg font-bold ">Node Properties:</p>
+
+                <ul class="text-sm font-medium ">
+                  <.property prop_key="Equipment ID">
+                    {@node.equipment_id}
+                  </.property>
+
+                  <%= if @node.implementor do %>
+                    <.property prop_key="Implementor">
+                      {@node.implementor}
+                    </.property>
+                  <% end %>
+
+                  <%= if @node.timeout do %>
+                    <.property prop_key="Timeout">
+                      {@node.timeout}
+                    </.property>
+                  <% end %>
+
+                  <%= if @node.firmware do %>
+                    <.property prop_key="Firmware">
+                      {@node.firmware}
+                    </.property>
+                  <% end %>
+
+                  <%= for {property_name, property_value} <- @node.custom_properties do %>
+                    <.property prop_key={String.replace_prefix(property_name, "_", "")}>
+                      {inspect(property_value)}
+                    </.property>
+                  <% end %>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="relative text-neutral-base overflow-hidden">
+            <ul class="text-lg font-medium text-right">
+              <.property prop_key="UUID" value_class="font-mono">
+                {@node.uuid}
+              </.property>
+
+              <.property prop_key="URI" value_class="font-mono">
+                {@node.host <> ":" <> to_string(@node.port)}
+              </.property>
+
+              <.property prop_key="Connected at">
+                {@node.inserted_at
+                |> DateTime.from_naive!("Etc/UTC")
+                |> DateTime.shift_zone!("Europe/Berlin")
+                |> Calendar.strftime("%d.%m.%Y %H:%M")}
+              </.property>
+            </ul>
+
+            <fieldset
+              :if={@state_map}
+              class="absolute right-0 bottom-0  fieldset bg-base-100 border-base-300 rounded-box border p-4"
+            >
+              <label class="label">
+                <input
+                  type="checkbox"
+                  checked={@state_map.active}
+                  phx-click="toggle-conn-state"
+                  class="toggle toggle-lg border-warning bg-warning checked:bg-success checked:border-success "
+                /> Async update Messages
+              </label>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
+  attr :module, :map, required: true
+  attr :host, :string, required: true
+  attr :port, :integer, required: true
+  attr :n_modules, :integer, default: 0
+  attr :status, :boolean, default: false
+
+  attr :interface_class, :string
+  attr :node_id_str, :string, required: true
+
+  slot :parameter_preview
+  slot :command_preview
+  slot :parameter_details
+  slot :command_details
+
+  def base_module(assigns) do
+    assigns =
+      assigns
+      |> assign(:styles, get_class_styles(assigns.interface_class))
+
+    ~H"""
+    <div class="flex mt-3 items-stretch gap-3">
+      <div class="flex-1">
+        <%!-- Module header and interactive elements (outside collapse) --%>
+        <div class={[
+          "bg-base-100 rounded-t-lg p-4",
+          @styles.bg,
+          @styles.border,
+          "border-t-2 border-l-2 border-r-2"
+        ]}>
+          <%!-- Module Name with Interface Class Icon --%>
+          <div class="mb-2 flex items-center">
+            <span class="text-2xl font-bold text-gray-800 dark:text-white">
+              {Module.display_name(@module)}
+            </span>
+            <%= if @interface_class do %>
+              <span class={[
+                "font-bold text-gray-800 dark:text-white text-sm ml-2 px-2 py-1 mb-1 rounded-full",
+                @styles.header_bg
+              ]}>
+                {@interface_class}
+              </span>
+            <% end %>
+          </div>
+
+          <%!-- Module Properties --%>
+          <div class="flex">
+            <div class="card card-border border-4 border-base-100/80 bg-neutral/45 w-3/4 mr-2 p-3">
+              <ul class="text-sm text-neutral-content space-y-2">
+                <.property
+                  prop_key="Description"
+                  key_class="text-lg"
+                  value_class="text-lg font-semibold text-neutral-content/80"
+                >
+                  {@module.description}
+                </.property>
+                <.property
+                  prop_key="Interface Classes"
+                  key_class="font-semibold"
+                >
+                  {@module.interface_classes |> Enum.join(", ")}
+                </.property>
+
+                <%= if @module.implementor do %>
+                  <.property
+                    prop_key="Implementor"
+                    key_class="font-semibold"
+                  >
+                    {@module.implementor}
+                  </.property>
+                <% end %>
+
+                <%= if @module.meaning do %>
+                  <.property
+                    prop_key="Meaning"
+                    key_class="font-semibold"
+                  >
+                    {inspect(@module.meaning)}
+                  </.property>
+                <% end %>
+
+                <%= for {property_name, property_value} <- @module.custom_properties, property_name != "_plotly" do %>
+                  <.property
+                    prop_key={String.replace_prefix(property_name, "_", "")}
+                    key_class="font-semibold"
+                  >
+                    {inspect(property_value)}
+                  </.property>
+                <% end %>
+              </ul>
+            </div>
+
+            <div
+              :if={@status}
+              class="w-1/4 card card-border border-4 border-base-100/80 bg-neutral/45 p-3 overflow-hidden"
+            >
+              <.live_component
+                module={ModuleIndicator}
+                id={"module_indicator_mod:"<> @node_id_str <>":"<> @module.name}
+                host={@host}
+                port={@port}
+                module_name={@module.name}
+                highest_if_class={@module.highest_interface_class}
+                status_param={Module.get_parameter(@module, "status")}
+                node_state={:initialized}
+                indicator_select={:inner}
+              />
+            </div>
+          </div>
+
+          <%!-- Value/Target displays --%>
+          {render_slot(@parameter_preview)}
+
+          <%!-- Commands --%>
+          {render_slot(@command_preview)}
+        </div>
+        <%!-- Collapsible section for parameters and commands details --%>
+        <div class={[
+          "collapse collapse-arrow",
+          @styles.bg,
+          @styles.border,
+          "border-2 rounded-b-lg rounded-t-none "
+        ]}>
+          <input type="checkbox" />
+          <div class="collapse-title text-lg font-semibold text-gray-800 dark:text-white ">
+            <.icon name="hero-magnifying-glass" class=" h-5 w-5  mr-1" />
+            Configuration Parameters & Details
+          </div>
+          <div class="collapse-content text-sm">
+            <%!-- Parameters --%>
+            <div class="card border-4 bg-base-200 border-base-100 p-4 mt-4">
+              <h3 class="text-lg font-bold text-base-content mb-2">Parameters:</h3>
+              {render_slot(@parameter_details)}
+            </div>
+
+            <%!-- Commands --%>
+
+            <div
+              :if={@module.commands != []}
+              class="card border-4 bg-base-200 border-base-100 p-4 mt-4"
+            >
+              <h3 class="text-lg font-bold text-base-content mb-2">Commands:</h3>
+              {render_slot(@command_details)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%= if @n_modules < 20 do %>
+        <.live_component
+          module={SecopServiceWeb.Components.HistoryDB}
+          id={"module-plot:" <> to_string(@module.name)}
+          secop_obj={@module}
+          class="w-3/5 hidden xl:block"
+        />
+      <% end %>
+    </div>
+    """
   end
 end
