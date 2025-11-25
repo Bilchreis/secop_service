@@ -15,8 +15,6 @@ defmodule SecopServiceWeb.DashboardComponents do
   import SecopServiceWeb.Components.ParameterFormFieldComponents
   import SecopServiceWeb.CoreComponents
 
-
-
   attr :node, :map, required: true
   attr :state_map, :map, required: true
 
@@ -30,7 +28,7 @@ defmodule SecopServiceWeb.DashboardComponents do
       |> assign(:n_modules, length(assigns.node.modules))
 
     ~H"""
-    <.sec_node node = {@node} state_map={@state_map}>
+    <.sec_node node={@node} state_map={@state_map}>
       <!--Modules -->
       <div class="mt-3 card  ">
         <%= for {group_name, modules} <- @grouped_modules do %>
@@ -43,7 +41,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               <%= if group_name == nil do %>
                 Ungrouped Modules
               <% else %>
-              {Util.display_name(group_name)}
+                {Util.display_name(group_name)}
               <% end %>
             </div>
             <div class="collapse-content text-sm">
@@ -62,10 +60,7 @@ defmodule SecopServiceWeb.DashboardComponents do
       </div>
     </.sec_node>
     """
-
-
   end
-
 
   attr :node, :map, required: true
   attr :node_state, :atom, required: true
@@ -102,9 +97,6 @@ defmodule SecopServiceWeb.DashboardComponents do
     """
   end
 
-
-
-
   attr :module, :map, required: true
   attr :host, :string, required: true
   attr :port, :integer, required: true
@@ -117,7 +109,9 @@ defmodule SecopServiceWeb.DashboardComponents do
   slot :parameter_preview
 
   def dash_base_module(assigns) do
-    grouped_parameters = Enum.group_by(assigns.module.parameters, &(&1.group || nil)) |> Enum.sort()
+    grouped_parameters =
+      Enum.group_by(assigns.module.parameters, &(&1.group || nil)) |> Enum.sort()
+
     grouped_commands = Enum.group_by(assigns.module.commands, &(&1.group || nil)) |> Enum.sort()
 
     assigns =
@@ -125,9 +119,8 @@ defmodule SecopServiceWeb.DashboardComponents do
       |> assign(:grouped_parameters, grouped_parameters)
       |> assign(:grouped_commands, grouped_commands)
 
-
     ~H"""
-      <.base_module
+    <.base_module
       module={@module}
       host={@host}
       port={@port}
@@ -135,95 +128,86 @@ defmodule SecopServiceWeb.DashboardComponents do
       status={@status}
       interface_class={@interface_class}
       node_id_str={@node_id_str}
-      >
-        <:parameter_preview>
-          {render_slot(@parameter_preview)}
-        </:parameter_preview>
+    >
+      <:parameter_preview>
+        {render_slot(@parameter_preview)}
+      </:parameter_preview>
 
-        <:command_preview>
-            <div :if={@module.commands != []} class="flex rounded-lg gap-2 mt-2 p-2 bg-neutral/40">
-              <%= for command <- @module.commands do %>
-                <.live_component
-                  module={CommandDisplay}
-                  id={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":" <> command.name}
-                  class=""
+      <:command_preview>
+        <div :if={@module.commands != []} class="flex rounded-lg gap-2 mt-2 p-2 bg-neutral/40">
+          <%= for command <- @module.commands do %>
+            <.live_component
+              module={CommandDisplay}
+              id={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":" <> command.name}
+              class=""
+              host={@host}
+              port={@port}
+              location="module_dash"
+              module_name={@module.name}
+              command={command}
+              id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":" <> command.name}
+            />
+          <% end %>
+        </div>
+      </:command_preview>
+
+      <:parameter_details>
+        <%= for {group_name, parameters} <- @grouped_parameters do %>
+          <div class="collapse collapse-arrow bg-base-100 border-base-300 border">
+            <%= if group_name == nil do %>
+              <input type="checkbox" checked />
+            <% else %>
+              <input type="checkbox" />
+            <% end %>
+            <div class="collapse-title font-semibold">
+              <%= if group_name == nil do %>
+                Ungrouped Parameters
+              <% else %>
+                {Util.display_name(group_name)}
+              <% end %>
+            </div>
+            <div class="collapse-content text-sm">
+              <%= for parameter <- parameters do %>
+                <.dash_parameter
                   host={@host}
                   port={@port}
-                  location="module_dash"
+                  node_id_str={@node_id_str}
                   module_name={@module.name}
-                  command={command}
-                  id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":" <> command.name}
+                  parameter={parameter}
                 />
               <% end %>
             </div>
-        </:command_preview>
+          </div>
+        <% end %>
+      </:parameter_details>
 
-        <:parameter_details>
-          <%= for {group_name, parameters} <- @grouped_parameters do %>
-            <div class="collapse collapse-arrow bg-base-100 border-base-300 border">
+      <:command_details>
+        <div :if={@module.commands != []} class="card border-4 bg-base-200 border-base-100 p-4 mt-4">
+          <h3 class="text-lg font-bold text-base-content mb-2">Commands:</h3>
+          <%= for {group_name, commands} <- @grouped_commands do %>
+            <div class="collapse collapse-arrow bg-base-100 border-base-300 border ">
               <%= if group_name == nil do %>
                 <input type="checkbox" checked />
               <% else %>
                 <input type="checkbox" />
               <% end %>
               <div class="collapse-title font-semibold">
-                  <%= if group_name == nil do %>
-                        Ungrouped Parameters
-                  <% else %>
-                        {Util.display_name(group_name)}
-                  <% end %>
-
+                <%= if group_name == nil do %>
+                  Ungrouped Commands
+                <% else %>
+                  {Util.display_name(group_name)}
+                <% end %>
               </div>
-              <div class="collapse-content text-sm">
-
-                <%= for parameter <- parameters do %>
-                  <.dash_parameter
-                    host={@host}
-                    port={@port}
-                    node_id_str={@node_id_str}
-                    module_name={@module.name}
-                    parameter={parameter}
-                  />
+              <div class="collapse-content text-sm ">
+                <%= for command <- commands do %>
+                  <.dash_command command={command} />
                 <% end %>
               </div>
             </div>
-
           <% end %>
-        </:parameter_details>
-
-        <:command_details>
-          <div :if={@module.commands != []} class="card border-4 bg-base-200 border-base-100 p-4 mt-4">
-            <h3 class="text-lg font-bold text-base-content mb-2">Commands:</h3>
-            <%= for {group_name, commands} <- @grouped_commands do %>
-              <div class="collapse collapse-arrow bg-base-100 border-base-300 border ">
-                <%= if group_name == nil do %>
-                  <input type="checkbox" checked />
-                <% else %>
-                  <input type="checkbox" />
-                <% end %>
-                <div class="collapse-title font-semibold">
-                    <%= if group_name == nil do %>
-                          Ungrouped Commands
-                    <% else %>
-                          {Util.display_name(group_name)}
-                    <% end %>
-                </div>
-                <div class="collapse-content text-sm ">
-                  <%= for command <- commands do %>
-                    <.dash_command
-                      command={command}
-                    />
-                  <% end %>
-                </div>
-              </div>
-
-            <% end %>
-          </div>
-        </:command_details>
-
-      </.base_module>
-
-
+        </div>
+      </:command_details>
+    </.base_module>
     """
   end
 
@@ -233,8 +217,7 @@ defmodule SecopServiceWeb.DashboardComponents do
   attr :n_modules, :integer, default: 0
   attr :interface_class, :string
 
-  def dash_module(%{interface_class: "communicator"}=assigns) do
-
+  def dash_module(%{interface_class: "communicator"} = assigns) do
     assigns =
       assigns
       |> assign_new(:node_id_str, fn -> "#{to_string(assigns.host)}:#{assigns.port}" end)
@@ -251,21 +234,13 @@ defmodule SecopServiceWeb.DashboardComponents do
       status={@status}
     >
       <:parameter_preview>
-        <div>
-
-        </div>
-
+        <div></div>
       </:parameter_preview>
-
     </.dash_base_module>
     """
   end
 
-
-
-
-  def dash_module(%{interface_class: "readable"}=assigns) do
-
+  def dash_module(%{interface_class: "readable"} = assigns) do
     assigns =
       assigns
       |> assign_new(:node_id_str, fn -> "#{to_string(assigns.host)}:#{assigns.port}" end)
@@ -281,8 +256,6 @@ defmodule SecopServiceWeb.DashboardComponents do
       node_id_str={@node_id_str}
       status={@status}
     >
-
-
       <:parameter_preview>
         <div class="grid grid-cols-[auto_1fr] items-center mt-4">
           <div class="p-2 text-lg font-bold text-neutral-content">
@@ -299,16 +272,14 @@ defmodule SecopServiceWeb.DashboardComponents do
             parameter={Module.get_parameter(@module, "value")}
             id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":value"}
           />
-          </div>
-
+        </div>
       </:parameter_preview>
-
-
     </.dash_base_module>
     """
   end
 
-  def dash_module(%{interface_class: interface_class}=assigns) when interface_class in  ["writable", "drivable"] do
+  def dash_module(%{interface_class: interface_class} = assigns)
+      when interface_class in ["writable", "drivable"] do
     assigns =
       assigns
       |> assign_new(:node_id_str, fn -> "#{to_string(assigns.host)}:#{assigns.port}" end)
@@ -323,9 +294,7 @@ defmodule SecopServiceWeb.DashboardComponents do
       interface_class={@interface_class}
       node_id_str={@node_id_str}
       status={@status}
-
     >
-
       <:parameter_preview>
         <div class="grid grid-cols-[auto_1fr] items-center mt-4">
           <div class="p-2 text-lg font-bold text-neutral-content">
@@ -358,22 +327,16 @@ defmodule SecopServiceWeb.DashboardComponents do
             id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":target"}
           />
         </div>
-
       </:parameter_preview>
-
-
     </.dash_base_module>
     """
   end
 
-
-  def dash_module(%{interface_class: "acquisition"}=assigns) do
-
+  def dash_module(%{interface_class: "acquisition"} = assigns) do
     assigns =
       assigns
       |> assign_new(:node_id_str, fn -> "#{to_string(assigns.host)}:#{assigns.port}" end)
       |> assign(:status, Module.has_status?(assigns.module))
-
 
     ~H"""
     <.dash_base_module
@@ -385,50 +348,6 @@ defmodule SecopServiceWeb.DashboardComponents do
       node_id_str={@node_id_str}
       status={@status}
     >
-
-
-      <:parameter_preview>
-        <div class="grid grid-cols-[auto_1fr] items-center mt-4">
-          <div class="p-2 text-lg font-bold text-neutral-content">
-            Value:
-          </div>
-          <.live_component
-            module={ParameterValueDisplay}
-            id={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":value"}
-            class=""
-            host={@host}
-            port={@port}
-            location="module_dash"
-            module_name={@module.name}
-            parameter={Module.get_parameter(@module, "value")}
-            id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":value"}
-          />
-          </div>
-
-      </:parameter_preview>
-
-
-    </.dash_base_module>
-    """
-  end
-
-  def dash_module(%{interface_class: "acquisition_channel"}=assigns) do
-
-    assigns =
-      assigns
-      |> assign_new(:node_id_str, fn -> "#{to_string(assigns.host)}:#{assigns.port}" end)
-      |> assign(:status, Module.has_status?(assigns.module))
-    ~H"""
-    <.dash_base_module
-      module={@module}
-      host={@host}
-      port={@port}
-      n_modules={@n_modules}
-      interface_class={@interface_class}
-      node_id_str={@node_id_str}
-      status={@status}
-    >
-
       <:parameter_preview>
         <div class="grid grid-cols-[auto_1fr] items-center mt-4">
           <div class="p-2 text-lg font-bold text-neutral-content">
@@ -446,16 +365,12 @@ defmodule SecopServiceWeb.DashboardComponents do
             id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":value"}
           />
         </div>
-
       </:parameter_preview>
-
-
     </.dash_base_module>
     """
   end
 
-  def dash_module(%{interface_class: "acquisition_controller"}=assigns) do
-
+  def dash_module(%{interface_class: "acquisition_channel"} = assigns) do
     assigns =
       assigns
       |> assign_new(:node_id_str, fn -> "#{to_string(assigns.host)}:#{assigns.port}" end)
@@ -470,21 +385,51 @@ defmodule SecopServiceWeb.DashboardComponents do
       interface_class={@interface_class}
       node_id_str={@node_id_str}
       status={@status}
-
     >
-
-
       <:parameter_preview>
-        <div></div>
+        <div class="grid grid-cols-[auto_1fr] items-center mt-4">
+          <div class="p-2 text-lg font-bold text-neutral-content">
+            Value:
+          </div>
+          <.live_component
+            module={ParameterValueDisplay}
+            id={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":value"}
+            class=""
+            host={@host}
+            port={@port}
+            location="module_dash"
+            module_name={@module.name}
+            parameter={Module.get_parameter(@module, "value")}
+            id_str={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":value"}
+          />
+        </div>
       </:parameter_preview>
-
-
     </.dash_base_module>
     """
   end
 
+  def dash_module(%{interface_class: "acquisition_controller"} = assigns) do
+    assigns =
+      assigns
+      |> assign_new(:node_id_str, fn -> "#{to_string(assigns.host)}:#{assigns.port}" end)
+      |> assign(:status, Module.has_status?(assigns.module))
 
-
+    ~H"""
+    <.dash_base_module
+      module={@module}
+      host={@host}
+      port={@port}
+      n_modules={@n_modules}
+      interface_class={@interface_class}
+      node_id_str={@node_id_str}
+      status={@status}
+    >
+      <:parameter_preview>
+        <div></div>
+      </:parameter_preview>
+    </.dash_base_module>
+    """
+  end
 
   attr :parameter, :map, required: true
   attr :host, :string, required: true
@@ -493,8 +438,6 @@ defmodule SecopServiceWeb.DashboardComponents do
   attr :node_id_str, :string, required: true
 
   def dash_parameter(assigns) do
-
-
     ~H"""
     <!-- Parameter Name -->
     <div class="card mb-4 bg-neutral p-4 shadow-md">
@@ -533,7 +476,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         >
           {@parameter.description}
         </.property>
-
+        
     <!-- Optional Properties -->
         <%= if @parameter.meaning do %>
           <.property prop_key="Meaning" key_class="text-neutral-content/80 font-semibold">
@@ -546,14 +489,14 @@ defmodule SecopServiceWeb.DashboardComponents do
             {@parameter.checkable}
           </.property>
         <% end %>
-
+        
     <!-- Custom Properties -->
         <%= for {property_name, property_value} <- @parameter.custom_properties do %>
           <.property
             prop_key={String.replace_prefix(property_name, "_", "")}
-            key_class="text-neutral-content/80 font-semibold">
+            key_class="text-neutral-content/80 font-semibold"
           >
-            {inspect(property_value)}
+            > {inspect(property_value)}
           </.property>
         <% end %>
       </ul>
@@ -578,7 +521,7 @@ defmodule SecopServiceWeb.DashboardComponents do
   def dash_command(assigns) do
     ~H"""
     <div class="card mb-4 bg-neutral p-4 shadow-md">
-
+      
     <!-- Parameter Name -->
       <div>
         <div class="flex ">
@@ -599,8 +542,8 @@ defmodule SecopServiceWeb.DashboardComponents do
           >
             {@command.description}
           </.property>
-
-          <!-- Optional Properties -->
+          
+    <!-- Optional Properties -->
           <%= if @command.group do %>
             <.property prop_key="Group" key_class="text-neutral-content font-semibold">
               {@command.group}
@@ -627,8 +570,8 @@ defmodule SecopServiceWeb.DashboardComponents do
               {@command.checkable}
             </.property>
           <% end %>
-
-          <!-- Custom Properties -->
+          
+    <!-- Custom Properties -->
           <%= for {property_name, property_value} <- @command.custom_properties do %>
             <.property
               prop_key={String.replace_prefix(property_name, "_", "")}

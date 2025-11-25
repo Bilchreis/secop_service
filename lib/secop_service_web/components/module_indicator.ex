@@ -89,7 +89,7 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
 
     ~H"""
     <div class="flex items-center">
-      <div class={[@stat_col,"w-6 h-6 mr-2 rounded-full border-3 border-gray-500/70"]}></div>
+      <div class={[@stat_col, "w-6 h-6 mr-2 rounded-full border-3 border-gray-500/70"]}></div>
       <div class="mb-1">
         <%= if @status_value.data_report != nil do %>
           <div class="text-lg font-semibold text-neutral-content truncate">
@@ -118,8 +118,6 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
     display_name = Util.display_name(assigns.module_name)
     # Adjust this threshold based on your needs (characters that fit in w-48)
     text_too_long = String.length(display_name) > 20
-
-
 
     color =
       case assigns.node_state do
@@ -151,9 +149,6 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
         ""
       end
 
-
-
-
     assigns =
       assigns
       |> assign(:display_name, display_name)
@@ -161,7 +156,6 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
       |> assign(:stat_col, stat_col)
       |> assign(:show, show)
       |> assign(:animate_marquee, animate_marquee)
-
 
     ~H"""
     <div class={[
@@ -171,7 +165,7 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
       @color
     ]}>
       <div class="flex items-center">
-        <div class={[@stat_col,"w-6 h-6 mr-2 rounded-full border-3 border-gray-500/70"]}></div>
+        <div class={[@stat_col, "w-6 h-6 mr-2 rounded-full border-3 border-gray-500/70"]}></div>
 
         <div class="flex-1 min-w-0">
           <div class={[

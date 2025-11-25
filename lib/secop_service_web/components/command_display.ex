@@ -8,7 +8,6 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
   import SecopServiceWeb.CoreComponents
   alias SecopService.Util
 
-
   @impl true
   def mount(socket) do
     {:ok, socket}

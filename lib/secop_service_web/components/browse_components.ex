@@ -272,12 +272,12 @@ defmodule SecopServiceWeb.BrowseComponents do
         >
           {@parameter.description}
         </.property>
-
+        
     <!-- Readonly -->
         <.property prop_key="Readonly" key_class="text-neutral-content/80 font-semibold">
           {@parameter.readonly}
         </.property>
-
+        
     <!-- Optional Properties -->
         <%= if @parameter.group do %>
           <.property prop_key="Group" key_class="text-neutral-content/80 font-semibold"></.property>
@@ -309,7 +309,7 @@ defmodule SecopServiceWeb.BrowseComponents do
             > <.enum enum={@parameter.datainfo} />
           </.property>
         <% end %>
-
+        
     <!-- Custom Properties -->
         <%= for {property_name, property_value} <- @parameter.custom_properties do %>
           <.property
@@ -324,7 +324,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           <.status_tuple status_tuple={@parameter.datainfo} />
         <% end %>
       </ul>
-
+      
     <!-- Datainfo -->
       <.datainfo_collapsible datainfo={@parameter_pretty} />
     </div>
@@ -343,7 +343,7 @@ defmodule SecopServiceWeb.BrowseComponents do
 
     ~H"""
     <div class="card mb-4 bg-neutral p-4 shadow-md">
-
+      
     <!-- Parameter Name -->
       <div>
         <span class="text-lg font-bold text-neutral-content">
@@ -358,7 +358,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           >
             {@command.description}
           </.property>
-
+          
     <!-- Optional Properties -->
           <%= if @command.group do %>
             <.property prop_key="Group" key_class="text-neutral-content font-semibold">
@@ -386,7 +386,7 @@ defmodule SecopServiceWeb.BrowseComponents do
               {@command.checkable}
             </.property>
           <% end %>
-
+          
     <!-- Custom Properties -->
           <%= for {property_name, property_value} <- @command.custom_properties do %>
             <.property
@@ -398,7 +398,7 @@ defmodule SecopServiceWeb.BrowseComponents do
           <% end %>
         </ul>
       </div>
-
+      
     <!-- Datainfo -->
       <.datainfo_collapsible datainfo={@datainfo_pretty} />
     </div>
