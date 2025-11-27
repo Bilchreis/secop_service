@@ -316,7 +316,10 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     unsubscribe_from_node(SEC_Node.get_node_id(current_node))
 
-    {:noreply, push_patch(socket, to: ~p"/dashboard?node=#{new_pubsub_topic}")}
+    socket = push_event(socket, "cleanup-plots", %{})
+
+    # Use push_navigate instead of push_patch to force a full re-mount
+    {:noreply, push_navigate(socket, to: ~p"/dashboard?node=#{new_pubsub_topic}")}
   end
 
   @impl true
@@ -328,6 +331,12 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     )
 
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("purge_plots", _params, socket) do
+    Logger.info("Purging all plots...")
+    {:noreply, push_event(socket, "cleanup-plots", %{})}
   end
 
   @impl true

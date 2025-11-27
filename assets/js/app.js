@@ -151,12 +151,10 @@ Hooks.PlotlyChart = {
       }
     });
 
-    
-    this.handleEvent("plotly-add-traces", ({  traces, newIndices }) => {
-      // Only update if this event is for this chart or if no ID is specified
 
-        Plotly.addTraces(this.el, traces, newIndices || null);
-
+    // Handle cleanup event
+    this.handleEvent(`cleanup-plots`, () => {
+      this.destroyed();
     });
     
     // Request initial data when the hook is mounted, include the chart ID

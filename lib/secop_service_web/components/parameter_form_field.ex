@@ -106,8 +106,16 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       assigns
       |> assign(:field, Enum.join(assigns.path, "."))
 
+    assigns =
+      assign(
+        assigns,
+        :input_id,
+        "#{assigns.parameter_id}-#{assigns.location}-#{assigns.modal_form[assigns.field].id}"
+      )
+
     ~H"""
     <.input
+      id={@input_id}
       name={@field}
       type="number"
       field={@modal_form[@field]}
@@ -132,8 +140,16 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       assigns
       |> assign(:field, Enum.join(assigns.path, "."))
 
+    assigns =
+      assign(
+        assigns,
+        :input_id,
+        "#{assigns.parameter_id}-#{assigns.location}-#{assigns.modal_form[assigns.field].id}"
+      )
+
     ~H"""
     <.input
+      id={@input_id}
       name={@field}
       type="text"
       field={@modal_form[@field]}
@@ -156,6 +172,13 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
     assigns =
       assigns
       |> assign(:field, Enum.join(assigns.path, "."))
+
+    assigns =
+      assign(
+        assigns,
+        :input_id,
+        "#{assigns.parameter_id}-#{assigns.location}-#{assigns.modal_form[assigns.field].id}"
+      )
 
     ~H"""
     <.input
@@ -194,9 +217,16 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
       |> assign(:options, select_options)
       |> assign(:class, class)
 
+    assigns =
+      assign(
+        assigns,
+        :input_id,
+        "#{assigns.parameter_id}-#{assigns.location}-#{assigns.modal_form[assigns.field].id}"
+      )
+
     ~H"""
     <.input
-      id={@id}
+      id={@input_id}
       name={@field}
       type="select"
       options={@options}
@@ -230,10 +260,18 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
         )
       )
 
+    assigns =
+      assign(
+        assigns,
+        :input_id,
+        "#{assigns.parameter_id}-#{assigns.location}-#{assigns.modal_form[assigns.field].id}"
+      )
+
     ~H"""
     Struct:
     <%= if @depth >= @max_depth do %>
       <.input
+        id={@input_id}
         name={@field}
         type="text"
         field={@modal_form[@field]}
@@ -283,10 +321,18 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
         if(length(assigns.datainfo["members"]) > 6, do: "grid-cols-3", else: "grid-cols-1")
       )
 
+    assigns =
+      assign(
+        assigns,
+        :input_id,
+        "#{assigns.parameter_id}-#{assigns.location}-#{assigns.modal_form[assigns.field].id}"
+      )
+
     ~H"""
     Tuple:
     <%= if @depth >= @max_depth do %>
       <.input
+        id={@input_id}
         name={@field}
         type="text"
         field={@modal_form[@field]}
@@ -335,8 +381,16 @@ defmodule SecopServiceWeb.Components.ParameterFormFieldComponents do
           assigns.location <> "-" <> assigns.parameter_id <> Enum.join(assigns.path, "-")
       )
 
+    assigns =
+      assign(
+        assigns,
+        :input_id,
+        "#{assigns.parameter_id}-#{assigns.location}-#{assigns.modal_form[assigns.field].id}"
+      )
+
     ~H"""
     <.input
+      id={@input_id}
       name={@field}
       type="text"
       field={@modal_form[@field]}
