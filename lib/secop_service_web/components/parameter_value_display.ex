@@ -821,6 +821,7 @@ defmodule SecopServiceWeb.Components.ParameterValueDisplay do
             <div class="mt-2">
               JSON Preview:
               <.input
+                id={to_string(@parameter.id) <> @location <> "_preview"}
                 name="value"
                 type="textarea"
                 field={@modal_form[:value]}
