@@ -316,7 +316,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     unsubscribe_from_node(SEC_Node.get_node_id(current_node))
 
-    socket = push_event(socket, "cleanup-plots", %{})
+
 
     # Use push_navigate instead of push_patch to force a full re-mount
     {:noreply, push_navigate(socket, to: ~p"/dashboard?node=#{new_pubsub_topic}")}
