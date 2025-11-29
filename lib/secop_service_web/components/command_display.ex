@@ -137,6 +137,15 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
 
   @impl true
   def render(assigns) do
+    btn_color = cond do
+      assigns.command.name == "stop" -> "btn-error"
+      assigns.command.name == "go" -> "btn-success"
+      assigns.has_arg -> "btn-base-200"
+      true -> "btn-neutral"
+    end
+
+    assigns = assign(assigns, :button_color, btn_color)
+
     ~H"""
     <div>
       <%= if @has_arg  do %>
@@ -144,7 +153,7 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
           onclick={"arg_modal_" <> to_string(@command.id)<> ".showModal()"}
           phx-click="open_arg_modal"
           phx-target={@myself}
-          class="btn border border-base-300"
+          class={["btn border border-base-300", @button_color]}
         >
           {Util.display_name(@command.name)}
         </button>
@@ -226,7 +235,7 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
           <input type="hidden" name="value" value={nil} />
           <button
             type="submit"
-            class="btn border border-base-300"
+            class={["btn border border-base-300", @button_color]}
             mod-highlight={@command_success}
           >
             {Util.display_name(@command.name)}
