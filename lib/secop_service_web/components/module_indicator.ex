@@ -205,32 +205,28 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
     # Adjust this threshold based on your needs (characters that fit in w-48)
     text_too_long = String.length(display_name) > 20
 
+    color =
+      case assigns.node_state do
+        :connected -> "bg-warning text-warning-content"
+        :disconnected -> "bg-error text-error-content"
+        :initialized -> "bg-neutral text-neutral-content"
+        # default fallback
+        _ -> "bg-error text-error-content"
+      end
+
     assigns = assign(assigns, :display_name, display_name)
     assigns = assign(assigns, :text_too_long, text_too_long)
+    assigns = assign(assigns, :color, color)
 
     ~H"""
-    <div class={
-      [
-        "w-65 min-w-65 max-w-65",
-        "text-white text-left font-bold py-2 px-4 rounded",
-        case @node_state do
-          :connected -> "bg-warning"
-          :disconnected -> "bg-error"
-          :initialized -> "bg-zinc-500"
-          # default fallback
-          _ -> "bg-error"
-        end
-      ]
-    }>
+    <div class={[
+      "card",
+      "w-[300px]",
+      "text-left font-bold py-2 px-4",
+      @color
+    ]}>
       <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <span class={[
-            "opacity-0",
-            "bg-gray-500",
-            "inline-block w-6 h-6 mr-2 rounded-full border-4 border-gray-600"
-          ]}>
-          </span>
-        </div>
+        <div class= "bg-base-100/10 w-6 h-6 mr-2 rounded-full border-3 border-gray-500/20"></div>
         <div class="flex-1 min-w-0">
           <div class={[
             "text-xl",

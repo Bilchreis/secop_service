@@ -1,41 +1,48 @@
 <Layouts.app flash={@flash}>
   <%= if @active_nodes != %{} and @current_node != nil do %>
-    <ul class="flex flex-wrap text-sm font-medium text-center text-neutral-content items-center">
-      <%= for {_addr,node} <- @active_nodes do %>
-        <li class="me-2 mb-2">
-          <.node_button
-            equipment_id={node.equipment_id}
-            pubsub_topic={node.pubsub_topic}
-            uuid={node.uuid}
-            current={node.uuid == @current_node.uuid}
-            state={node.state}
-            connstate={node.active}
-          />
-        </li>
-      <% end %>
-      <li class="me-2 mb-2">
-        <button
-          onclick="connect_modal.showModal()"
-          phx-click="open_connect_modal"
-          class="btn btn-primary p-5"
-        >
-          <.icon name="hero-link" class="me-2" />
-          <div class="text-xl">Connect Node</div>
-        </button>
-      </li>
-    </ul>
-
-    <div class="flex">
+    <div class = "flex">
+      <div class = "sticky   top-0 self-start ">
       <.module_indicators
         node={@current_node}
         node_state={@active_nodes[SEC_Node.get_node_id(@current_node)].state}
         values={@values}
         node_id_str={SEC_Node.get_id_str(@current_node)}
       />
-      <.dash_sec_node
-        node={@current_node}
-        state_map={@active_nodes[SEC_Node.get_node_id(@current_node)]}
-      />
+      </div>
+
+      <div class = "flex-1">
+        <ul class="flex flex-wrap text-sm font-medium text-center text-neutral-content items-cente ml-4">
+          <%= for {_addr,node} <- @active_nodes do %>
+            <li class="me-2 mb-2">
+              <.node_button
+                equipment_id={node.equipment_id}
+                pubsub_topic={node.pubsub_topic}
+                uuid={node.uuid}
+                current={node.uuid == @current_node.uuid}
+                state={node.state}
+                connstate={node.active}
+              />
+            </li>
+          <% end %>
+          <li class="me-2 mb-2">
+            <button
+              onclick="connect_modal.showModal()"
+              phx-click="open_connect_modal"
+              class="btn btn-primary p-5"
+            >
+              <.icon name="hero-link" class="me-2" />
+              <div class="text-xl">Connect Node</div>
+            </button>
+          </li>
+        </ul>
+
+
+
+        <.dash_sec_node
+          node={@current_node}
+          state_map={@active_nodes[SEC_Node.get_node_id(@current_node)]}
+        />
+      </div>
     </div>
   <% else %>
     <div class="max-w-5xl align-middle mx-auto mt-20">

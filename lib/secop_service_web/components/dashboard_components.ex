@@ -12,6 +12,22 @@ defmodule SecopServiceWeb.DashboardComponents do
   import SecopServiceWeb.SECoPComponents
   import SecopServiceWeb.Components.ParameterFormFieldComponents
 
+
+  defp sort_commands_with_priority(commands) do
+    priority_order = ["stop","go","reset","clear_errors","control_off","communicate","hold","prepare","shutdown","get_data"]
+
+    {priority_commands, other_commands} =
+      Enum.split_with(commands, fn cmd -> cmd.name in priority_order end)
+
+    sorted_priority =
+      Enum.sort_by(priority_commands, fn cmd ->
+        Enum.find_index(priority_order, &(&1 == cmd.name)) || 999
+      end)
+
+    sorted_priority ++ Enum.sort_by(other_commands, & &1.name)
+  end
+
+
   attr :node, :map, required: true
   attr :state_map, :map, required: true
 
@@ -71,7 +87,7 @@ defmodule SecopServiceWeb.DashboardComponents do
       end)
 
     ~H"""
-    <div class="flex-none  p-3  mt-4  card bg-base-200 ">
+    <div class="flex-none p-3 card bg-base-200 max-h-screen overflow-y-auto  ">
       <span class="text-base-content text-lg font-bold">Module Status:</span>
       <ul class="mt-1 space-y space-y-2">
         <%= for module <- @node.modules do %>
@@ -115,6 +131,7 @@ defmodule SecopServiceWeb.DashboardComponents do
       assigns
       |> assign(:grouped_parameters, grouped_parameters)
       |> assign(:grouped_commands, grouped_commands)
+      |> assign(:sorted_commands, sort_commands_with_priority(assigns.module.commands))
 
     ~H"""
     <.base_module
@@ -132,7 +149,7 @@ defmodule SecopServiceWeb.DashboardComponents do
 
       <:command_preview>
         <div :if={@module.commands != []} class="flex rounded-lg gap-2 mt-2 p-2 bg-neutral/40">
-          <%= for command <- @module.commands do %>
+          <%= for command <- @sorted_commands do %>
             <.live_component
               module={CommandDisplay}
               id={"module_dash:"<> @node_id_str <> ":" <> @module.name <> ":" <> command.name}
@@ -473,7 +490,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         >
           {@parameter.description}
         </.property>
-        
+
     <!-- Optional Properties -->
         <%= if @parameter.meaning do %>
           <.property prop_key="Meaning" key_class="text-neutral-content/80 font-semibold">
@@ -486,7 +503,7 @@ defmodule SecopServiceWeb.DashboardComponents do
             {@parameter.checkable}
           </.property>
         <% end %>
-        
+
     <!-- Custom Properties -->
         <%= for {property_name, property_value} <- @parameter.custom_properties do %>
           <.property
@@ -518,7 +535,7 @@ defmodule SecopServiceWeb.DashboardComponents do
   def dash_command(assigns) do
     ~H"""
     <div class="card mb-4 bg-neutral p-4 shadow-md">
-      
+
     <!-- Parameter Name -->
       <div>
         <div class="flex ">
@@ -539,7 +556,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           >
             {@command.description}
           </.property>
-          
+
     <!-- Optional Properties -->
           <%= if @command.group do %>
             <.property prop_key="Group" key_class="text-neutral-content font-semibold">
@@ -567,7 +584,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               {@command.checkable}
             </.property>
           <% end %>
-          
+
     <!-- Custom Properties -->
           <%= for {property_name, property_value} <- @command.custom_properties do %>
             <.property

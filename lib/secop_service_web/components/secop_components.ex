@@ -7,6 +7,7 @@ defmodule SecopServiceWeb.SECoPComponents do
   alias SecopService.Util
   import SecopServiceWeb.CoreComponents
   alias SecopServiceWeb.Components.ModuleIndicator
+  alias Phoenix.LiveView.JS
 
   # Helper function to get class-specific styles
   def status_to_color(status) do
@@ -321,14 +322,15 @@ defmodule SecopServiceWeb.SECoPComponents do
 
   def connect_node(assigns) do
     ~H"""
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl  p-6">
+    <div class="bg-base-200  p-6">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Connect to Node</h3>
+        <h3 class="text-xl font-bold text-base-content">Connect to Node</h3>
       </div>
 
       <form phx-submit="connect-node">
-        <div class="mb-4">
-          <label for="host" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+        <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+
+          <label for="host" class="label">
             Host
           </label>
           <input
@@ -337,11 +339,11 @@ defmodule SecopServiceWeb.SECoPComponents do
             name="host"
             placeholder="localhost"
             required
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="input"
           />
-        </div>
-        <div class="mb-4">
-          <label for="port" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+
+
+          <label for="port" class="label">
             Port
           </label>
           <input
@@ -352,34 +354,36 @@ defmodule SecopServiceWeb.SECoPComponents do
             required
             min="1"
             max="65535"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="input"
           />
-        </div>
-        <div class="flex justify-between">
-          <button
-            phx-click="trigger-node-scan"
-            class="text-white bg-purple-500 hover:bg-purple-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700"
-          >
-            Trigger Scan
-          </button>
+        </fieldset>
+        <div class="flex justify-between mt-2">
+
 
           <div class="flex justify-end">
             <button
               type="button"
-              phx-click="close_connect_modal"
-              class="mr-2 text-gray-500 bg-gray-200 hover:bg-gray-300 focus:outline-none rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-600"
+              phx-click={JS.dispatch("myapp:close-modal")}
+              class="mr-2 btn btn-neutral"
             >
               Cancel
             </button>
             <button
               type="submit"
-              class="text-white bg-purple-500 hover:bg-purple-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700"
+              class="btn btn-primary"
             >
               Connect
             </button>
           </div>
         </div>
       </form>
+
+      <button
+        phx-click="trigger-node-scan"
+        class="mt-2 btn btn-primary flex-none"
+      >
+        Trigger Scan
+      </button>
     </div>
     """
   end
