@@ -378,12 +378,6 @@ defmodule SecopServiceWeb.SECoPComponents do
         </div>
       </form>
 
-      <button
-        phx-click="trigger-node-scan"
-        class="mt-2 btn btn-primary flex-none"
-      >
-        Trigger Scan
-      </button>
     </div>
     """
   end

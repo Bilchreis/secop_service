@@ -24,15 +24,25 @@
               />
             </li>
           <% end %>
-          <li class="me-2 mb-2">
+          <li class="flex flex-col me-2 mb-2 justify-center">
+            
             <button
               onclick="connect_modal.showModal()"
               phx-click="open_connect_modal"
-              class="btn btn-primary p-5"
+              class="btn btn-primary justify-between"
             >
-              <.icon name="hero-link" class="me-2" />
-              <div class="text-xl">Connect Node</div>
+              <.icon name="hero-link"  class="" />
+              <div class="text-lg">Connect Node</div>
             </button>
+                        
+            <button
+              phx-click="trigger-node-scan"
+              class="mt-2 btn btn-primary justify-between"
+            >
+              <.icon name="hero-globe-alt" class="" />
+              <div class="text-lg">Trigger Scan</div>
+            </button>
+
           </li>
         </ul>
 
