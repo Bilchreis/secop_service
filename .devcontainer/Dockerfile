@@ -1,5 +1,5 @@
 # Use an official Erlang image as the base
-FROM elixir:1.18.4-otp-27
+FROM elixir:1.19.3-otp-28
 
 
 # Install dependencies and inotify-tools
