@@ -12,9 +12,19 @@ defmodule SecopServiceWeb.DashboardComponents do
   import SecopServiceWeb.SECoPComponents
   import SecopServiceWeb.Components.ParameterFormFieldComponents
 
-
   defp sort_commands_with_priority(commands) do
-    priority_order = ["stop","go","reset","clear_errors","control_off","communicate","hold","prepare","shutdown","get_data"]
+    priority_order = [
+      "stop",
+      "go",
+      "reset",
+      "clear_errors",
+      "control_off",
+      "communicate",
+      "hold",
+      "prepare",
+      "shutdown",
+      "get_data"
+    ]
 
     {priority_commands, other_commands} =
       Enum.split_with(commands, fn cmd -> cmd.name in priority_order end)
@@ -26,7 +36,6 @@ defmodule SecopServiceWeb.DashboardComponents do
 
     sorted_priority ++ Enum.sort_by(other_commands, & &1.name)
   end
-
 
   attr :node, :map, required: true
   attr :state_map, :map, required: true
@@ -490,7 +499,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         >
           {@parameter.description}
         </.property>
-
+        
     <!-- Optional Properties -->
         <%= if @parameter.meaning do %>
           <.property prop_key="Meaning" key_class="text-neutral-content/80 font-semibold">
@@ -503,7 +512,7 @@ defmodule SecopServiceWeb.DashboardComponents do
             {@parameter.checkable}
           </.property>
         <% end %>
-
+        
     <!-- Custom Properties -->
         <%= for {property_name, property_value} <- @parameter.custom_properties do %>
           <.property
@@ -535,7 +544,7 @@ defmodule SecopServiceWeb.DashboardComponents do
   def dash_command(assigns) do
     ~H"""
     <div class="card mb-4 bg-neutral p-4 shadow-md">
-
+      
     <!-- Parameter Name -->
       <div>
         <div class="flex ">
@@ -556,7 +565,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           >
             {@command.description}
           </.property>
-
+          
     <!-- Optional Properties -->
           <%= if @command.group do %>
             <.property prop_key="Group" key_class="text-neutral-content font-semibold">
@@ -584,7 +593,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               {@command.checkable}
             </.property>
           <% end %>
-
+          
     <!-- Custom Properties -->
           <%= for {property_name, property_value} <- @command.custom_properties do %>
             <.property

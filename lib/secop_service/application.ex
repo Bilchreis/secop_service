@@ -25,7 +25,8 @@ defmodule SecopService.Application do
       # Start a worker by calling: SecopService.Worker.start_link(arg)
       # {SecopService.Worker, arg},
       # Start to serve requests, typically the last entry
-      SecopServiceWeb.Endpoint
+      SecopServiceWeb.Endpoint,
+      {AshAuthentication.Supervisor, [otp_app: :secop_service]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

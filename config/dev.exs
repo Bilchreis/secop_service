@@ -1,4 +1,5 @@
 import Config
+config :ash, policies: [show_policy_breakdowns?: true]
 
 # Configure your database
 config :secop_service, SecopService.Repo,
@@ -66,7 +67,7 @@ config :secop_service, SecopServiceWeb.Endpoint,
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :secop_service, dev_routes: true
+config :secop_service, dev_routes: true, token_signing_secret: "FRcr0lkCVZSbVYKzKjl2MtPHp7KAbdx0"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

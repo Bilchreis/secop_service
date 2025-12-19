@@ -2,6 +2,7 @@
    https://tailwindcss.com/docs/configuration */
 
 @import "tailwindcss" source(none);
+@source "../../deps/ash_authentication_phoenix";
 @source "../css";
 @source "../js";
 @source "../../lib/secop_service_web";
@@ -164,6 +165,3 @@
   background-color:  white;
   transition: background-color 0.2s;
 }
-
-
-

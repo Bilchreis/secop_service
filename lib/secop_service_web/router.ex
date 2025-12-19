@@ -1,7 +1,10 @@
 defmodule SecopServiceWeb.Router do
   use SecopServiceWeb, :router
 
-  import SecopServiceWeb.UserAuth
+  use AshAuthentication.Phoenix.Router
+
+  import AshAuthentication.Plug.Helpers
+
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -10,11 +13,46 @@ defmodule SecopServiceWeb.Router do
     plug :put_root_layout, html: {SecopServiceWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug :fetch_current_user
+    plug :load_from_session
   end
 
   pipeline :api do
     plug :accepts, ["json"]
+
+    plug AshAuthentication.Strategy.ApiKey.Plug,
+      resource: SecopService.Accounts.User,
+      # if you want to require an api key to be supplied, set `required?` to true
+      required?: false
+
+    plug :load_from_bearer
+    plug :set_actor, :user
+  end
+
+  scope "/", SecopServiceWeb do
+    pipe_through :browser
+
+    ash_authentication_live_session :authenticated_routes do
+      # in each liveview, add one of the following at the top of the module:
+      #
+      # If an authenticated user must be present:
+      # on_mount {SecopServiceWeb.LiveUserAuth, :live_user_required}
+      #
+      # If an authenticated user *may* be present:
+      # on_mount {SecopServiceWeb.LiveUserAuth, :live_user_optional}
+      #
+      # If an authenticated user must *not* be present:
+      # on_mount {SecopServiceWeb.LiveUserAuth, :live_no_user}
+    end
+  end
+
+  scope "/api/json" do
+    pipe_through [:api]
+
+    forward "/swaggerui", OpenApiSpex.Plug.SwaggerUI,
+      path: "/api/json/open_api",
+      default_model_expand_depth: 4
+
+    forward "/", SecopServiceWeb.AshJsonApiRouter
   end
 
   scope "/", SecopServiceWeb do
@@ -25,6 +63,10 @@ defmodule SecopServiceWeb.Router do
     live "/browse", DataBrowserLive.Index, :index
     live "/browse/node/:uuid", NodeBrowserLive.Index, :index
     live "/browse/node/:uuid/parameter/:id", ParameterBrowserLive.Index, :index
+    auth_routes AuthController, SecopService.Accounts.User, path: "/auth"
+    sign_out_route AuthController
+
+
   end
 
   # Other scopes may use custom stacks.
@@ -56,39 +98,14 @@ defmodule SecopServiceWeb.Router do
 
   ## Authentication routes
 
-  scope "/", SecopServiceWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    live_session :redirect_if_user_is_authenticated,
-      on_mount: [{SecopServiceWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserLoginLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
-    end
+  if Application.compile_env(:secop_service, :dev_routes) do
+    import AshAdmin.Router
 
-    post "/users/log_in", UserSessionController, :create
-  end
+    scope "/admin" do
+      pipe_through :browser
 
-  scope "/", SecopServiceWeb do
-    pipe_through [:browser, :require_authenticated_user]
-
-    live_session :require_authenticated_user,
-      on_mount: [{SecopServiceWeb.UserAuth, :ensure_authenticated}] do
-      live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
-    end
-  end
-
-  scope "/", SecopServiceWeb do
-    pipe_through [:browser]
-
-    delete "/users/log_out", UserSessionController, :delete
-
-    live_session :current_user,
-      on_mount: [{SecopServiceWeb.UserAuth, :mount_current_user}] do
-      live "/users/confirm/:token", UserConfirmationLive, :edit
-      live "/users/confirm", UserConfirmationInstructionsLive, :new
+      ash_admin "/"
     end
   end
 end

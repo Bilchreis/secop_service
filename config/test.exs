@@ -1,4 +1,6 @@
 import Config
+config :secop_service, token_signing_secret: "aAAT96csYVHMuEPfYDoDI3pDRgj7THhG"
+config :ash, policies: [show_policy_breakdowns?: true], disable_async?: true
 
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1

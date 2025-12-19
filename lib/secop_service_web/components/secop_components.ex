@@ -329,7 +329,6 @@ defmodule SecopServiceWeb.SECoPComponents do
 
       <form phx-submit="connect-node">
         <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
-
           <label for="host" class="label">
             Host
           </label>
@@ -341,7 +340,6 @@ defmodule SecopServiceWeb.SECoPComponents do
             required
             class="input"
           />
-
 
           <label for="port" class="label">
             Port
@@ -358,8 +356,6 @@ defmodule SecopServiceWeb.SECoPComponents do
           />
         </fieldset>
         <div class="flex justify-between mt-2">
-
-
           <div class="flex justify-end">
             <button
               type="button"
@@ -377,7 +373,6 @@ defmodule SecopServiceWeb.SECoPComponents do
           </div>
         </div>
       </form>
-
     </div>
     """
   end

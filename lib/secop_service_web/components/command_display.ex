@@ -137,12 +137,13 @@ defmodule SecopServiceWeb.Components.CommandDisplay do
 
   @impl true
   def render(assigns) do
-    btn_color = cond do
-      assigns.command.name == "stop" -> "btn-error"
-      assigns.command.name == "go" -> "btn-success"
-      assigns.has_arg -> "btn-base-200"
-      true -> "btn-neutral"
-    end
+    btn_color =
+      cond do
+        assigns.command.name == "stop" -> "btn-error"
+        assigns.command.name == "go" -> "btn-success"
+        assigns.has_arg -> "btn-base-200"
+        true -> "btn-neutral"
+      end
 
     assigns = assign(assigns, :button_color, btn_color)
 
