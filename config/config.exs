@@ -70,7 +70,7 @@ config :spark,
 config :secop_service,
   ecto_repos: [SecopService.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [SecopService.Accounts]
+  ash_domains: [SecopService.Ash.SecNodes, SecopService.Accounts]
 
 # Add Flop configuration
 config :flop, repo: SecopService.Repo
