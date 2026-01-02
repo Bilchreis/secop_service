@@ -17,7 +17,28 @@ defmodule SecopService.Ash.SecNodes.Module do
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [
+        :name,
+        :description,
+        :interface_classes,
+        :highest_interface_class,
+        :visibility,
+        :group,
+        :meaning,
+        :implementor,
+        :custom_properties,
+        :sec_node_id
+      ]
+
+      argument :parameters, {:array, :map}
+      argument :commands, {:array, :map}
+
+      change manage_relationship(:parameters, type: :create)
+      change manage_relationship(:commands, type: :create)
+    end
   end
 
   attributes do
@@ -65,15 +86,9 @@ defmodule SecopService.Ash.SecNodes.Module do
       public? true
     end
 
-    attribute :inserted_at, :utc_datetime_usec do
-      allow_nil? false
-      public? true
-    end
 
-    update_timestamp :updated_at do
-      allow_nil? false
-      public? true
-    end
+    timestamps()
+
   end
 
   relationships do

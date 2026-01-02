@@ -17,7 +17,7 @@ defmodule SecopService.Ash.SecNodes.Command do
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy, :create]
   end
 
   attributes do
@@ -69,15 +69,8 @@ defmodule SecopService.Ash.SecNodes.Command do
       public? true
     end
 
-    attribute :inserted_at, :utc_datetime_usec do
-      allow_nil? false
-      public? true
-    end
 
-    update_timestamp :updated_at do
-      allow_nil? false
-      public? true
-    end
+    timestamps()
   end
 
   relationships do

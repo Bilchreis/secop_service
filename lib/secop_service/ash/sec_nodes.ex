@@ -3,7 +3,6 @@ defmodule SecopService.Ash.SecNodes do
     otp_app: :secop_service
 
   resources do
-    resource SecopService.Ash.SecNodes.ApiKey
     resource SecopService.Ash.SecNodes.Command
     resource SecopService.Ash.SecNodes.Module
     resource SecopService.Ash.SecNodes.ParameterValuesArrayBool
@@ -17,7 +16,5 @@ defmodule SecopService.Ash.SecNodes do
     resource SecopService.Ash.SecNodes.ParameterValuesString
     resource SecopService.Ash.SecNodes.Parameter
     resource SecopService.Ash.SecNodes.SecNode
-    resource SecopService.Ash.SecNodes.Token
-    resource SecopService.Ash.SecNodes.User
   end
 end

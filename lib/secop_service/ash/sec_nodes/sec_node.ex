@@ -6,10 +6,40 @@ defmodule SecopService.Ash.SecNodes.SecNode do
   postgres do
     table "sec_nodes"
     repo SecopService.Repo
+
+    custom_indexes do
+      index [:equipment_id] do
+        name "equipment_id_index"
+      end
+
+    end
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy]
+
+
+    create :create do
+      accept [
+        :uuid,
+        :equipment_id,
+        :host,
+        :port,
+        :description,
+        :firmware,
+        :implementor,
+        :timeout,
+        :describe_message,
+        :describe_message_raw,
+        :custom_properties,
+        :check_result
+      ]
+
+      argument :modules, {:array, :map}
+
+      change manage_relationship(:modules, type: :create)
+    end
+
   end
 
   attributes do
@@ -66,15 +96,7 @@ defmodule SecopService.Ash.SecNodes.SecNode do
       public? true
     end
 
-    attribute :inserted_at, :utc_datetime_usec do
-      allow_nil? false
-      public? true
-    end
-
-    update_timestamp :updated_at do
-      allow_nil? false
-      public? true
-    end
+    timestamps()
   end
 
   relationships do

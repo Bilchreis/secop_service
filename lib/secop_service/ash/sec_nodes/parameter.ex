@@ -17,7 +17,7 @@ defmodule SecopService.Ash.SecNodes.Parameter do
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy, :create]
   end
 
   attributes do
@@ -46,10 +46,6 @@ defmodule SecopService.Ash.SecNodes.Parameter do
       public? true
     end
 
-    attribute :custom_properties, :map do
-      public? true
-    end
-
     attribute :group, :string do
       public? true
     end
@@ -66,15 +62,13 @@ defmodule SecopService.Ash.SecNodes.Parameter do
       public? true
     end
 
-    attribute :inserted_at, :utc_datetime_usec do
-      allow_nil? false
+    attribute :custom_properties, :map do
       public? true
     end
 
-    update_timestamp :updated_at do
-      allow_nil? false
-      public? true
-    end
+
+    timestamps()
+
   end
 
   relationships do

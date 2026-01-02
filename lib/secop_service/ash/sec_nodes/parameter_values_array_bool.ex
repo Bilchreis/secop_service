@@ -50,15 +50,9 @@ defmodule SecopService.Ash.SecNodes.ParameterValuesArrayBool do
       public? true
     end
 
-    attribute :inserted_at, :utc_datetime_usec do
-      allow_nil? false
-      public? true
-    end
 
-    update_timestamp :updated_at do
-      allow_nil? false
-      public? true
-    end
+    timestamps()
+
   end
 
   relationships do
