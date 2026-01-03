@@ -3,8 +3,8 @@ defmodule SecopService.NodeDBWriter do
   require Logger
 
   alias SecopService.Repo
-  alias SecopService.Sec_Nodes.SEC_Node
-  alias SecopService.Sec_Nodes.ParameterValue
+  alias SecopService.SecNodes.SecNode
+  alias SecopService.SecNodes.ParameterValue
   alias Ecto.Multi
 
   @pubsub_name :secop_client_pubsub
@@ -29,7 +29,7 @@ defmodule SecopService.NodeDBWriter do
 
   def start_link(node_db) do
     GenServer.start_link(__MODULE__, node_db,
-      name: {:via, Registry, {Registry.NodeDBWriter, SEC_Node.get_node_id(node_db)}}
+      name: {:via, Registry, {Registry.NodeDBWriter, node_db.uuid}}
     )
   end
 
@@ -43,7 +43,7 @@ defmodule SecopService.NodeDBWriter do
   @impl true
   def init(node_db) do
     # Subscribe to node's topic for parameter updates
-    topic = SEC_Node.get_values_pubsub_topic(node_db)
+    topic = node_db.values_pubsub_topic
     Phoenix.PubSub.subscribe(@pubsub_name, topic)
 
     Logger.info("Started DB writer for Node: #{node_db.equipment_id} (#{node_db.uuid})")

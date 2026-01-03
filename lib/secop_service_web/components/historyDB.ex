@@ -25,15 +25,15 @@ defmodule SecopServiceWeb.Components.HistoryDB do
 
   defp get_parameter(secop_obj) do
     case secop_obj do
-      %SecopService.Sec_Nodes.Parameter{} = param ->
+      %SecopService.SecNodes.Parameter{} = param ->
         param
 
-      %SecopService.Sec_Nodes.Module{} = module ->
+      %SecopService.SecNodes.Module{} = module ->
         Enum.find(module.parameters, nil, fn param -> param.name == "value" end)
     end
   end
 
-  def tabular?(%SecopService.Sec_Nodes.Module{} = module) do
+  def tabular?(%SecopService.SecNodes.Module{} = module) do
     if get_parameter(module) do
       true
     else
@@ -41,7 +41,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
     end
   end
 
-  def tabular?(%SecopService.Sec_Nodes.Parameter{} = _parameter) do
+  def tabular?(%SecopService.SecNodes.Parameter{} = _parameter) do
     true
   end
 
@@ -89,10 +89,10 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   def update(%{value_update: value_update_list, parameter: parameter} = _assigns, socket) do
     param_list =
       case socket.assigns.secop_obj do
-        %SecopService.Sec_Nodes.Parameter{} = param ->
+        %SecopService.SecNodes.Parameter{} = param ->
           [param.name]
 
-        %SecopService.Sec_Nodes.Module{} = module ->
+        %SecopService.SecNodes.Module{} = module ->
           case module.highest_interface_class do
             "readable" -> ["value"]
             "drivable" -> ["value", "target"]

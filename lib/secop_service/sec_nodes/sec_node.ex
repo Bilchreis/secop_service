@@ -1,99 +1,118 @@
-defmodule SecopService.Sec_Nodes.SEC_Node do
-  use Ecto.Schema
-  import Ecto.Changeset
-  alias SecopService.Util
+defmodule SecopService.SecNodes.SecNode do
+  use Ash.Resource,
+    domain: SecopService.SecNodes,
+    data_layer: AshPostgres.DataLayer
 
-  @derive {
-    Flop.Schema,
-    filterable: [:uuid, :equipment_id, :host, :port],
-    sortable: [:uuid, :equipment_id, :host, :port, :inserted_at],
-    default_order: %{
-      order_by: [:inserted_at, :equipment_id],
-      order_directions: [:desc, :asc]
-    }
-  }
+  postgres do
+    table "sec_nodes"
+    repo SecopService.Repo
 
-  @primary_key {:uuid, Ecto.UUID, autogenerate: true}
-  @derive {Phoenix.Param, key: :uuid}
-  schema "sec_nodes" do
-    field :equipment_id, :string
-    field :host, :string
-    field :port, :integer
-    field :description, :string
-    field :firmware, :string
-    field :implementor, :string
-    field :timeout, :integer
+    custom_indexes do
+      index [:equipment_id] do
+        name "equipment_id_index"
+      end
 
-    # JSONB full describe message
-    field :describe_message, :map
-    field :describe_message_raw, :string
-    # JSONB column for flexible properties
-    field :custom_properties, :map
+    end
+  end
 
-    field :check_result, :map
+  actions do
+    defaults [:destroy]
 
-    has_many :modules, SecopService.Sec_Nodes.Module, foreign_key: :sec_node_id
+    read :read do
+      primary? true
+      prepare build(load: [:values_pubsub_topic, :processed_values_pubsub_topic, :error_pubsub_topic])
+    end
+
+    create :create do
+      accept [
+        :uuid,
+        :equipment_id,
+        :host,
+        :port,
+        :description,
+        :firmware,
+        :implementor,
+        :timeout,
+        :describe_message,
+        :describe_message_raw,
+        :custom_properties,
+        :check_result
+      ]
+
+      argument :modules, {:array, :map}
+
+      change manage_relationship(:modules, type: :create)
+    end
+
+  end
+
+  attributes do
+    attribute :uuid, :uuid do
+      primary_key? true
+      allow_nil? false
+      public? true
+    end
+
+    attribute :equipment_id, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :host, :string do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :port, :integer do
+      allow_nil? false
+      public? true
+    end
+
+    attribute :description, :string do
+      public? true
+    end
+
+    attribute :firmware, :string do
+      public? true
+    end
+
+    attribute :implementor, :string do
+      public? true
+    end
+
+    attribute :timeout, :integer do
+      public? true
+    end
+
+    attribute :describe_message, :map do
+      public? true
+    end
+
+    attribute :describe_message_raw, :string do
+      public? true
+    end
+
+    attribute :custom_properties, :map do
+      public? true
+    end
+
+    attribute :check_result, :map do
+      public? true
+    end
 
     timestamps()
   end
 
-  def changeset(sec_node, attrs) do
-    sec_node
-    |> cast(attrs, [
-      :uuid,
-      :equipment_id,
-      :host,
-      :port,
-      :description,
-      :describe_message,
-      :describe_message_raw,
-      :custom_properties,
-      :firmware,
-      :implementor,
-      :timeout,
-      :check_result
-    ])
-    |> validate_required([
-      :uuid,
-      :equipment_id,
-      :host,
-      :port,
-      :description,
-      :describe_message,
-      :describe_message_raw,
-      :custom_properties,
-      :check_result
-    ])
+  calculations do
+    calculate :values_pubsub_topic, :string, expr("value_update:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
+    calculate :processed_values_pubsub_topic, :string, expr("value_update:processed:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
+    calculate :error_pubsub_topic, :string, expr("error_update:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
   end
 
-  def display_description(sec_node) do
-    sec_node.description
-    |> String.split("\n")
-    |> Enum.map(&Phoenix.HTML.html_escape/1)
-    |> Enum.intersperse(Phoenix.HTML.raw("<br>"))
-  end
-
-  def display_equipment_id(sec_node) do
-    Util.display_name(sec_node.equipment_id)
-  end
-
-  def get_node_id(sec_node) do
-    {String.to_charlist(sec_node.host), sec_node.port}
-  end
-
-  def get_id_str(sec_node) do
-    "#{sec_node.host}:#{sec_node.port}"
-  end
-
-  def get_values_pubsub_topic(sec_node) do
-    "value_update:#{sec_node.host}:#{sec_node.port}"
-  end
-
-  def get_processed_values_pubsub_topic(sec_node) do
-    "value_update:processed:#{sec_node.host}:#{sec_node.port}"
-  end
-
-  def get_error_pubsub_topic(sec_node) do
-    "error_update:#{sec_node.host}:#{sec_node.port}"
+  relationships do
+    has_many :modules, SecopService.SecNodes.Module do
+      source_attribute :uuid
+      public? true
+    end
   end
 end

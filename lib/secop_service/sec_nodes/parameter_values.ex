@@ -1,6 +1,6 @@
-defmodule SecopService.Sec_Nodes.ParameterValue do
-  alias SecopService.Sec_Nodes.Parameter
-  alias SecopService.Sec_Nodes.ParameterValue
+defmodule SecopService.SecNodes.ParameterValue do
+  alias SecopService.SecNodes.Parameter
+  alias SecopService.SecNodes.ParameterValue
   alias ExPrintf
   require Logger
 

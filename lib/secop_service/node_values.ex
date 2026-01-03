@@ -49,10 +49,10 @@ defmodule SecopService.NodeValues do
 
   @impl true
   def init(state) do
-    Phoenix.PubSub.subscribe(@pubsub_name, SEC_Node.get_values_pubsub_topic(state.node_db))
-    Phoenix.PubSub.subscribe(@pubsub_name, SEC_Node.get_error_pubsub_topic(state.node_db))
+    Phoenix.PubSub.subscribe(@pubsub_name, state.node_db.values_pubsub_topic)
+    Phoenix.PubSub.subscribe(@pubsub_name, state.node_db.error_pubsub_topic)
 
-    {:ok, table} = NodeTable.start({:service, SEC_Node.get_node_id(state.node_db)})
+    {:ok, table} = NodeTable.start({:service, SecNode.get_node_id(state.node_db)})
 
     values = get_val_map(state.node_db, table)
 

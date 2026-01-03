@@ -1,8 +1,8 @@
 defmodule SecopService.PlotDB do
   alias SecopService.Util
-  alias SecopService.Sec_Nodes
+  alias SecopService.SecNodes
   alias SEC_Node_Statem
-  alias SecopService.Sec_Nodes.SEC_Node, as: SEC_Node
+  alias SecopService.SecNodes.SecNode, as: SecNode
   require Logger
 
   defp read_from_device_if_empty({_value_val, _value_ts} = readings, param_id) do
@@ -12,11 +12,11 @@ defmodule SecopService.PlotDB do
           "No values found in DB for param_id: #{param_id}, trying to read from device"
         )
 
-        parameter = SecopService.Sec_Nodes.get_parameter(param_id)
-        module = SecopService.Sec_Nodes.get_module(parameter.module_id)
-        node = SecopService.Sec_Nodes.get_node(module.sec_node_id)
+        parameter = SecNodes.get_parameter(param_id)
+        module = SecNodes.get_module(parameter.module_id)
+        node = SecNodes.get_node(module.sec_node_id)
 
-        id = SEC_Node.get_node_id(node)
+        id = SecNode.get_node_id(node)
 
         # Retry indefinitely until we get a valid reading
         read_until_valid(id, module.name, parameter.name)
@@ -438,7 +438,7 @@ defmodule SecopService.PlotDB do
     {xdata, ydata, trace_index}
   end
 
-  def plottable?(%SecopService.Sec_Nodes.Parameter{} = parameter) do
+  def plottable?(%SecopService.SecNodes.Parameter{} = parameter) do
     has_plotly_property = Map.has_key?(parameter.custom_properties || %{}, "_plotly")
 
     case parameter.datainfo["type"] do
@@ -453,7 +453,7 @@ defmodule SecopService.PlotDB do
     end
   end
 
-  def plottable?(%SecopService.Sec_Nodes.Module{} = module) do
+  def plottable?(%SecopService.SecNodes.Module{} = module) do
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
 
     case value_param do
@@ -464,10 +464,10 @@ defmodule SecopService.PlotDB do
 
   def get_parameter(secop_obj) do
     case secop_obj do
-      %SecopService.Sec_Nodes.Parameter{} = param ->
+      %SecopService.SecNodes.Parameter{} = param ->
         param
 
-      %SecopService.Sec_Nodes.Module{} = module ->
+      %SecopService.SecNodes.Module{} = module ->
         Enum.find(module.parameters, fn param -> param.name == "value" end)
     end
   end
@@ -513,10 +513,10 @@ defmodule SecopService.PlotDB do
 
   def init(secop_obj) do
     case secop_obj do
-      %SecopService.Sec_Nodes.Parameter{} = param ->
+      %SecopService.SecNodes.Parameter{} = param ->
         parameter_plot(param)
 
-      %SecopService.Sec_Nodes.Module{} = module ->
+      %SecopService.SecNodes.Module{} = module ->
         module_plot(module)
     end
   end
