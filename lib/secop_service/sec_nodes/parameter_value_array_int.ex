@@ -1,10 +1,10 @@
-defmodule SecopService.SecNodes.ParameterValuesJson do
+defmodule SecopService.SecNodes.ParameterValueArrayInt do
   use Ash.Resource,
     domain: SecopService.SecNodes,
     data_layer: AshPostgres.DataLayer
 
   postgres do
-    table "parameter_values_json"
+    table "parameter_values_array_int"
     repo SecopService.Repo
 
     references do
@@ -15,22 +15,25 @@ defmodule SecopService.SecNodes.ParameterValuesJson do
 
     custom_indexes do
       index [:parameter_id, :timestamp] do
-        name "parameter_values_json_parameter_id_timestamp_index"
+        name "parameter_values_array_int_parameter_id_timestamp_index"
       end
 
       index [:timestamp] do
-        name "parameter_values_json_timestamp_index"
-      end
-
-      index [:value] do
-        name "parameter_values_json_value_index"
-        using "gin"
+        name "parameter_values_array_int_timestamp_index"
       end
     end
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
+
+    create :bulk_create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
   end
 
   attributes do
@@ -41,7 +44,7 @@ defmodule SecopService.SecNodes.ParameterValuesJson do
       public? true
     end
 
-    attribute :value, :map do
+    attribute :value, {:array, :integer} do
       allow_nil? false
       public? true
     end
@@ -55,8 +58,8 @@ defmodule SecopService.SecNodes.ParameterValuesJson do
       public? true
     end
 
-    timestamps()
 
+    timestamps()
   end
 
   relationships do

@@ -21,23 +21,8 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "value",
-      "type": [
-        "array",
-        "text"
-      ]
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "timestamp",
-      "type": "utc_datetime_usec"
+      "source": "name",
+      "type": "text"
     },
     {
       "allow_nil?": true,
@@ -48,8 +33,104 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "qualifiers",
+      "source": "description",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "datainfo",
       "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "custom_properties",
+      "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "argument",
+      "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "result",
+      "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "group",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "visibility",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "meaning",
+      "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "checkable",
+      "type": "boolean"
     },
     {
       "allow_nil?": false,
@@ -94,76 +175,45 @@
           "global": null,
           "strategy": null
         },
-        "name": "parameter_values_array_string_parameter_id_fkey",
+        "name": "commands_module_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "parameters"
+        "table": "modules"
       },
       "scale": null,
       "size": null,
-      "source": "parameter_id",
+      "source": "module_id",
       "type": "bigint"
     }
   ],
   "base_filter": null,
   "check_constraints": [],
-  "custom_indexes": [
+  "custom_indexes": [],
+  "custom_statements": [],
+  "has_create_action": true,
+  "hash": "CACC2BCB2C8D93140E710073A8AEAD543098B5EB4F98532BFF70BD95421E01DD",
+  "identities": [
     {
       "all_tenants?": false,
-      "concurrently": false,
-      "error_fields": [
-        "parameter_id",
-        "timestamp"
-      ],
-      "fields": [
+      "base_filter": null,
+      "index_name": "commands_module_id_name_index",
+      "keys": [
         {
           "type": "atom",
-          "value": "parameter_id"
+          "value": "module_id"
         },
         {
           "type": "atom",
-          "value": "timestamp"
+          "value": "name"
         }
       ],
-      "include": null,
-      "message": null,
-      "name": "parameter_values_array_string_parameter_id_timestamp_index",
-      "nulls_distinct": true,
-      "prefix": null,
-      "table": null,
-      "unique": false,
-      "using": null,
-      "where": null
-    },
-    {
-      "all_tenants?": false,
-      "concurrently": false,
-      "error_fields": [
-        "timestamp"
-      ],
-      "fields": [
-        {
-          "type": "atom",
-          "value": "timestamp"
-        }
-      ],
-      "include": null,
-      "message": null,
-      "name": "parameter_values_array_string_timestamp_index",
-      "nulls_distinct": true,
-      "prefix": null,
-      "table": null,
-      "unique": false,
-      "using": null,
+      "name": "module_id_name",
+      "nils_distinct?": true,
       "where": null
     }
   ],
-  "custom_statements": [],
-  "has_create_action": true,
-  "hash": "39D6AD3FCF91FDCBE70101A5549B335A7B2BEF0B657B852239C500E91BD52BDF",
-  "identities": [],
   "multitenancy": {
     "attribute": null,
     "global": null,
@@ -171,5 +221,5 @@
   },
   "repo": "Elixir.SecopService.Repo",
   "schema": null,
-  "table": "parameter_values_array_string"
+  "table": "commands"
 }

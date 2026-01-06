@@ -1,4 +1,4 @@
-defmodule SecopService.SecNodes.ParameterValuesString do
+defmodule SecopService.SecNodes.ParameterValueString do
   use Ash.Resource,
     domain: SecopService.SecNodes,
     data_layer: AshPostgres.DataLayer
@@ -25,7 +25,15 @@ defmodule SecopService.SecNodes.ParameterValuesString do
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
+
+    create :bulk_create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
   end
 
   attributes do
@@ -39,6 +47,9 @@ defmodule SecopService.SecNodes.ParameterValuesString do
     attribute :value, :string do
       allow_nil? false
       public? true
+      constraints [
+        allow_empty?: true  # Allow empty strings
+        ]
     end
 
     attribute :timestamp, :utc_datetime_usec do

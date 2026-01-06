@@ -12,15 +12,15 @@ defmodule SecopService.SecNodes do
   resources do
     resource SecopService.SecNodes.Command
     resource SecopService.SecNodes.Module
-    resource SecopService.SecNodes.ParameterValuesArrayBool
-    resource SecopService.SecNodes.ParameterValuesArrayDouble
-    resource SecopService.SecNodes.ParameterValuesArrayInt
-    resource SecopService.SecNodes.ParameterValuesArrayString
-    resource SecopService.SecNodes.ParameterValuesBool
-    resource SecopService.SecNodes.ParameterValuesDouble
-    resource SecopService.SecNodes.ParameterValuesInt
-    resource SecopService.SecNodes.ParameterValuesJson
-    resource SecopService.SecNodes.ParameterValuesString
+    resource SecopService.SecNodes.ParameterValueArrayBool
+    resource SecopService.SecNodes.ParameterValueArrayDouble
+    resource SecopService.SecNodes.ParameterValueArrayInt
+    resource SecopService.SecNodes.ParameterValueArrayString
+    resource SecopService.SecNodes.ParameterValueBool
+    resource SecopService.SecNodes.ParameterValueDouble
+    resource SecopService.SecNodes.ParameterValueInt
+    resource SecopService.SecNodes.ParameterValueJson
+    resource SecopService.SecNodes.ParameterValueString
     resource SecopService.SecNodes.Parameter
     resource SecopService.SecNodes.SecNode
   end

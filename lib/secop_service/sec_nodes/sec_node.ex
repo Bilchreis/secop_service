@@ -1,7 +1,10 @@
 defmodule SecopService.SecNodes.SecNode do
   use Ash.Resource,
     domain: SecopService.SecNodes,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    primary_read_warning?: false
+
+  alias SecopService.Util
 
   postgres do
     table "sec_nodes"
@@ -15,12 +18,29 @@ defmodule SecopService.SecNodes.SecNode do
     end
   end
 
+  preparations do
+    prepare build(load: [
+      :node_id,
+      :values_pubsub_topic,
+      :processed_values_pubsub_topic,
+      :error_pubsub_topic,
+      :node_id_str,
+      :display_description,
+      :display_equipment_id
+
+    ]
+    )
+  end
+
+
   actions do
     defaults [:destroy]
 
+
+
     read :read do
       primary? true
-      prepare build(load: [:values_pubsub_topic, :processed_values_pubsub_topic, :error_pubsub_topic])
+      prepare build(load: [modules: [:parameters, :commands]])
     end
 
     create :create do
@@ -44,6 +64,30 @@ defmodule SecopService.SecNodes.SecNode do
       change manage_relationship(:modules, type: :create)
     end
 
+    create :upsert do
+      accept [
+        :uuid,
+        :equipment_id,
+        :host,
+        :port,
+        :description,
+        :firmware,
+        :implementor,
+        :timeout,
+        :describe_message,
+        :describe_message_raw,
+        :custom_properties,
+        :check_result
+      ]
+
+      argument :modules, {:array, :map}
+
+      upsert? true
+      upsert_identity :unique_uuid
+      upsert_fields [:equipment_id, :host, :port, :description, :firmware, :implementor, :timeout, :describe_message, :describe_message_raw, :custom_properties, :check_result]
+
+      change manage_relationship(:modules, type: :create)
+    end
   end
 
   attributes do
@@ -107,7 +151,31 @@ defmodule SecopService.SecNodes.SecNode do
     calculate :values_pubsub_topic, :string, expr("value_update:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
     calculate :processed_values_pubsub_topic, :string, expr("value_update:processed:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
     calculate :error_pubsub_topic, :string, expr("error_update:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
+    calculate :node_id_str, :string, expr(^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
+
+    calculate :node_id, :term, fn records, _context ->
+      Enum.map(records, fn record ->
+        {String.to_charlist(record.host), record.port}
+      end)
+    end
+
+    calculate :display_description, :string, fn records, _context ->
+      Enum.map(records, fn record ->
+        record.description
+          |> String.split("\n")
+          |> Enum.map(&Phoenix.HTML.html_escape/1)
+          |> Enum.intersperse(Phoenix.HTML.raw("<br>"))
+      end)
+    end
+
+    calculate :display_equipment_id, :string, fn records, _context ->
+      Enum.map(records, fn record ->
+        Util.display_name(record.equipment_id)
+      end)
+    end
   end
+
+
 
   relationships do
     has_many :modules, SecopService.SecNodes.Module do
@@ -115,4 +183,13 @@ defmodule SecopService.SecNodes.SecNode do
       public? true
     end
   end
+
+  identities do
+    identity :unique_uuid, [:uuid]
+  end
+
+
+
+
+
 end

@@ -3,7 +3,6 @@ defmodule SecopService.NodeDBWriter do
   require Logger
 
   alias SecopService.Repo
-  alias SecopService.SecNodes.SecNode
   alias SecopService.SecNodes.ParameterValue
   alias Ecto.Multi
 
@@ -96,9 +95,6 @@ defmodule SecopService.NodeDBWriter do
         # Determine storage type for this parameter
         storage_type = ParameterValue.get_storage_type(parameter_db)
 
-        # Process the parameter value
-        now = DateTime.utc_now() |> DateTime.to_naive() |> NaiveDateTime.truncate(:second)
-
         param_val_map =
           ParameterValue.create_map(
             value,
@@ -106,8 +102,6 @@ defmodule SecopService.NodeDBWriter do
             timestamp || DateTime.utc_now(),
             qualifiers || %{}
           )
-          |> Map.put(:inserted_at, now)
-          |> Map.put(:updated_at, now)
 
         # Get the batch field name for this storage type
         batch_key = get_batch_key(storage_type)
@@ -217,55 +211,58 @@ defmodule SecopService.NodeDBWriter do
 
   defp flush_all_batches(state) do
     Task.start(fn ->
-      Enum.reduce(@batch_list, Multi.new(), fn batch_key, multi_acc ->
+      @batch_list
+      |> Enum.each(fn batch_key ->
         batch = Map.get(state, batch_key)
 
-        if not Enum.empty?(batch) do
-          storage_type =
-            case batch_key do
-              :batch_int -> :int
-              :batch_double -> :double
-              :batch_bool -> :bool
-              :batch_string -> :string
-              :batch_array_int -> :array_int
-              :batch_array_double -> :array_double
-              :batch_array_bool -> :array_bool
-              :batch_array_string -> :array_string
-              :batch_json -> :json
+        unless Enum.empty?(batch) do
+          storage_type = get_storage_type_from_batch_key(batch_key)
+          resource_module = ParameterValue.get_resource_module(storage_type)
+
+          # Filter out records with nil values before bulk insert
+          valid_batch = Enum.reject(batch, fn record -> is_nil(record.value) end)
+
+          if Enum.empty?(valid_batch) do
+            Logger.debug("Skipping empty batch for #{storage_type} after filtering nil values")
+          else
+            # Use Ash bulk_create for efficient batch insertion
+            case Ash.bulk_create(valid_batch, resource_module, :bulk_create,
+                   return_errors?: true,
+                   stop_on_error?: false,
+                   return_records?: false
+                 ) do
+              %Ash.BulkResult{status: :success} ->
+                Logger.debug("Successfully inserted #{length(valid_batch)} #{storage_type} values")
+
+              %Ash.BulkResult{status: :partial_success, error_count: error_count, errors: errors} ->
+                Logger.warning(
+                  "Partially inserted #{storage_type} values: #{length(valid_batch) - error_count}/#{length(valid_batch)} succeeded"
+                )
+
+                # Log details about the first few errors for debugging
+                errors
+                |> Enum.take(3)  # Only log first 3 to avoid spam
+                |> Enum.each(fn error ->
+                  Logger.warning("Sample #{storage_type} insert error: #{inspect(error)}")
+                end)
+
+              %Ash.BulkResult{status: :error, errors: errors} ->
+                Logger.error("Failed to insert #{storage_type} values: #{inspect(errors)}")
             end
-
-          schema_module = ParameterValue.get_schema_module(storage_type)
-
-          multi_acc
-          |> Multi.insert_all(
-            :"insert_#{storage_type}_values",
-            schema_module,
-            batch
-          )
-        else
-          multi_acc
+          end
         end
       end)
-      |> Repo.transaction()
     end)
   end
 
   # Build a cache of full parameter records indexed by {module_name, parameter_name}
   # This is only called once during initialization
   defp build_parameter_cache(node_uuid) do
-    # Find the node's parameters
-    import Ecto.Query
-
-    parameters =
-      from(p in SecopService.Sec_Nodes.Parameter,
-        join: m in SecopService.Sec_Nodes.Module,
-        on: p.module_id == m.id,
-        join: n in SecopService.Sec_Nodes.SEC_Node,
-        on: m.sec_node_id == n.uuid,
-        where: n.uuid == ^node_uuid,
-        preload: [:module]
-      )
-      |> Repo.all()
+    # Use Ash to query parameters by node UUID
+    {:ok, parameters} =
+      SecopService.SecNodes.Parameter
+      |> Ash.Query.for_read(:by_node_uuid, %{node_uuid: node_uuid})
+      |> Ash.read()
 
     # Build a map of {module_name, parameter_name} => parameter
     Enum.reduce(parameters, %{}, fn parameter, acc ->
@@ -285,6 +282,20 @@ defmodule SecopService.NodeDBWriter do
       :array_bool -> :batch_array_bool
       :array_string -> :batch_array_string
       :json -> :batch_json
+    end
+  end
+
+  defp get_storage_type_from_batch_key(batch_key) do
+    case batch_key do
+      :batch_int -> :int
+      :batch_double -> :double
+      :batch_bool -> :bool
+      :batch_string -> :string
+      :batch_array_int -> :array_int
+      :batch_array_double -> :array_double
+      :batch_array_bool -> :array_bool
+      :batch_array_string -> :array_string
+      :batch_json -> :json
     end
   end
 end

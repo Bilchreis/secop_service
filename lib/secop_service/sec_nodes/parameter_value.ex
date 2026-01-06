@@ -6,24 +6,24 @@ defmodule SecopService.SecNodes.ParameterValue do
 
   # Type-specific modules
   @type_modules %{
-    int: ParameterValue.Int,
-    double: ParameterValue.Double,
-    bool: ParameterValue.Bool,
-    string: ParameterValue.String,
-    array_int: ParameterValue.ArrayInt,
-    array_double: ParameterValue.ArrayDouble,
-    array_bool: ParameterValue.ArrayBool,
-    array_string: ParameterValue.ArrayString,
-    json: ParameterValue.Json
+    int: SecopService.SecNodes.ParameterValueInt,
+    double: SecopService.SecNodes.ParameterValueDouble,
+    bool: SecopService.SecNodes.ParameterValueBool,
+    string: SecopService.SecNodes.ParameterValueString,
+    array_int: SecopService.SecNodes.ParameterValueArrayInt,
+    array_double: SecopService.SecNodes.ParameterValueArrayDouble,
+    array_bool: SecopService.SecNodes.ParameterValueArrayBool,
+    array_string: SecopService.SecNodes.ParameterValueArrayString,
+    json: SecopService.SecNodes.ParameterValueJson
   }
 
   # Determine which schema module and table to use for a parameter
-  def get_schema_module(%Parameter{} = parameter) do
+  def get_resource_module(%Parameter{} = parameter) do
     storage_type = get_storage_type(parameter)
     Map.fetch!(@type_modules, storage_type)
   end
 
-  def get_schema_module(storage_type) when is_atom(storage_type) do
+  def get_resource_module(storage_type) when is_atom(storage_type) do
     Map.fetch!(@type_modules, storage_type)
   end
 
@@ -158,7 +158,7 @@ defmodule SecopService.SecNodes.ParameterValue do
   def create_changeset(raw_value, parameter, timestamp, qualifiers \\ %{}) do
     param_val_map = create_map(raw_value, parameter, timestamp, qualifiers)
 
-    schema_module = get_schema_module(parameter)
+    schema_module = get_resource_module(parameter)
 
     struct(schema_module)
     |> schema_module.changeset(param_val_map)

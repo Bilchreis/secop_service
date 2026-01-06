@@ -17,7 +17,33 @@ defmodule SecopService.SecNodes.Parameter do
   end
 
   actions do
-    defaults [:read, :destroy, :create]
+    defaults [:read, :destroy]
+
+    create :create do
+    primary? true
+      accept [
+        :name,
+        :datainfo,
+        :readonly,
+        :description,
+        :group,
+        :visibility,
+        :meaning,
+        :checkable,
+        :custom_properties,
+        :module_id
+      ]
+    end
+
+    read :by_node_uuid do
+      argument :node_uuid, :uuid do
+        allow_nil? false
+      end
+
+      prepare build(load: [:module])
+
+      filter expr(module.sec_node_id == ^arg(:node_uuid))
+    end
   end
 
   attributes do
@@ -66,9 +92,7 @@ defmodule SecopService.SecNodes.Parameter do
       public? true
     end
 
-
     timestamps()
-
   end
 
   relationships do

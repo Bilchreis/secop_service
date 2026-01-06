@@ -1,7 +1,7 @@
 defmodule SecopServiceWeb.DashboardComponents do
   use Phoenix.Component
 
-  alias SecopService.Sec_Nodes.Module
+  alias SecopService.SecNodes.Module
 
   alias SecopService.Util
   alias Jason
@@ -499,7 +499,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         >
           {@parameter.description}
         </.property>
-        
+
     <!-- Optional Properties -->
         <%= if @parameter.meaning do %>
           <.property prop_key="Meaning" key_class="text-neutral-content/80 font-semibold">
@@ -512,7 +512,7 @@ defmodule SecopServiceWeb.DashboardComponents do
             {@parameter.checkable}
           </.property>
         <% end %>
-        
+
     <!-- Custom Properties -->
         <%= for {property_name, property_value} <- @parameter.custom_properties do %>
           <.property
@@ -544,7 +544,7 @@ defmodule SecopServiceWeb.DashboardComponents do
   def dash_command(assigns) do
     ~H"""
     <div class="card mb-4 bg-neutral p-4 shadow-md">
-      
+
     <!-- Parameter Name -->
       <div>
         <div class="flex ">
@@ -565,7 +565,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           >
             {@command.description}
           </.property>
-          
+
     <!-- Optional Properties -->
           <%= if @command.group do %>
             <.property prop_key="Group" key_class="text-neutral-content font-semibold">
@@ -593,9 +593,9 @@ defmodule SecopServiceWeb.DashboardComponents do
               {@command.checkable}
             </.property>
           <% end %>
-          
+
     <!-- Custom Properties -->
-          <%= for {property_name, property_value} <- @command.custom_properties do %>
+          <%= for {property_name, property_value} <- @command.custom_properties || %{} do %>
             <.property
               prop_key={String.replace_prefix(property_name, "_", "")}
               key_class="text-neutral-content font-semibold"

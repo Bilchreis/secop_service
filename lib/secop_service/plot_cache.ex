@@ -1,12 +1,12 @@
 defmodule SecopService.PlotCacheSupervisor do
   use DynamicSupervisor
   require Logger
-  alias SecopService.Sec_Nodes.SEC_Node
+  alias SecopService.Sec_Nodes.SecNode
   alias SecopService.PlotCache
 
   def start_link(node_db) do
     DynamicSupervisor.start_link(__MODULE__, node_db,
-      name: {:via, Registry, {Registry.PlotCacheSupervisor, SEC_Node.get_node_id(node_db)}}
+      name: {:via, Registry, {Registry.PlotCacheSupervisor, node_db.node_id}}
     )
   end
 
@@ -16,7 +16,7 @@ defmodule SecopService.PlotCacheSupervisor do
   end
 
   def start_plot_cache(node_db) do
-    node_id = SEC_Node.get_node_id(node_db)
+    node_id = node_db.node_id
     [{cache_supervisor, _value}] = Registry.lookup(Registry.PlotCacheSupervisor, node_id)
 
     count =

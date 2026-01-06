@@ -58,6 +58,8 @@ defmodule SecopService.Repo.Migrations.Initial do
 
     create index(:sec_nodes, [:equipment_id], name: "equipment_id_index")
 
+    create unique_index(:sec_nodes, [:uuid], name: "sec_nodes_unique_uuid_index")
+
     create table(:parameters, primary_key: false) do
       add :id, :bigserial, null: false, primary_key: true
       add :name, :text, null: false
@@ -639,6 +641,8 @@ defmodule SecopService.Repo.Migrations.Initial do
     drop table(:parameter_values_string)
 
     drop table(:parameters)
+
+    drop_if_exists unique_index(:sec_nodes, [:uuid], name: "sec_nodes_unique_uuid_index")
 
     drop_if_exists index(:sec_nodes, [:equipment_id], name: "equipment_id_index")
 

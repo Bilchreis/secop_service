@@ -2,7 +2,7 @@ defmodule SecopService.PlotDB do
   alias SecopService.Util
   alias SecopService.SecNodes
   alias SEC_Node_Statem
-  alias SecopService.SecNodes.SecNode, as: SecNode
+  alias SecopService.SecNodes.SecNode
   require Logger
 
   defp read_from_device_if_empty({_value_val, _value_ts} = readings, param_id) do
@@ -14,12 +14,12 @@ defmodule SecopService.PlotDB do
 
         parameter = SecNodes.get_parameter(param_id)
         module = SecNodes.get_module(parameter.module_id)
-        node = SecNodes.get_node(module.sec_node_id)
+        node_db = Ash.get!(SecNode, module.sec_node_id)
 
-        id = SecNode.get_node_id(node)
+        node_id = node_db.node_id
 
         # Retry indefinitely until we get a valid reading
-        read_until_valid(id, module.name, parameter.name)
+        read_until_valid(node_id, module.name, parameter.name)
 
       {_, _} ->
         readings

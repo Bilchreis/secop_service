@@ -3,14 +3,14 @@
     {
       "allow_nil?": false,
       "default": "nil",
-      "generated?": true,
+      "generated?": false,
       "precision": null,
       "primary_key?": true,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "id",
-      "type": "bigint"
+      "source": "uuid",
+      "type": "uuid"
     },
     {
       "allow_nil?": false,
@@ -21,8 +21,32 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "name",
+      "source": "equipment_id",
       "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "host",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "port",
+      "type": "bigint"
     },
     {
       "allow_nil?": true,
@@ -45,8 +69,56 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "datainfo",
+      "source": "firmware",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "implementor",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "timeout",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "describe_message",
       "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "describe_message_raw",
+      "type": "text"
     },
     {
       "allow_nil?": true,
@@ -69,68 +141,8 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "argument",
+      "source": "check_result",
       "type": "map"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "result",
-      "type": "map"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "group",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "visibility",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "meaning",
-      "type": "map"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "checkable",
-      "type": "boolean"
     },
     {
       "allow_nil?": false,
@@ -155,61 +167,49 @@
       "size": null,
       "source": "updated_at",
       "type": "utc_datetime_usec"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": null,
-          "global": null,
-          "strategy": null
-        },
-        "name": "commands_module_id_fkey",
-        "on_delete": "delete",
-        "on_update": null,
-        "primary_key?": true,
-        "schema": "public",
-        "table": "modules"
-      },
-      "scale": null,
-      "size": null,
-      "source": "module_id",
-      "type": "bigint"
     }
   ],
   "base_filter": null,
   "check_constraints": [],
-  "custom_indexes": [],
+  "custom_indexes": [
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "equipment_id"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "equipment_id"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "equipment_id_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    }
+  ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "87D53281117846DED3F5210EA64AD2BBF645A334FB6BDEBEAAC98F73F174D66F",
+  "hash": "49AFD63C169F4AF90FE711F8876F29183B21E941B31020E174219532F7F3269A",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "commands_module_id_name_index",
+      "index_name": "sec_nodes_unique_uuid_index",
       "keys": [
         {
           "type": "atom",
-          "value": "module_id"
-        },
-        {
-          "type": "atom",
-          "value": "name"
+          "value": "uuid"
         }
       ],
-      "name": "module_id_name",
+      "name": "unique_uuid",
       "nils_distinct?": true,
       "where": null
     }
@@ -221,5 +221,5 @@
   },
   "repo": "Elixir.SecopService.Repo",
   "schema": null,
-  "table": "commands"
+  "table": "sec_nodes"
 }

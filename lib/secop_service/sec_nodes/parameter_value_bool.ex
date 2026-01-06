@@ -1,10 +1,10 @@
-defmodule SecopService.SecNodes.ParameterValuesDouble do
+defmodule SecopService.SecNodes.ParameterValueBool do
   use Ash.Resource,
     domain: SecopService.SecNodes,
     data_layer: AshPostgres.DataLayer
 
   postgres do
-    table "parameter_values_double"
+    table "parameter_values_bool"
     repo SecopService.Repo
 
     references do
@@ -15,17 +15,25 @@ defmodule SecopService.SecNodes.ParameterValuesDouble do
 
     custom_indexes do
       index [:parameter_id, :timestamp] do
-        name "parameter_values_double_parameter_id_timestamp_index"
+        name "parameter_values_bool_parameter_id_timestamp_index"
       end
 
       index [:timestamp] do
-        name "parameter_values_double_timestamp_index"
+        name "parameter_values_bool_timestamp_index"
       end
     end
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
+
+    create :bulk_create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
   end
 
   attributes do
@@ -36,7 +44,7 @@ defmodule SecopService.SecNodes.ParameterValuesDouble do
       public? true
     end
 
-    attribute :value, :decimal do
+    attribute :value, :boolean do
       allow_nil? false
       public? true
     end

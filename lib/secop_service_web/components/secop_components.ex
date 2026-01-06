@@ -1,8 +1,7 @@
 defmodule SecopServiceWeb.SECoPComponents do
   use Phoenix.Component
 
-  alias SecopService.Sec_Nodes.SEC_Node
-  alias SecopService.Sec_Nodes.Module
+  alias SecopService.SecNodes.Module
   alias Jason
   alias SecopService.Util
   import SecopServiceWeb.CoreComponents
@@ -397,7 +396,7 @@ defmodule SecopServiceWeb.SECoPComponents do
                     prop_key="Description"
                     key_class="text-lg"
                   >
-                    <div class="">{SEC_Node.display_description(@node)}</div>
+                    <div class="">{@node.display_description}</div>
                   </.property>
                 </ul>
               </div>
@@ -556,7 +555,7 @@ defmodule SecopServiceWeb.SECoPComponents do
                   </.property>
                 <% end %>
 
-                <%= for {property_name, property_value} <- @module.custom_properties, property_name != "_plotly" do %>
+                <%= for {property_name, property_value} <- @module.custom_properties || %{}, property_name != "_plotly" do %>
                   <.property
                     prop_key={String.replace_prefix(property_name, "_", "")}
                     key_class="font-semibold"

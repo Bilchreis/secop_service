@@ -17,7 +17,24 @@ defmodule SecopService.SecNodes.Command do
   end
 
   actions do
-    defaults [:read, :destroy, :create]
+    defaults [:read, :destroy]
+
+    create :create do
+      primary? true
+      accept [
+        :name,
+        :description,
+        :datainfo,
+        :custom_properties,
+        :argument,
+        :result,
+        :group,
+        :visibility,
+        :meaning,
+        :checkable,
+        :module_id
+      ]
+    end
   end
 
   attributes do

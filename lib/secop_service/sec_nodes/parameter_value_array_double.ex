@@ -1,4 +1,4 @@
-defmodule SecopService.SecNodes.ParameterValuesArrayDouble do
+defmodule SecopService.SecNodes.ParameterValueArrayDouble do
   use Ash.Resource,
     domain: SecopService.SecNodes,
     data_layer: AshPostgres.DataLayer
@@ -25,7 +25,15 @@ defmodule SecopService.SecNodes.ParameterValuesArrayDouble do
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
+
+    create :bulk_create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
   end
 
   attributes do

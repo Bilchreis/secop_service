@@ -4,9 +4,9 @@
       <div class = "sticky   top-0 self-start ">
       <.module_indicators
         node={@current_node}
-        node_state={@active_nodes[SEC_Node.get_node_id(@current_node)].state}
+        node_state={@active_nodes[@current_node.node_id].state}
         values={@values}
-        node_id_str={SEC_Node.get_id_str(@current_node)}
+        node_id_str={@current_node.node_id_str}
       />
       </div>
 
@@ -50,7 +50,7 @@
 
         <.dash_sec_node
           node={@current_node}
-          state_map={@active_nodes[SEC_Node.get_node_id(@current_node)]}
+          state_map={@active_nodes[@current_node.node_id]}
         />
       </div>
     </div>

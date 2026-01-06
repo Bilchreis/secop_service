@@ -1,10 +1,10 @@
-defmodule SecopService.SecNodes.ParameterValuesInt do
+defmodule SecopService.SecNodes.ParameterValueArrayBool do
   use Ash.Resource,
     domain: SecopService.SecNodes,
     data_layer: AshPostgres.DataLayer
 
   postgres do
-    table "parameter_values_int"
+    table "parameter_values_array_bool"
     repo SecopService.Repo
 
     references do
@@ -15,17 +15,25 @@ defmodule SecopService.SecNodes.ParameterValuesInt do
 
     custom_indexes do
       index [:parameter_id, :timestamp] do
-        name "parameter_values_int_parameter_id_timestamp_index"
+        name "parameter_values_array_bool_parameter_id_timestamp_index"
       end
 
       index [:timestamp] do
-        name "parameter_values_int_timestamp_index"
+        name "parameter_values_array_bool_timestamp_index"
       end
     end
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
+
+    create :bulk_create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
   end
 
   attributes do
@@ -36,7 +44,7 @@ defmodule SecopService.SecNodes.ParameterValuesInt do
       public? true
     end
 
-    attribute :value, :integer do
+    attribute :value, {:array, :boolean} do
       allow_nil? false
       public? true
     end
@@ -52,6 +60,7 @@ defmodule SecopService.SecNodes.ParameterValuesInt do
 
 
     timestamps()
+
   end
 
   relationships do

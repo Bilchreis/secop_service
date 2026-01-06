@@ -3,6 +3,8 @@ defmodule SecopService.SecNodes.Module do
     domain: SecopService.SecNodes,
     data_layer: AshPostgres.DataLayer
 
+  alias SecopService.Util
+
   postgres do
     table "modules"
     repo SecopService.Repo
@@ -20,6 +22,7 @@ defmodule SecopService.SecNodes.Module do
     defaults [:read, :destroy]
 
     create :create do
+      primary? true
       accept [
         :name,
         :description,
@@ -109,5 +112,55 @@ defmodule SecopService.SecNodes.Module do
 
   identities do
     identity :sec_node_id_name, [:sec_node_id, :name]
+  end
+
+  # Helper functions that work on loaded structs
+  def display_name(module) do
+    Util.display_name(module.name)
+  end
+
+  def has_status?(module) do
+    case module.parameters do
+      %Ash.NotLoaded{} ->
+        raise "parameters must be loaded to check for status parameter"
+      parameters ->
+        Enum.any?(parameters, fn param -> param.name == "status" end)
+    end
+  end
+
+  def has_parameter?(module, param_name) do
+    case module.parameters do
+      %Ash.NotLoaded{} ->
+        raise "parameters must be loaded to check for parameter: #{param_name}"
+      parameters ->
+        Enum.any?(parameters, fn param -> param.name == param_name end)
+    end
+  end
+
+  def has_command?(module, command_name) do
+    case module.commands do
+      %Ash.NotLoaded{} ->
+        raise "commands must be loaded to check for command: #{command_name}"
+      commands ->
+        Enum.any?(commands, fn cmd -> cmd.name == command_name end)
+    end
+  end
+
+  def get_parameter(module, param_name) do
+    case module.parameters do
+      %Ash.NotLoaded{} ->
+        raise "parameters must be loaded to get parameter: #{param_name}"
+      parameters ->
+        Enum.find(parameters, fn param -> param.name == param_name end)
+    end
+  end
+
+  def get_command(module, command_name) do
+    case module.commands do
+      %Ash.NotLoaded{} ->
+        raise "commands must be loaded to get command: #{command_name}"
+      commands ->
+        Enum.find(commands, fn cmd -> cmd.name == command_name end)
+    end
   end
 end

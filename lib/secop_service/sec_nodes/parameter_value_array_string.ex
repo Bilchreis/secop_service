@@ -1,10 +1,10 @@
-defmodule SecopService.SecNodes.ParameterValuesBool do
+defmodule SecopService.SecNodes.ParameterValueArrayString do
   use Ash.Resource,
     domain: SecopService.SecNodes,
     data_layer: AshPostgres.DataLayer
 
   postgres do
-    table "parameter_values_bool"
+    table "parameter_values_array_string"
     repo SecopService.Repo
 
     references do
@@ -15,17 +15,25 @@ defmodule SecopService.SecNodes.ParameterValuesBool do
 
     custom_indexes do
       index [:parameter_id, :timestamp] do
-        name "parameter_values_bool_parameter_id_timestamp_index"
+        name "parameter_values_array_string_parameter_id_timestamp_index"
       end
 
       index [:timestamp] do
-        name "parameter_values_bool_timestamp_index"
+        name "parameter_values_array_string_timestamp_index"
       end
     end
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
+
+    create :bulk_create do
+      accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
   end
 
   attributes do
@@ -36,9 +44,14 @@ defmodule SecopService.SecNodes.ParameterValuesBool do
       public? true
     end
 
-    attribute :value, :boolean do
+    attribute :value, {:array, :string} do
       allow_nil? false
       public? true
+      constraints [
+        items: [
+          allow_empty?: true  # Allow empty strings in the array
+        ]
+      ]
     end
 
     attribute :timestamp, :utc_datetime_usec do

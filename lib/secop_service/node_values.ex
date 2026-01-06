@@ -1,6 +1,6 @@
 defmodule SecopService.NodeValues do
   use GenServer
-  alias SecopService.Sec_Nodes.SEC_Node
+  alias SecopService.Sec_Nodes.SecNode
   alias NodeTable
   require Logger
 
@@ -10,7 +10,7 @@ defmodule SecopService.NodeValues do
     state = %{node_db: node_db}
 
     GenServer.start_link(__MODULE__, state,
-      name: {:via, Registry, {Registry.NodeValues, SEC_Node.get_node_id(node_db)}}
+      name: {:via, Registry, {Registry.NodeValues, node_db.node_id}}
     )
   end
 
@@ -52,7 +52,7 @@ defmodule SecopService.NodeValues do
     Phoenix.PubSub.subscribe(@pubsub_name, state.node_db.values_pubsub_topic)
     Phoenix.PubSub.subscribe(@pubsub_name, state.node_db.error_pubsub_topic)
 
-    {:ok, table} = NodeTable.start({:service, SecNode.get_node_id(state.node_db)})
+    {:ok, table} = NodeTable.start({:service, state.node_db.node_id})
 
     values = get_val_map(state.node_db, table)
 
@@ -127,7 +127,7 @@ defmodule SecopService.NodeValues do
   end
 
   def get_val_map(db_node, service_table) do
-    node_id = SEC_Node.get_node_id(db_node)
+    node_id = db_node.node_id
 
     Enum.reduce(db_node.modules, %{}, fn module, mod_acc ->
       parameter_map =
@@ -201,7 +201,7 @@ defmodule SecopService.NodeValues do
         if old_without_timestamp == merged_without_timestamp do
           Phoenix.PubSub.broadcast(
             SecopService.PubSub,
-            "value_update:processed:#{SEC_Node.get_id_str(node_db)}",
+            "value_update:processed:#{node_db.node_id_str}",
             {:value_update, :equal, module, accessible, new_param_val}
           )
 
@@ -209,7 +209,7 @@ defmodule SecopService.NodeValues do
         else
           Phoenix.PubSub.broadcast(
             SecopService.PubSub,
-            "value_update:processed:#{SEC_Node.get_id_str(node_db)}",
+            "value_update:processed:#{node_db.node_id_str}",
             {:value_update, :updated, module, accessible, new_param_val}
           )
 
