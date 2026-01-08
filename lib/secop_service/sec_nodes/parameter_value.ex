@@ -1,6 +1,5 @@
 defmodule SecopService.SecNodes.ParameterValue do
   alias SecopService.SecNodes.Parameter
-  alias SecopService.SecNodes.ParameterValue
   alias ExPrintf
   require Logger
 
@@ -239,5 +238,22 @@ defmodule SecopService.SecNodes.ParameterValue do
     end
   rescue
     _ -> "error_#{value}"
+  end
+
+
+
+  def extract_value_timestamp_lists(parameter_values, parameter) do
+    values =
+      Enum.map(parameter_values, fn param_value ->
+        get_raw_value(param_value, parameter)
+      end)
+
+    timestamps =
+      Enum.map(parameter_values, fn param_value ->
+        # Extract the timestamp - using DateTime values
+        DateTime.to_unix(param_value.timestamp, :millisecond)
+      end)
+
+    {values, timestamps}
   end
 end

@@ -30,7 +30,7 @@ defmodule SecopService.SecNodes.ParameterValueJson do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:destroy]
 
     create :create do
       accept [:value, :parameter_id, :timestamp, :qualifiers]
@@ -38,6 +38,46 @@ defmodule SecopService.SecNodes.ParameterValueJson do
 
     create :bulk_create do
       accept [:value, :parameter_id, :timestamp, :qualifiers]
+    end
+
+    read :read do
+      prepare build(sort: [timestamp: :asc])
+    end
+
+    read :for_parameter do
+      argument :parameter_id, :integer do
+        allow_nil? false
+      end
+
+      argument :start_timestamp, :utc_datetime_usec
+      argument :end_timestamp, :utc_datetime_usec
+      argument :limit, :integer
+
+      argument :order, :atom do
+        default :asc
+        constraints one_of: [:asc, :desc]
+      end
+
+      # Filter by parameter_id (always required)
+      prepare build(filter: expr(parameter_id == ^arg(:parameter_id)))
+
+      # Filter by start_timestamp if provided
+      prepare build(filter: expr(timestamp >= ^arg(:start_timestamp))) do
+        where present(:start_timestamp)
+      end
+
+      # Filter by end_timestamp if provided
+      prepare build(filter: expr(timestamp <= ^arg(:end_timestamp))) do
+        where present(:end_timestamp)
+      end
+
+      # Sort by timestamp with the order from argument
+      prepare build(sort: [{:timestamp, arg(:order)}])
+
+      # Apply limit if provided
+      prepare build(limit: arg(:limit)) do
+        where present(:limit)
+      end
     end
   end
 

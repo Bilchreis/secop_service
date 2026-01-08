@@ -44,6 +44,16 @@ defmodule SecopService.SecNodes.Parameter do
 
       filter expr(module.sec_node_id == ^arg(:node_uuid))
     end
+
+    read :get_with_context do
+      argument :id, :integer do
+        allow_nil? false
+      end
+
+      filter expr(id == ^arg(:id))
+
+      prepare build(load: [module: [sec_node: [:node_id]]])
+    end
   end
 
   attributes do

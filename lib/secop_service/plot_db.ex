@@ -3,6 +3,8 @@ defmodule SecopService.PlotDB do
   alias SecopService.SecNodes
   alias SEC_Node_Statem
   alias SecopService.SecNodes.SecNode
+  alias SecopService.SecNodes.ParameterValue
+    alias SecopService.SecNodes.Parameter
   require Logger
 
   defp read_from_device_if_empty({_value_val, _value_ts} = readings, param_id) do
@@ -12,14 +14,19 @@ defmodule SecopService.PlotDB do
           "No values found in DB for param_id: #{param_id}, trying to read from device"
         )
 
-        parameter = SecNodes.get_parameter(param_id)
-        module = SecNodes.get_module(parameter.module_id)
-        node_db = Ash.get!(SecNode, module.sec_node_id)
 
-        node_id = node_db.node_id
+        parameter = Parameter
+          |> Ash.Query.for_read(:get_with_context, %{id: param_id})
+          |> Ash.read_first!()
+
+
 
         # Retry indefinitely until we get a valid reading
-        read_until_valid(node_id, module.name, parameter.name)
+        read_until_valid(
+          parameter.module.sec_node.node_id ,
+          parameter.module.name,
+          parameter.name
+          )
 
       {_, _} ->
         readings
@@ -53,8 +60,12 @@ defmodule SecopService.PlotDB do
     end
   end
 
-  defp get_values(param_id) do
-    Sec_Nodes.get_values(param_id)
+  defp get_values(parameter) do
+    ParameterValue.get_resource_module(parameter)
+    |> Ash.Query.for_read(:for_parameter,%{parameter_id: parameter.id})
+    |> Ash.read!()
+
+
   end
 
   def get_layout(%{plotly: nil} = plot_map) do
@@ -536,12 +547,12 @@ defmodule SecopService.PlotDB do
 
       {value_val, value_ts} =
         get_values(value_param)
-        |> Sec_Nodes.extract_value_timestamp_lists(value_param)
+        |> ParameterValue.extract_value_timestamp_lists(value_param)
         |> read_from_device_if_empty(value_param.id)
 
       {target_val, target_ts} =
         get_values(target_param)
-        |> Sec_Nodes.extract_value_timestamp_lists(target_param)
+        |> ParameterValue.extract_value_timestamp_lists(target_param)
         |> read_from_device_if_empty(target_param.id)
 
       plot_map = plot_available(plot_map, value_val)
@@ -577,7 +588,7 @@ defmodule SecopService.PlotDB do
 
         {value_val, value_ts} =
           get_values(value_param)
-          |> Sec_Nodes.extract_value_timestamp_lists(value_param)
+          |> ParameterValue.extract_value_timestamp_lists(value_param)
           |> read_from_device_if_empty(value_param.id)
 
         plot_map = plot_available(plot_map, value_val)
@@ -608,7 +619,7 @@ defmodule SecopService.PlotDB do
       if plottable?(parameter) do
         {value_val, value_ts} =
           get_values(parameter)
-          |> Sec_Nodes.extract_value_timestamp_lists(parameter)
+          |> ParameterValue.extract_value_timestamp_lists(parameter)
           |> read_from_device_if_empty(parameter.id)
 
         plot_map =
