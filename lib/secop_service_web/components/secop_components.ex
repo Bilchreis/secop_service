@@ -1,8 +1,7 @@
 defmodule SecopServiceWeb.SECoPComponents do
   use Phoenix.Component
 
-  alias SecopService.Sec_Nodes.SEC_Node
-  alias SecopService.Sec_Nodes.Module
+  alias SecopService.SecNodes.Module
   alias Jason
   alias SecopService.Util
   import SecopServiceWeb.CoreComponents
@@ -329,7 +328,6 @@ defmodule SecopServiceWeb.SECoPComponents do
 
       <form phx-submit="connect-node">
         <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
-
           <label for="host" class="label">
             Host
           </label>
@@ -341,7 +339,6 @@ defmodule SecopServiceWeb.SECoPComponents do
             required
             class="input"
           />
-
 
           <label for="port" class="label">
             Port
@@ -358,8 +355,6 @@ defmodule SecopServiceWeb.SECoPComponents do
           />
         </fieldset>
         <div class="flex justify-between mt-2">
-
-
           <div class="flex justify-end">
             <button
               type="button"
@@ -377,7 +372,6 @@ defmodule SecopServiceWeb.SECoPComponents do
           </div>
         </div>
       </form>
-
     </div>
     """
   end
@@ -402,7 +396,7 @@ defmodule SecopServiceWeb.SECoPComponents do
                     prop_key="Description"
                     key_class="text-lg"
                   >
-                    <div class="">{SEC_Node.display_description(@node)}</div>
+                    <div class="">{@node.display_description}</div>
                   </.property>
                 </ul>
               </div>
@@ -561,7 +555,7 @@ defmodule SecopServiceWeb.SECoPComponents do
                   </.property>
                 <% end %>
 
-                <%= for {property_name, property_value} <- @module.custom_properties, property_name != "_plotly" do %>
+                <%= for {property_name, property_value} <- @module.custom_properties || %{}, property_name != "_plotly" do %>
                   <.property
                     prop_key={String.replace_prefix(property_name, "_", "")}
                     key_class="font-semibold"

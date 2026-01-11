@@ -79,10 +79,10 @@ defmodule SecopService.NodeServices do
   """
 
   def start_link(node_db) do
-    node_id = SEC_Node.get_node_id(node_db)
+
 
     Supervisor.start_link(__MODULE__, node_db,
-      name: {:via, Registry, {Registry.NodeServices, node_id}}
+      name: {:via, Registry, {Registry.NodeServices, node_db.node_id}}
     )
   end
 
@@ -103,7 +103,7 @@ defmodule SecopService.NodeServices do
 
   @impl true
   def init(node_db) do
-    Logger.info("Initializing NodeServices for #{inspect(SEC_Node.get_node_id(node_db))}")
+    Logger.info("Initializing NodeServices for #{inspect(node_db.node_id)}")
 
     children = [
       # Buffer process for this specific node
@@ -113,7 +113,7 @@ defmodule SecopService.NodeServices do
       {SecopService.PlotCacheSupervisor, node_db},
 
       # Dispatcher process for plot cache updates
-      {SecopService.PlotCacheDispatcher, SEC_Node.get_node_id(node_db)},
+      {SecopService.PlotCacheDispatcher, node_db.node_id},
 
       # DB Writer process for this specific node
       {SecopService.NodeDBWriter, node_db}

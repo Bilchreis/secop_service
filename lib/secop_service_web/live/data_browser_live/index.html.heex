@@ -1,8 +1,9 @@
 <Layouts.app flash={@flash}>
   <div class="container mx-auto">
-    <div class="card bg-neutral p-2 ">
-      <Flop.Phoenix.table items={@sec_nodes} meta={@meta} path={~p"/browse"} opts={table_opts()}>
-        <:col :let={sec_node} label="Created at" field={:inserted_at}>
+    <div class="card bg-neutral p-2">
+      <div class="min-h-[600px] flex flex-col">
+        <AshPagify.Components.table items={@sec_nodes} meta={@meta} path={~p"/browse"} opts={table_opts()}>
+          <:col :let={sec_node} label="Created at" field={:inserted_at}>
           {sec_node.inserted_at
           |> DateTime.from_naive!("Etc/UTC")
           |> DateTime.shift_zone!("Europe/Berlin")
@@ -14,10 +15,12 @@
         <:col :let={sec_node} label="Equipment ID" field={:equipment_id}>
           {sec_node.equipment_id}
         </:col>
-        <:col :let={sec_node} label="URI" field={:uri}>{sec_node.host}:{sec_node.port}</:col>
+        <:col :let={sec_node} label="URI" field={:node_id_str}>{sec_node.node_id_str}</:col>
 
         <:col :let={sec_node} label="Description" field={:description}>
-          {SEC_Node.display_description(sec_node)}
+          <div class="max-h-35 min-h-35 overflow-y-auto text-sm " title={sec_node.display_description}>
+            {sec_node.display_description}
+          </div>
         </:col>
         <:col :let={sec_node} label="Actions">
           <div class="flex flex-col space-y-2 w-full">
@@ -37,9 +40,12 @@
             </button>
           </div>
         </:col>
-      </Flop.Phoenix.table>
+      </AshPagify.Components.table>
+      </div>
 
-      <.pagination meta={@meta} path={~p"/browse"} />
+      <AshPagify.Components.pagination meta={@meta} path={~p"/browse"} opts={node_browser_pagination_opts()} />
+    
+
     </div>
     <.modal
       id="json-modal"

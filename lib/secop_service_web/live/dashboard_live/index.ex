@@ -96,7 +96,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
       end
 
     if model.current_node do
-      subscribe_to_node(SEC_Node.get_node_id(model.current_node))
+      subscribe_to_node(model.current_node.node_id)
     end
 
     socket =
@@ -150,12 +150,11 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
           assign(socket, current_node: current_node) |> assign(values: values)
 
-        state.node_id == SEC_Node.get_node_id(current_node) ->
+        state.node_id == current_node.node_id ->
           {values, current_node} =
             if NodeSupervisor.services_running?(state[:uuid]) do
               # unsubscribe from all subs (prevents double updates)
-              unsubscribe_from_node(SEC_Node.get_node_id(current_node))
-
+              unsubscribe_from_node(current_node.node_id)
               {:ok, current_node} = NodeValues.get_node_db(node_id)
               {:ok, values} = NodeValues.get_values(node_id)
 
@@ -164,7 +163,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
               Logger.info("Current node updated #{inspect(node_id)}")
               {values, current_node}
             else
-              unsubscribe_from_node(SEC_Node.get_node_id(current_node))
+              unsubscribe_from_node(current_node.node_id)
 
               Logger.warning(
                 "Node with UUID #{state[:uuid]} does not exist in the database, unsubscribed from pubsub topic."
@@ -290,7 +289,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   def handle_event("toggle-conn-state", _unsigned_params, socket) do
     Logger.info("Toggling connection state for current node")
 
-    node_state = socket.assigns.active_nodes[SEC_Node.get_node_id(socket.assigns.current_node)]
+    node_state = socket.assigns.active_nodes[socket.assigns.current_node.node_id]
     node_id = node_state.node_id
     active = node_state.active
 
@@ -314,9 +313,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
     current_node = socket.assigns.current_node
 
-    unsubscribe_from_node(SEC_Node.get_node_id(current_node))
-
-
+    unsubscribe_from_node(current_node.node_id)
 
     # Use push_navigate instead of push_patch to force a full re-mount
     {:noreply, push_navigate(socket, to: ~p"/dashboard?node=#{new_pubsub_topic}")}

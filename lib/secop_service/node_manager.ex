@@ -1,10 +1,12 @@
 defmodule SecopService.NodeManager do
   use GenServer
   require Logger
+  alias SecopService.SecNodes.SecNode
   alias SecopService.NodeSupervisor
-  alias SecopService.Sec_Nodes
+  alias SecopService.SecNodes
   alias SEC_Node_Supervisor
   alias SecopService.NodeSupervisor
+  alias SecopService.DescribeMessageTransformer
 
   @pubsub_name :secop_client_pubsub
   # Check for node changes every minute
@@ -141,22 +143,22 @@ defmodule SecopService.NodeManager do
   end
 
   defp sync_nodes_with_db(active_nodes, state) do
-    # Store nodes in database
-
+    # Store/update nodes in database using upsert
     result =
       Enum.reduce(active_nodes, %{}, fn {node_id, node_state}, acc ->
-        case Sec_Nodes.node_exists?(node_state.uuid) do
-          false ->
-            # New node
+        transformed_node_state = DescribeMessageTransformer.transform(node_state)
+
+        case SecNode
+        |> Ash.Changeset.for_create(:upsert, transformed_node_state)
+        |> Ash.create() do
+          {:ok, _node} ->
             Logger.info(
-              "New node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
+              "Synced node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
             )
-
-            {:ok, _node} = Sec_Nodes.store_single_node(node_state)
-
             Map.put(acc, node_id, node_state)
 
-          true ->
+          {:error, changeset} ->
+            Logger.error("Failed to sync node: #{inspect(changeset.errors)}")
             acc
         end
       end)
@@ -169,7 +171,7 @@ defmodule SecopService.NodeManager do
         )
 
         Task.start(fn ->
-          node_db = Sec_Nodes.get_sec_node_by_uuid(node_state.uuid)
+          node_db = Ash.get!(SecNode, node_state.uuid)
           NodeSupervisor.start_child(node_db)
           Task.start(fn -> SecopService.PlotCacheSupervisor.start_plot_cache(node_db) end)
         end)

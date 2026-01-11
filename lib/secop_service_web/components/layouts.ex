@@ -38,7 +38,7 @@ defmodule SecopServiceWeb.Layouts do
     <header class="flex items-center justify-between container mx-auto">
       <div class="flex">
         <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img id="logo" src={~p"/images/logo.svg"} width="90" />
+          <img id="logo" src={~p"/images/logo.svg"} width="70" />
           <p class="bg-brand/5 text-brand rounded-full px-2 font-medium leading-6">
             v{Application.spec(:secop_service, :vsn)}
           </p>

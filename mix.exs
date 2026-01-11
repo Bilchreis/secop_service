@@ -11,7 +11,8 @@ defmodule SecopService.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      consolidate_protocols: Mix.env() != :dev
     ]
   end
 
@@ -34,6 +35,18 @@ defmodule SecopService.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:picosat_elixir, "~> 0.2"},
+      {:sourceror, "~> 1.8", only: [:dev, :test]},
+      {:open_api_spex, "~> 3.0"},
+      {:ash_state_machine, "~> 0.2"},
+      {:ash_admin, "~> 0.13"},
+      {:ash_authentication_phoenix, "~> 2.0"},
+      {:ash_authentication, "~> 4.0"},
+      {:ash_postgres, "~> 2.0"},
+      {:ash_json_api, "~> 1.0"},
+      {:ash_phoenix, "~> 2.0"},
+      {:ash_pagify, "~> 1.4"},
+      {:ash, "~> 3.0"},
       {:bcrypt_elixir, "~> 3.0"},
       {:phoenix, "~> 1.8"},
       {:phoenix_ecto, "~> 4.5"},
@@ -65,13 +78,12 @@ defmodule SecopService.MixProject do
       {:secop_client, git: "https://github.com/Bilchreis/secop_client.git", tag: "v0.0.45"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:tzdata, "~> 1.1"},
-      {:flop, "~> 0.26.3"},
-      {:flop_phoenix, "~> 0.25.3"},
       {:exprintf, "~> 0.2.1"},
       {:pythonx, "~> 0.4.4"},
       {:flame_on, git: "https://github.com/DockYard/flame_on.git", only: :dev},
       {:benchee, "~> 1.5", only: :dev},
-      {:igniter, "~> 0.6", only: :dev}
+      {:igniter, "~> 0.6", only: :dev},
+      {:usage_rules, "~> 0.1.26", only: :dev}
     ]
   end
 
@@ -83,10 +95,10 @@ defmodule SecopService.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+      setup: ["deps.get", "ash.setup", "assets.setup", "assets.build", "run priv/repo/seeds.exs"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      test: ["ash.setup --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind secop_service", "esbuild secop_service"],
       "assets.deploy": [

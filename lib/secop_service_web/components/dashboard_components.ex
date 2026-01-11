@@ -1,7 +1,7 @@
 defmodule SecopServiceWeb.DashboardComponents do
   use Phoenix.Component
 
-  alias SecopService.Sec_Nodes.Module
+  alias SecopService.SecNodes.Module
 
   alias SecopService.Util
   alias Jason
@@ -12,9 +12,19 @@ defmodule SecopServiceWeb.DashboardComponents do
   import SecopServiceWeb.SECoPComponents
   import SecopServiceWeb.Components.ParameterFormFieldComponents
 
-
   defp sort_commands_with_priority(commands) do
-    priority_order = ["stop","go","reset","clear_errors","control_off","communicate","hold","prepare","shutdown","get_data"]
+    priority_order = [
+      "stop",
+      "go",
+      "reset",
+      "clear_errors",
+      "control_off",
+      "communicate",
+      "hold",
+      "prepare",
+      "shutdown",
+      "get_data"
+    ]
 
     {priority_commands, other_commands} =
       Enum.split_with(commands, fn cmd -> cmd.name in priority_order end)
@@ -26,7 +36,6 @@ defmodule SecopServiceWeb.DashboardComponents do
 
     sorted_priority ++ Enum.sort_by(other_commands, & &1.name)
   end
-
 
   attr :node, :map, required: true
   attr :state_map, :map, required: true
@@ -586,7 +595,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           <% end %>
 
     <!-- Custom Properties -->
-          <%= for {property_name, property_value} <- @command.custom_properties do %>
+          <%= for {property_name, property_value} <- @command.custom_properties || %{} do %>
             <.property
               prop_key={String.replace_prefix(property_name, "_", "")}
               key_class="text-neutral-content font-semibold"

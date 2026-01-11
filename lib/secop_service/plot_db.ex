@@ -1,8 +1,10 @@
 defmodule SecopService.PlotDB do
   alias SecopService.Util
-  alias SecopService.Sec_Nodes
+  alias SecopService.SecNodes
   alias SEC_Node_Statem
-  alias SecopService.Sec_Nodes.SEC_Node, as: SEC_Node
+  alias SecopService.SecNodes.SecNode
+  alias SecopService.SecNodes.ParameterValue
+    alias SecopService.SecNodes.Parameter
   require Logger
 
   defp read_from_device_if_empty({_value_val, _value_ts} = readings, param_id) do
@@ -12,14 +14,19 @@ defmodule SecopService.PlotDB do
           "No values found in DB for param_id: #{param_id}, trying to read from device"
         )
 
-        parameter = SecopService.Sec_Nodes.get_parameter(param_id)
-        module = SecopService.Sec_Nodes.get_module(parameter.module_id)
-        node = SecopService.Sec_Nodes.get_node(module.sec_node_id)
 
-        id = SEC_Node.get_node_id(node)
+        parameter = Parameter
+          |> Ash.Query.for_read(:get_with_context, %{id: param_id})
+          |> Ash.read_first!()
+
+
 
         # Retry indefinitely until we get a valid reading
-        read_until_valid(id, module.name, parameter.name)
+        read_until_valid(
+          parameter.module.sec_node.node_id ,
+          parameter.module.name,
+          parameter.name
+          )
 
       {_, _} ->
         readings
@@ -53,8 +60,12 @@ defmodule SecopService.PlotDB do
     end
   end
 
-  defp get_values(param_id) do
-    Sec_Nodes.get_values(param_id)
+  defp get_values(parameter) do
+    ParameterValue.get_resource_module(parameter)
+    |> Ash.Query.for_read(:for_parameter,%{parameter_id: parameter.id})
+    |> Ash.read!()
+
+
   end
 
   def get_layout(%{plotly: nil} = plot_map) do
@@ -438,7 +449,7 @@ defmodule SecopService.PlotDB do
     {xdata, ydata, trace_index}
   end
 
-  def plottable?(%SecopService.Sec_Nodes.Parameter{} = parameter) do
+  def plottable?(%SecopService.SecNodes.Parameter{} = parameter) do
     has_plotly_property = Map.has_key?(parameter.custom_properties || %{}, "_plotly")
 
     case parameter.datainfo["type"] do
@@ -453,21 +464,21 @@ defmodule SecopService.PlotDB do
     end
   end
 
-  def plottable?(%SecopService.Sec_Nodes.Module{} = module) do
+  def plottable?(%SecopService.SecNodes.Module{} = module) do
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
 
     case value_param do
       nil -> false
-      param -> plottable?(param) or Map.has_key?(module.custom_properties, "_plotly")
+      param -> plottable?(param) or Map.has_key?(module.custom_properties || %{}, "_plotly")
     end
   end
 
   def get_parameter(secop_obj) do
     case secop_obj do
-      %SecopService.Sec_Nodes.Parameter{} = param ->
+      %SecopService.SecNodes.Parameter{} = param ->
         param
 
-      %SecopService.Sec_Nodes.Module{} = module ->
+      %SecopService.SecNodes.Module{} = module ->
         Enum.find(module.parameters, fn param -> param.name == "value" end)
     end
   end
@@ -513,10 +524,10 @@ defmodule SecopService.PlotDB do
 
   def init(secop_obj) do
     case secop_obj do
-      %SecopService.Sec_Nodes.Parameter{} = param ->
+      %SecopService.SecNodes.Parameter{} = param ->
         parameter_plot(param)
 
-      %SecopService.Sec_Nodes.Module{} = module ->
+      %SecopService.SecNodes.Module{} = module ->
         module_plot(module)
     end
   end
@@ -528,20 +539,20 @@ defmodule SecopService.PlotDB do
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
     target_param = Enum.find(module.parameters, fn param -> param.name == "target" end)
 
-    if plottable?(value_param) or Map.has_key?(module.custom_properties, "_plotly") do
+    if plottable?(value_param) or Map.has_key?(module.custom_properties || %{}, "_plotly") do
       plot_map =
         Map.put(plot_map, :plottable, true)
         |> get_unit(value_param)
-        |> Map.put(:plotly, Map.get(module.custom_properties, "_plotly", nil))
+        |> Map.put(:plotly, Map.get(module.custom_properties || %{}, "_plotly", nil))
 
       {value_val, value_ts} =
         get_values(value_param)
-        |> Sec_Nodes.extract_value_timestamp_lists(value_param)
+        |> ParameterValue.extract_value_timestamp_lists(value_param)
         |> read_from_device_if_empty(value_param.id)
 
       {target_val, target_ts} =
         get_values(target_param)
-        |> Sec_Nodes.extract_value_timestamp_lists(target_param)
+        |> ParameterValue.extract_value_timestamp_lists(target_param)
         |> read_from_device_if_empty(target_param.id)
 
       plot_map = plot_available(plot_map, value_val)
@@ -573,11 +584,11 @@ defmodule SecopService.PlotDB do
         plot_map =
           Map.put(plot_map, :plottable, true)
           |> get_unit(value_param)
-          |> Map.put(:plotly, Map.get(module.custom_properties, "_plotly", nil))
+          |> Map.put(:plotly, Map.get(module.custom_properties || %{}, "_plotly", nil))
 
         {value_val, value_ts} =
           get_values(value_param)
-          |> Sec_Nodes.extract_value_timestamp_lists(value_param)
+          |> ParameterValue.extract_value_timestamp_lists(value_param)
           |> read_from_device_if_empty(value_param.id)
 
         plot_map = plot_available(plot_map, value_val)
@@ -608,7 +619,7 @@ defmodule SecopService.PlotDB do
       if plottable?(parameter) do
         {value_val, value_ts} =
           get_values(parameter)
-          |> Sec_Nodes.extract_value_timestamp_lists(parameter)
+          |> ParameterValue.extract_value_timestamp_lists(parameter)
           |> read_from_device_if_empty(parameter.id)
 
         plot_map =

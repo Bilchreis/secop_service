@@ -226,7 +226,7 @@ defmodule SecopServiceWeb.Components.ModuleIndicator do
       @color
     ]}>
       <div class="flex items-center">
-        <div class= "bg-base-100/10 w-6 h-6 mr-2 rounded-full border-3 border-gray-500/20"></div>
+        <div class="bg-base-100/10 w-6 h-6 mr-2 rounded-full border-3 border-gray-500/20"></div>
         <div class="flex-1 min-w-0">
           <div class={[
             "text-xl",
