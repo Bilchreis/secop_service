@@ -6,6 +6,14 @@ defmodule SecopService.SecNodes.SecNode do
 
   alias SecopService.Util
 
+
+  @ash_pagify_options %{
+    default_limit: 10,
+    #scopes
+  }
+  def ash_pagify_options, do: @ash_pagify_options
+
+
   postgres do
     table "sec_nodes"
     repo SecopService.Repo
@@ -33,8 +41,22 @@ defmodule SecopService.SecNodes.SecNode do
   end
 
 
+  code_interface do
+    define :node_only, action: :node_only
+  end
+
   actions do
     defaults [:destroy]
+
+    read :node_only do
+      prepare build(sort: [{:inserted_at, :desc}])
+
+
+      pagination offset?: true,
+          default_limit: @ash_pagify_options.default_limit,
+          countable: true,
+          required?: false
+    end
 
 
 
@@ -144,7 +166,8 @@ defmodule SecopService.SecNodes.SecNode do
       public? true
     end
 
-    timestamps()
+    timestamps(public?: true)
+
   end
 
   calculations do

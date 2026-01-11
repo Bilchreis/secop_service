@@ -3,6 +3,14 @@ defmodule SecopService.SecNodes.ParameterValue do
   alias ExPrintf
   require Logger
 
+  # Centralized pagination options for all parameter value resources
+  @ash_pagify_options %{
+    default_limit: 10
+    # scopes can be added here if needed
+  }
+
+  def ash_pagify_options, do: @ash_pagify_options
+
   # Type-specific modules
   @type_modules %{
     int: SecopService.SecNodes.ParameterValueInt,
@@ -197,19 +205,23 @@ defmodule SecopService.SecNodes.ParameterValue do
     case parameter.datainfo["type"] do
       "double" ->
         format_string = parameter.datainfo["fmtstr"] || "%.6g"
-        formatted = ExPrintf.sprintf(format_string, [raw_value])
+        # Convert Decimal to float for formatting
+        float_value = if is_struct(raw_value, Decimal), do: Decimal.to_float(raw_value), else: raw_value
+        formatted = ExPrintf.sprintf(format_string, [float_value])
         append_unit(formatted, unit)
 
       "scaled" ->
         # Convert scaled integer to actual value
         scale = parameter.datainfo["scale"] || 1.0
         actual_value = raw_value * scale
+        # Convert Decimal to float for formatting
+        float_value = if is_struct(actual_value, Decimal), do: Decimal.to_float(actual_value), else: actual_value
 
         format_string =
           parameter.datainfo["fmtstr"] ||
             "%." <> Integer.to_string(max(0, -floor(:math.log10(scale)))) <> "f"
 
-        formatted = ExPrintf.sprintf(format_string, [actual_value])
+        formatted = ExPrintf.sprintf(format_string, [float_value])
         append_unit(formatted, unit)
 
       "enum" ->
@@ -219,7 +231,7 @@ defmodule SecopService.SecNodes.ParameterValue do
 
       "array" ->
         "[" <>
-          (raw_value |> Enum.map(&to_string/1) |> Enum.join(", ")) <>
+          (raw_value |> Enum.map(&format_array_element/1) |> Enum.join(", ")) <>
           "]" <>
           if unit != "", do: " #{unit}", else: ""
 
@@ -230,6 +242,12 @@ defmodule SecopService.SecNodes.ParameterValue do
 
   defp append_unit(value_str, ""), do: value_str
   defp append_unit(value_str, unit), do: "#{value_str} #{unit}"
+
+  defp format_array_element(value) when is_struct(value, Decimal) do
+    Decimal.to_string(value)
+  end
+
+  defp format_array_element(value), do: to_string(value)
 
   defp find_enum_name(members, value) do
     case Enum.find(members, fn {_name, val} -> val == value end) do

@@ -3,12 +3,20 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   import SecopServiceWeb.CoreComponents
   require Logger
   alias SecopService.PlotDB
-  alias SecopService.Sec_Nodes
-  alias SecopService.Sec_Nodes.ParameterValue
+  alias SecopService.SecNodes.ParameterValue
   alias Phoenix.LiveView.JS
 
   defp get_tabledata(secop_obj, params \\ %{}) do
-    case get_parameter(secop_obj) |> Sec_Nodes.list_parameter_values(params) do
+
+
+    parameter = get_parameter(secop_obj)
+
+    resource = ParameterValue.get_resource_module(parameter)
+
+    # Ensure default pagination parameters are set
+    params_with_defaults = Map.merge(%{limit: 20, page: 1,order_by: ["-timestamp"]}, params)
+
+    case AshPagify.validate_and_run(resource, params_with_defaults, [action: :for_parameter], %{parameter_id: parameter.id}) do
       {:ok, {parameter_values, meta}} ->
         {:ok, %{table_data: %{parameter_values: parameter_values, meta: meta}}}
 
@@ -148,14 +156,14 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   end
 
   @impl true
-  def handle_event("paginate", %{"page" => page}, socket) do
+  def handle_event("paginate", %{"offset" => offset}, socket) do
     %{parameter_values: _paramerter_values, meta: current_meta} = socket.assigns.table_data.result
     old_params = current_meta.params
 
-    page = Integer.parse(page) |> elem(0)
+    offset = Integer.parse(offset) |> elem(0)
 
     # Update the meta with new sort params
-    params = Map.put(old_params, :page, page)
+    params = Map.put(old_params, :offset, offset)
 
     secop_obj = socket.assigns.parameter
 
@@ -169,28 +177,17 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   end
 
   @impl true
-  def handle_event("sort", %{"order" => order}, socket) do
+  def handle_event("sort", %{"order" => field}, socket) do
     %{parameter_values: _paramerter_values, meta: current_meta} = socket.assigns.table_data.result
 
     old_params = current_meta.params
 
-    # Convert to atoms for Flop
-    field_atom = String.to_existing_atom(order)
+    ash_pagify= AshPagify.push_order(current_meta.ash_pagify,field)
 
-    direction_atom =
-      case current_meta.flop.order_by do
-        [^field_atom | _] ->
-          # If the field is already sorted, toggle the direction
-          if current_meta.flop.order_directions == [:asc], do: :desc, else: :asc
-
-        _ ->
-          # If a different field is sorted, set the new field and default to ascending
-          :asc
-      end
 
     # Update the meta with new sort params
     params =
-      Map.put(old_params, :order_by, [field_atom]) |> Map.put(:order_directions, [direction_atom])
+      Map.put(old_params, :order_by, ash_pagify.order_by)
 
     secop_obj = socket.assigns.parameter
 
@@ -335,13 +332,12 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               ERROR
             </:failed>
             <div class="card bg-neutral rounded-lg  p-2">
-              <Flop.Phoenix.table
+              <AshPagify.Components.table
                 items={table_data.parameter_values}
                 meta={table_data.meta}
                 on_sort={JS.push("sort", target: @myself)}
                 opts={table_opts()}
-                id={"#{@id}-table"}
-              >
+                id={"#{@id}-table"}>
                 <:col :let={parameter_value} label="Time" field={:timestamp}>
                   {parameter_value.timestamp
                   |> DateTime.from_naive!("Etc/UTC")
@@ -353,31 +349,14 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                     {ParameterValue.get_display_value(parameter_value, @parameter)}
                   </div>
                 </:col>
-              </Flop.Phoenix.table>
+            </AshPagify.Components.table>
 
-              <Flop.Phoenix.pagination
-                meta={table_data.meta}
-                on_paginate={JS.push("paginate", target: @myself)}
-                page_links={10}
-                class="flex flex-wrap items-center justify-center gap-y-2 gap-x-2 p-2 bg-neutral text-neutral-content "
-                page_list_attrs={[class: "order-1 flex gap-1 basis-full justify-center"]}
-                current_page_link_attrs={[class: "btn btn-primary"]}
-                page_link_attrs={[
-                  class: "btn btn-base-100"
-                ]}
-              >
-                <:previous attrs={[
-                  class: "order-2 btn btn-base-100"
-                ]}>
-                  Prev
-                </:previous>
+            <AshPagify.Components.pagination
+              meta={table_data.meta}
+              on_paginate={JS.push("paginate", target: @myself)}
+              opts={history_pagination_opts()}
+            />
 
-                <:next attrs={[
-                  class: "order-2 btn btn-base-100"
-                ]}>
-                  Next
-                </:next>
-              </Flop.Phoenix.pagination>
             </div>
           </.async_result>
         <% :empty -> %>

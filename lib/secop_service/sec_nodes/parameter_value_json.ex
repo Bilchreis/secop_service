@@ -3,6 +3,11 @@ defmodule SecopService.SecNodes.ParameterValueJson do
     domain: SecopService.SecNodes,
     data_layer: AshPostgres.DataLayer
 
+  alias SecopService.SecNodes.ParameterValue
+
+  @ash_pagify_options ParameterValue.ash_pagify_options()
+  def ash_pagify_options, do: @ash_pagify_options
+
   postgres do
     table "parameter_values_json"
     repo SecopService.Repo
@@ -29,6 +34,11 @@ defmodule SecopService.SecNodes.ParameterValueJson do
     end
   end
 
+
+  code_interface do
+    define :for_parameter, action: :for_parameter
+  end
+
   actions do
     defaults [:destroy]
 
@@ -45,6 +55,12 @@ defmodule SecopService.SecNodes.ParameterValueJson do
     end
 
     read :for_parameter do
+      pagination offset?: true,
+          default_limit: @ash_pagify_options.default_limit,
+          countable: true,
+          required?: false
+
+
       argument :parameter_id, :integer do
         allow_nil? false
       end

@@ -469,7 +469,7 @@ defmodule SecopService.PlotDB do
 
     case value_param do
       nil -> false
-      param -> plottable?(param) or Map.has_key?(module.custom_properties, "_plotly")
+      param -> plottable?(param) or Map.has_key?(module.custom_properties || %{}, "_plotly")
     end
   end
 
@@ -539,11 +539,11 @@ defmodule SecopService.PlotDB do
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
     target_param = Enum.find(module.parameters, fn param -> param.name == "target" end)
 
-    if plottable?(value_param) or Map.has_key?(module.custom_properties, "_plotly") do
+    if plottable?(value_param) or Map.has_key?(module.custom_properties || %{}, "_plotly") do
       plot_map =
         Map.put(plot_map, :plottable, true)
         |> get_unit(value_param)
-        |> Map.put(:plotly, Map.get(module.custom_properties, "_plotly", nil))
+        |> Map.put(:plotly, Map.get(module.custom_properties || %{}, "_plotly", nil))
 
       {value_val, value_ts} =
         get_values(value_param)
@@ -584,7 +584,7 @@ defmodule SecopService.PlotDB do
         plot_map =
           Map.put(plot_map, :plottable, true)
           |> get_unit(value_param)
-          |> Map.put(:plotly, Map.get(module.custom_properties, "_plotly", nil))
+          |> Map.put(:plotly, Map.get(module.custom_properties || %{}, "_plotly", nil))
 
         {value_val, value_ts} =
           get_values(value_param)

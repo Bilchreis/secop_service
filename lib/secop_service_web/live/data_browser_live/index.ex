@@ -1,7 +1,7 @@
 defmodule SecopServiceWeb.DataBrowserLive.Index do
   use SecopServiceWeb, :live_view
-  alias SecopService.Sec_Nodes
-  alias SecopService.Sec_Nodes.SEC_Node
+
+  alias SecopService.SecNodes.SecNode
 
   @impl true
   def mount(_params, _session, socket) do
@@ -16,14 +16,16 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
 
   @impl true
   def handle_params(params, _, socket) do
-    {:ok, {sec_nodes, meta}} = Sec_Nodes.list_sec_nodes(params)
+    IO.inspect(params, label: "Handle params in DataBrowserLive.Index")
+    case list_sec_nodes(params, replace_invalid_params?: true) do
+        {:ok, {sec_nodes, meta}} ->
+          {:noreply, assign(socket, %{sec_nodes: sec_nodes, meta: meta})}
+        {:error, meta} ->
+          valid_path = AshPagify.Components.build_path(~p"/browse", meta.params)
+          {:noreply, push_navigate(socket, to: valid_path)}
+    end
 
-    socket =
-      socket
-      |> assign(:sec_nodes, sec_nodes)
-      |> assign(:meta, meta)
 
-    {:noreply, socket}
   end
 
   @impl true
@@ -45,5 +47,9 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
   @impl true
   def handle_event("close_json_modal", _params, socket) do
     {:noreply, assign(socket, show_json_modal: false)}
+  end
+
+  defp list_sec_nodes(params, opts \\ []) do
+    AshPagify.validate_and_run(SecNode, params, [action: :node_only]++opts)
   end
 end

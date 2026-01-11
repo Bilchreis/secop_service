@@ -72,8 +72,7 @@ config :secop_service,
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [SecopService.SecNodes, SecopService.Accounts]
 
-# Add Flop configuration
-config :flop, repo: SecopService.Repo
+
 
 # Configures the endpoint
 config :secop_service, SecopServiceWeb.Endpoint,
