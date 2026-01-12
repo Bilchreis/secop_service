@@ -39,6 +39,11 @@ defmodule SecopService.SecNodes.Module do
       argument :parameters, {:array, :map}
       argument :commands, {:array, :map}
 
+      upsert? true
+      upsert_identity :sec_node_id_name
+      upsert_fields [:description, :interface_classes, :highest_interface_class, :visibility, :group, :meaning, :implementor, :custom_properties]
+
+
       change manage_relationship(:parameters, type: :create)
       change manage_relationship(:commands, type: :create)
     end

@@ -3,14 +3,13 @@ defmodule SecopService.NodeManager do
   require Logger
   alias SecopService.SecNodes.SecNode
   alias SecopService.NodeSupervisor
-  alias SecopService.SecNodes
   alias SEC_Node_Supervisor
   alias SecopService.NodeSupervisor
   alias SecopService.DescribeMessageTransformer
 
   @pubsub_name :secop_client_pubsub
   # Check for node changes every minute
-  @check_interval 1000 * 10 * 60
+  @check_interval 1000 * 60 * 10
 
   # Client API
 
@@ -103,23 +102,32 @@ defmodule SecopService.NodeManager do
 
         NodeSupervisor.stop_node_services(node_state.node_id)
 
-        # Store the new node configuration
-        {:ok, db_node} = Sec_Nodes.store_single_node(node_state)
+       transformed_node_state = DescribeMessageTransformer.transform(node_state)
 
-        Logger.debug("publish new node added at: #{db_node.uuid}")
+      case SecNode
+        |> Ash.Changeset.for_create(:upsert, transformed_node_state)
+        |> Ash.create() do
+          {:ok, node} ->
+            Logger.info(
+              "Synced node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
+            )
 
-        # Phoenix.PubSub.broadcast(
-        #   :secop_client_pubsub,
-        #   "new_node",
-        #   {:new_node_db, db_node}
-        # )
+            node_db = Ash.get!(SecNode, node.uuid)
+            Logger.debug("publish new node added at: #{node_db.uuid}")
 
-        updated_nodes = Map.put(state.nodes, node_state.node_id, node_state)
-        # Start a new writer
-        new_db_node = Sec_Nodes.get_sec_node_by_uuid(node_state.uuid)
-        NodeSupervisor.start_child(new_db_node)
-        Task.start(fn -> SecopService.PlotCacheSupervisor.start_plot_cache(new_db_node) end)
-        %{state | nodes: updated_nodes}
+            updated_nodes = Map.put(state.nodes, node_state.node_id, node_state)
+            # Start a new writer
+
+            NodeSupervisor.start_child(node_db)
+            Task.start(fn -> SecopService.PlotCacheSupervisor.start_plot_cache(node_db) end)
+            %{state | nodes: updated_nodes}
+
+          {:error, changeset} ->
+            Logger.error("Failed to sync node: #{inspect(changeset.errors)}")
+            state
+        end
+
+
       else
         state
       end
@@ -144,22 +152,38 @@ defmodule SecopService.NodeManager do
 
   defp sync_nodes_with_db(active_nodes, state) do
     # Store/update nodes in database using upsert
+    uuids = Enum.map(active_nodes,fn {_node_id, node_state} -> node_state.uuid end)
+
+
+    uuids_in_db = SecNode
+      |> Ash.Query.for_read(:exists_by_uuids,%{uuids: uuids})
+      |> Ash.read!()
+      |> Enum.map(fn node -> node.uuid end)
+      |> MapSet.new()
+
+
+
+
     result =
       Enum.reduce(active_nodes, %{}, fn {node_id, node_state}, acc ->
-        transformed_node_state = DescribeMessageTransformer.transform(node_state)
+        if not MapSet.member?(uuids_in_db, node_state.uuid) do
+          transformed_node_state = DescribeMessageTransformer.transform(node_state)
 
-        case SecNode
-        |> Ash.Changeset.for_create(:upsert, transformed_node_state)
-        |> Ash.create() do
-          {:ok, _node} ->
-            Logger.info(
-              "Synced node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
-            )
-            Map.put(acc, node_id, node_state)
+          case SecNode
+          |> Ash.Changeset.for_create(:upsert, transformed_node_state)
+          |> Ash.create() do
+            {:ok, _node} ->
+              Logger.info(
+                "Synced node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
+              )
+              Map.put(acc, node_id, node_state)
 
-          {:error, changeset} ->
-            Logger.error("Failed to sync node: #{inspect(changeset.errors)}")
-            acc
+            {:error, changeset} ->
+              Logger.error("Failed to sync node: #{inspect(changeset.errors)}")
+              acc
+          end
+        else
+          acc
         end
       end)
 

@@ -34,6 +34,11 @@ defmodule SecopService.SecNodes.Command do
         :checkable,
         :module_id
       ]
+
+      upsert? true
+      upsert_identity :module_id_name
+      upsert_fields [:description, :datainfo, :custom_properties, :argument, :result, :group, :visibility, :meaning, :checkable]
+
     end
   end
 

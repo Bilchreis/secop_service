@@ -1,5 +1,6 @@
 defmodule SecopService.DescribeMessageTransformer do
   alias SecopService.Util
+  require Logger
 
   @moduledoc """
   Transforms SEC_Node_Statem state into database-ready format for Ash resources.
