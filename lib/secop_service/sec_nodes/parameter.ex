@@ -33,6 +33,11 @@ defmodule SecopService.SecNodes.Parameter do
         :custom_properties,
         :module_id
       ]
+
+      upsert? true
+      upsert_identity :module_id_name
+      upsert_fields [:datainfo, :readonly, :description, :group, :visibility, :meaning, :checkable, :custom_properties]
+
     end
 
     read :by_node_uuid do

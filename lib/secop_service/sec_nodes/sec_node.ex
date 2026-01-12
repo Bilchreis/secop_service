@@ -26,19 +26,7 @@ defmodule SecopService.SecNodes.SecNode do
     end
   end
 
-  preparations do
-    prepare build(load: [
-      :node_id,
-      :values_pubsub_topic,
-      :processed_values_pubsub_topic,
-      :error_pubsub_topic,
-      :node_id_str,
-      :display_description,
-      :display_equipment_id
 
-    ]
-    )
-  end
 
 
   code_interface do
@@ -49,7 +37,18 @@ defmodule SecopService.SecNodes.SecNode do
     defaults [:destroy]
 
     read :node_only do
-      prepare build(sort: [{:inserted_at, :desc}])
+      prepare build(
+        sort: [{:inserted_at, :desc}],
+        load: [
+          :node_id,
+          :values_pubsub_topic,
+          :processed_values_pubsub_topic,
+          :error_pubsub_topic,
+          :node_id_str,
+          :display_description,
+          :display_equipment_id
+        ]
+      )
 
 
       pagination offset?: true,
@@ -62,7 +61,43 @@ defmodule SecopService.SecNodes.SecNode do
 
     read :read do
       primary? true
-      prepare build(load: [modules: [:parameters, :commands]])
+      prepare build(
+            load: [
+              :node_id,
+              :values_pubsub_topic,
+              :processed_values_pubsub_topic,
+              :error_pubsub_topic,
+              :node_id_str,
+              :display_description,
+              :display_equipment_id,
+              modules: [:parameters, :commands]
+            ]
+          )
+    end
+
+    # Check if single UUID exists
+    read :exists_by_uuid do
+      argument :uuid, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(uuid == ^arg(:uuid))
+
+      prepare build(select: [:uuid], load: [])
+
+      get? true
+    end
+
+    # Check which UUIDs exist (for batch checking)
+    read :exists_by_uuids do
+      argument :uuids, {:array, :uuid} do
+        allow_nil? false
+      end
+
+      filter expr(uuid in ^arg(:uuids))
+
+      prepare build(select: [:uuid], load: [])
+
     end
 
     create :create do
@@ -109,6 +144,8 @@ defmodule SecopService.SecNodes.SecNode do
       upsert_fields [:equipment_id, :host, :port, :description, :firmware, :implementor, :timeout, :describe_message, :describe_message_raw, :custom_properties, :check_result]
 
       change manage_relationship(:modules, type: :create)
+
+
     end
   end
 
