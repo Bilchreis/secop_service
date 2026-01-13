@@ -1,6 +1,5 @@
 defmodule SecopService.NodeValues do
   use GenServer
-  alias SecopService.Sec_Nodes.SecNode
   alias NodeTable
   require Logger
 

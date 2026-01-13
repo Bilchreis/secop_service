@@ -66,7 +66,7 @@ end
 defmodule SecopService.NodeServices do
   use Supervisor
   require Logger
-  alias SecopService.Sec_Nodes.SEC_Node
+
 
   @moduledoc """
   Supervisor for all processes related to a specific SEC Node, including:

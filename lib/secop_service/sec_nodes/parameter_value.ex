@@ -215,11 +215,15 @@ defmodule SecopService.SecNodes.ParameterValue do
         scale = parameter.datainfo["scale"] || 1.0
         actual_value = raw_value * scale
         # Convert Decimal to float for formatting
-        float_value = if is_struct(actual_value, Decimal), do: Decimal.to_float(actual_value), else: actual_value
+        # Ensure we have a float for formatting
+        float_value =
+          cond do
+            is_float(actual_value) -> actual_value
+            is_integer(actual_value) -> actual_value * 1.0
+            true -> actual_value
+          end
 
-        format_string =
-          parameter.datainfo["fmtstr"] ||
-            "%." <> Integer.to_string(max(0, -floor(:math.log10(scale)))) <> "f"
+        format_string = parameter.datainfo["fmtstr"] || "%.6g"
 
         formatted = ExPrintf.sprintf(format_string, [float_value])
         append_unit(formatted, unit)

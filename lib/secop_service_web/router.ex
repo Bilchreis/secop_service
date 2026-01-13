@@ -62,7 +62,6 @@ defmodule SecopServiceWeb.Router do
     live "/dashboard", DashboardLive.Index
     live "/browse", DataBrowserLive.Index, :index
     live "/browse/node/:uuid", NodeBrowserLive.Index, :index
-    live "/browse/node/:uuid/parameter/:id", ParameterBrowserLive.Index, :index
     auth_routes AuthController, SecopService.Accounts.User, path: "/auth"
     sign_out_route AuthController
 

@@ -117,41 +117,41 @@ defmodule SecopService.SecNodes.Parameter do
       public? true
     end
 
-    has_many :parameter_values_array_bools, SecopService.SecNodes.ParameterValuesArrayBool do
+    has_many :parameter_values_array_bools, SecopService.SecNodes.ParameterValueArrayBool do
       public? true
     end
 
     has_many :parameter_values_array_doubles,
-             SecopService.SecNodes.ParameterValuesArrayDouble do
+             SecopService.SecNodes.ParameterValueArrayDouble do
       public? true
     end
 
-    has_many :parameter_values_array_ints, SecopService.SecNodes.ParameterValuesArrayInt do
+    has_many :parameter_values_array_ints, SecopService.SecNodes.ParameterValueArrayInt do
       public? true
     end
 
     has_many :parameter_values_array_strings,
-             SecopService.SecNodes.ParameterValuesArrayString do
+             SecopService.SecNodes.ParameterValueArrayString do
       public? true
     end
 
-    has_many :parameter_values_bools, SecopService.SecNodes.ParameterValuesBool do
+    has_many :parameter_values_bools, SecopService.SecNodes.ParameterValueBool do
       public? true
     end
 
-    has_many :parameter_values_doubles, SecopService.SecNodes.ParameterValuesDouble do
+    has_many :parameter_values_doubles, SecopService.SecNodes.ParameterValueDouble do
       public? true
     end
 
-    has_many :parameter_values_ints, SecopService.SecNodes.ParameterValuesInt do
+    has_many :parameter_values_ints, SecopService.SecNodes.ParameterValueInt do
       public? true
     end
 
-    has_many :parameter_values_jsons, SecopService.SecNodes.ParameterValuesJson do
+    has_many :parameter_values_jsons, SecopService.SecNodes.ParameterValueJson do
       public? true
     end
 
-    has_many :parameter_values_strings, SecopService.SecNodes.ParameterValuesString do
+    has_many :parameter_values_strings, SecopService.SecNodes.ParameterValueString do
       public? true
     end
   end
