@@ -16,13 +16,12 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
 
   @impl true
   def handle_params(params, _, socket) do
-    IO.inspect(params, label: "Handle params in DataBrowserLive.Index")
     case list_sec_nodes(params, replace_invalid_params?: true) do
-        {:ok, {sec_nodes, meta}} ->
-          {:noreply, assign(socket, %{sec_nodes: sec_nodes, meta: meta})}
-        {:error, meta} ->
-          valid_path = AshPagify.Components.build_path(~p"/browse", meta.params)
-          {:noreply, push_navigate(socket, to: valid_path)}
+      {:ok, {sec_nodes, meta}} ->
+        {:noreply, assign(socket, %{sec_nodes: sec_nodes, meta: meta})}
+      {:error, meta} ->
+        valid_path = AshPagify.Components.build_path(~p"/browse", meta.params)
+        {:noreply, push_navigate(socket, to: valid_path)}
     end
 
 
@@ -49,7 +48,7 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
     {:noreply, assign(socket, show_json_modal: false)}
   end
 
-  defp list_sec_nodes(params, opts \\ []) do
+  defp list_sec_nodes(params, opts) do
     AshPagify.validate_and_run(SecNode, params, [action: :node_only]++opts)
   end
 end

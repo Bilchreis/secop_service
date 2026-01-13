@@ -1,12 +1,12 @@
 defmodule SecopServiceWeb.DashboardLive.Index do
-  alias SecopService.Sec_Nodes.SEC_Node
+
   use SecopServiceWeb, :live_view
 
   alias SecopService.Model
   alias SecopClient
   alias NodeDiscover
   alias SEC_Node_Supervisor
-  alias SEC_Node
+
 
   alias SecopService.NodeValues
   alias SecopService.NodeSupervisor

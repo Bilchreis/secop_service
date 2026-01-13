@@ -1,10 +1,10 @@
 defmodule SecopService.PlotDB do
   alias SecopService.Util
-  alias SecopService.SecNodes
+
   alias SEC_Node_Statem
-  alias SecopService.SecNodes.SecNode
+
   alias SecopService.SecNodes.ParameterValue
-    alias SecopService.SecNodes.Parameter
+  alias SecopService.SecNodes.Parameter
   require Logger
 
   defp read_from_device_if_empty({_value_val, _value_ts} = readings, param_id) do

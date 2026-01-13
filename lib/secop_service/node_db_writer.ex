@@ -2,9 +2,8 @@ defmodule SecopService.NodeDBWriter do
   use GenServer
   require Logger
 
-  alias SecopService.Repo
   alias SecopService.SecNodes.ParameterValue
-  alias Ecto.Multi
+
 
   @pubsub_name :secop_client_pubsub
   # Batch parameter values for 5 seconds

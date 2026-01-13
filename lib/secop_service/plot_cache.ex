@@ -1,7 +1,6 @@
 defmodule SecopService.PlotCacheSupervisor do
   use DynamicSupervisor
   require Logger
-  alias SecopService.Sec_Nodes.SecNode
   alias SecopService.PlotCache
 
   def start_link(node_db) do
