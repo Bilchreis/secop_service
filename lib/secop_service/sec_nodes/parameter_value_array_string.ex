@@ -28,6 +28,7 @@ defmodule SecopService.SecNodes.ParameterValueArrayString do
       end
     end
   end
+
   code_interface do
     define :for_parameter, action: :for_parameter
   end
@@ -49,9 +50,9 @@ defmodule SecopService.SecNodes.ParameterValueArrayString do
 
     read :for_parameter do
       pagination offset?: true,
-          default_limit: @ash_pagify_options.default_limit,
-          countable: true,
-          required?: false
+                 default_limit: @ash_pagify_options.default_limit,
+                 countable: true,
+                 required?: false
 
       argument :parameter_id, :integer do
         allow_nil? false
@@ -100,11 +101,11 @@ defmodule SecopService.SecNodes.ParameterValueArrayString do
     attribute :value, {:array, :string} do
       allow_nil? false
       public? true
-      constraints [
-        items: [
-          allow_empty?: true  # Allow empty strings in the array
-        ]
-      ]
+
+      constraints items: [
+                    # Allow empty strings in the array
+                    allow_empty?: true
+                  ]
     end
 
     attribute :timestamp, :utc_datetime_usec do
@@ -115,7 +116,6 @@ defmodule SecopService.SecNodes.ParameterValueArrayString do
     attribute :qualifiers, :map do
       public? true
     end
-
 
     timestamps()
   end

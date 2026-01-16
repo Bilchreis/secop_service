@@ -23,6 +23,7 @@ defmodule SecopService.SecNodes.Module do
 
     create :create do
       primary? true
+
       accept [
         :name,
         :description,
@@ -41,8 +42,17 @@ defmodule SecopService.SecNodes.Module do
 
       upsert? true
       upsert_identity :sec_node_id_name
-      upsert_fields [:description, :interface_classes, :highest_interface_class, :visibility, :group, :meaning, :implementor, :custom_properties]
 
+      upsert_fields [
+        :description,
+        :interface_classes,
+        :highest_interface_class,
+        :visibility,
+        :group,
+        :meaning,
+        :implementor,
+        :custom_properties
+      ]
 
       change manage_relationship(:parameters, type: :create)
       change manage_relationship(:commands, type: :create)
@@ -94,9 +104,7 @@ defmodule SecopService.SecNodes.Module do
       public? true
     end
 
-
     timestamps()
-
   end
 
   relationships do
@@ -128,6 +136,7 @@ defmodule SecopService.SecNodes.Module do
     case module.parameters do
       %Ash.NotLoaded{} ->
         raise "parameters must be loaded to check for status parameter"
+
       parameters ->
         Enum.any?(parameters, fn param -> param.name == "status" end)
     end
@@ -137,6 +146,7 @@ defmodule SecopService.SecNodes.Module do
     case module.parameters do
       %Ash.NotLoaded{} ->
         raise "parameters must be loaded to check for parameter: #{param_name}"
+
       parameters ->
         Enum.any?(parameters, fn param -> param.name == param_name end)
     end
@@ -146,6 +156,7 @@ defmodule SecopService.SecNodes.Module do
     case module.commands do
       %Ash.NotLoaded{} ->
         raise "commands must be loaded to check for command: #{command_name}"
+
       commands ->
         Enum.any?(commands, fn cmd -> cmd.name == command_name end)
     end
@@ -155,6 +166,7 @@ defmodule SecopService.SecNodes.Module do
     case module.parameters do
       %Ash.NotLoaded{} ->
         raise "parameters must be loaded to get parameter: #{param_name}"
+
       parameters ->
         Enum.find(parameters, fn param -> param.name == param_name end)
     end
@@ -164,6 +176,7 @@ defmodule SecopService.SecNodes.Module do
     case module.commands do
       %Ash.NotLoaded{} ->
         raise "commands must be loaded to get command: #{command_name}"
+
       commands ->
         Enum.find(commands, fn cmd -> cmd.name == command_name end)
     end

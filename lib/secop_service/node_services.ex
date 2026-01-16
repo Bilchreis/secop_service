@@ -67,7 +67,6 @@ defmodule SecopService.NodeServices do
   use Supervisor
   require Logger
 
-
   @moduledoc """
   Supervisor for all processes related to a specific SEC Node, including:
   - NodeValues: Buffering and caching of incoming node values
@@ -79,8 +78,6 @@ defmodule SecopService.NodeServices do
   """
 
   def start_link(node_db) do
-
-
     Supervisor.start_link(__MODULE__, node_db,
       name: {:via, Registry, {Registry.NodeServices, node_db.node_id}}
     )

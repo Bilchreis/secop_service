@@ -6,13 +6,11 @@ defmodule SecopService.SecNodes.SecNode do
 
   alias SecopService.Util
 
-
   @ash_pagify_options %{
-    default_limit: 10,
-    #scopes
+    default_limit: 10
+    # scopes
   }
   def ash_pagify_options, do: @ash_pagify_options
-
 
   postgres do
     table "sec_nodes"
@@ -22,12 +20,8 @@ defmodule SecopService.SecNodes.SecNode do
       index [:equipment_id] do
         name "equipment_id_index"
       end
-
     end
   end
-
-
-
 
   code_interface do
     define :node_only, action: :node_only
@@ -38,41 +32,39 @@ defmodule SecopService.SecNodes.SecNode do
 
     read :node_only do
       prepare build(
-        sort: [{:inserted_at, :desc}],
-        load: [
-          :node_id,
-          :values_pubsub_topic,
-          :processed_values_pubsub_topic,
-          :error_pubsub_topic,
-          :node_id_str,
-          :display_description,
-          :display_equipment_id
-        ]
-      )
-
+                sort: [{:inserted_at, :desc}],
+                load: [
+                  :node_id,
+                  :values_pubsub_topic,
+                  :processed_values_pubsub_topic,
+                  :error_pubsub_topic,
+                  :node_id_str,
+                  :display_description,
+                  :display_equipment_id
+                ]
+              )
 
       pagination offset?: true,
-          default_limit: @ash_pagify_options.default_limit,
-          countable: true,
-          required?: false
+                 default_limit: @ash_pagify_options.default_limit,
+                 countable: true,
+                 required?: false
     end
-
-
 
     read :read do
       primary? true
+
       prepare build(
-            load: [
-              :node_id,
-              :values_pubsub_topic,
-              :processed_values_pubsub_topic,
-              :error_pubsub_topic,
-              :node_id_str,
-              :display_description,
-              :display_equipment_id,
-              modules: [:parameters, :commands]
-            ]
-          )
+                load: [
+                  :node_id,
+                  :values_pubsub_topic,
+                  :processed_values_pubsub_topic,
+                  :error_pubsub_topic,
+                  :node_id_str,
+                  :display_description,
+                  :display_equipment_id,
+                  modules: [:parameters, :commands]
+                ]
+              )
     end
 
     # Check if single UUID exists
@@ -97,7 +89,6 @@ defmodule SecopService.SecNodes.SecNode do
       filter expr(uuid in ^arg(:uuids))
 
       prepare build(select: [:uuid], load: [])
-
     end
 
     create :create do
@@ -141,11 +132,22 @@ defmodule SecopService.SecNodes.SecNode do
 
       upsert? true
       upsert_identity :unique_uuid
-      upsert_fields [:equipment_id, :host, :port, :description, :firmware, :implementor, :timeout, :describe_message, :describe_message_raw, :custom_properties, :check_result]
+
+      upsert_fields [
+        :equipment_id,
+        :host,
+        :port,
+        :description,
+        :firmware,
+        :implementor,
+        :timeout,
+        :describe_message,
+        :describe_message_raw,
+        :custom_properties,
+        :check_result
+      ]
 
       change manage_relationship(:modules, type: :create)
-
-
     end
   end
 
@@ -204,14 +206,38 @@ defmodule SecopService.SecNodes.SecNode do
     end
 
     timestamps(public?: true)
+  end
 
+  relationships do
+    has_many :modules, SecopService.SecNodes.Module do
+      source_attribute :uuid
+      public? true
+    end
   end
 
   calculations do
-    calculate :values_pubsub_topic, :string, expr("value_update:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
-    calculate :processed_values_pubsub_topic, :string, expr("value_update:processed:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
-    calculate :error_pubsub_topic, :string, expr("error_update:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
-    calculate :node_id_str, :string, expr(^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
+    calculate :values_pubsub_topic,
+              :string,
+              expr(
+                "value_update:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port))
+              )
+
+    calculate :processed_values_pubsub_topic,
+              :string,
+              expr(
+                "value_update:processed:" <>
+                  ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port))
+              )
+
+    calculate :error_pubsub_topic,
+              :string,
+              expr(
+                "error_update:" <> ^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port))
+              )
+
+    calculate :node_id_str,
+              :string,
+              expr(^ref(:host) <> ":" <> fragment("CAST(? AS TEXT)", ^ref(:port)))
 
     calculate :node_id, :term, fn records, _context ->
       Enum.map(records, fn record ->
@@ -222,9 +248,9 @@ defmodule SecopService.SecNodes.SecNode do
     calculate :display_description, :string, fn records, _context ->
       Enum.map(records, fn record ->
         record.description
-          |> String.split("\n")
-          |> Enum.map(&Phoenix.HTML.html_escape/1)
-          |> Enum.intersperse(Phoenix.HTML.raw("<br>"))
+        |> String.split("\n")
+        |> Enum.map(&Phoenix.HTML.html_escape/1)
+        |> Enum.intersperse(Phoenix.HTML.raw("<br>"))
       end)
     end
 
@@ -235,21 +261,7 @@ defmodule SecopService.SecNodes.SecNode do
     end
   end
 
-
-
-  relationships do
-    has_many :modules, SecopService.SecNodes.Module do
-      source_attribute :uuid
-      public? true
-    end
-  end
-
   identities do
     identity :unique_uuid, [:uuid]
   end
-
-
-
-
-
 end

@@ -21,6 +21,7 @@ defmodule SecopService.SecNodes.Command do
 
     create :create do
       primary? true
+
       accept [
         :name,
         :description,
@@ -37,8 +38,18 @@ defmodule SecopService.SecNodes.Command do
 
       upsert? true
       upsert_identity :module_id_name
-      upsert_fields [:description, :datainfo, :custom_properties, :argument, :result, :group, :visibility, :meaning, :checkable]
 
+      upsert_fields [
+        :description,
+        :datainfo,
+        :custom_properties,
+        :argument,
+        :result,
+        :group,
+        :visibility,
+        :meaning,
+        :checkable
+      ]
     end
   end
 
@@ -90,7 +101,6 @@ defmodule SecopService.SecNodes.Command do
     attribute :checkable, :boolean do
       public? true
     end
-
 
     timestamps()
   end

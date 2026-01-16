@@ -20,7 +20,8 @@ defmodule SecopService.SecNodes.Parameter do
     defaults [:read, :destroy]
 
     create :create do
-    primary? true
+      primary? true
+
       accept [
         :name,
         :datainfo,
@@ -36,8 +37,17 @@ defmodule SecopService.SecNodes.Parameter do
 
       upsert? true
       upsert_identity :module_id_name
-      upsert_fields [:datainfo, :readonly, :description, :group, :visibility, :meaning, :checkable, :custom_properties]
 
+      upsert_fields [
+        :datainfo,
+        :readonly,
+        :description,
+        :group,
+        :visibility,
+        :meaning,
+        :checkable,
+        :custom_properties
+      ]
     end
 
     read :by_node_uuid do

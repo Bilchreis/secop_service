@@ -7,16 +7,16 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   alias Phoenix.LiveView.JS
 
   defp get_tabledata(secop_obj, params \\ %{}) do
-
-
     parameter = get_parameter(secop_obj)
 
     resource = ParameterValue.get_resource_module(parameter)
 
     # Ensure default pagination parameters are set
-    params_with_defaults = Map.merge(%{limit: 20, page: 1,order_by: ["-timestamp"]}, params)
+    params_with_defaults = Map.merge(%{limit: 20, page: 1, order_by: ["-timestamp"]}, params)
 
-    case AshPagify.validate_and_run(resource, params_with_defaults, [action: :for_parameter], %{parameter_id: parameter.id}) do
+    case AshPagify.validate_and_run(resource, params_with_defaults, [action: :for_parameter], %{
+           parameter_id: parameter.id
+         }) do
       {:ok, {parameter_values, meta}} ->
         {:ok, %{table_data: %{parameter_values: parameter_values, meta: meta}}}
 
@@ -182,8 +182,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
 
     old_params = current_meta.params
 
-    ash_pagify= AshPagify.push_order(current_meta.ash_pagify,field)
-
+    ash_pagify = AshPagify.push_order(current_meta.ash_pagify, field)
 
     # Update the meta with new sort params
     params =
@@ -337,7 +336,8 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                 meta={table_data.meta}
                 on_sort={JS.push("sort", target: @myself)}
                 opts={table_opts()}
-                id={"#{@id}-table"}>
+                id={"#{@id}-table"}
+              >
                 <:col :let={parameter_value} label="Time" field={:timestamp}>
                   {parameter_value.timestamp
                   |> DateTime.from_naive!("Etc/UTC")
@@ -349,14 +349,13 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                     {ParameterValue.get_display_value(parameter_value, @parameter)}
                   </div>
                 </:col>
-            </AshPagify.Components.table>
+              </AshPagify.Components.table>
 
-            <AshPagify.Components.pagination
-              meta={table_data.meta}
-              on_paginate={JS.push("paginate", target: @myself)}
-              opts={history_pagination_opts()}
-            />
-
+              <AshPagify.Components.pagination
+                meta={table_data.meta}
+                on_paginate={JS.push("paginate", target: @myself)}
+                opts={history_pagination_opts()}
+              />
             </div>
           </.async_result>
         <% :empty -> %>

@@ -11,8 +11,13 @@ defmodule SecopService.Application do
       SecopServiceWeb.Telemetry,
       SecopService.Repo,
       {DNSCluster, query: Application.get_env(:secop_service, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: SecopService.PubSub},
+      {Oban,
+       AshOban.config(
+         Application.fetch_env!(:secop_service, :ash_domains),
+         Application.fetch_env!(:secop_service, Oban)
+       )},
       # Start the Finch HTTP client for sending emails
+      {Phoenix.PubSub, name: SecopService.PubSub},
       {Finch, name: SecopService.Finch},
       {Registry, keys: :unique, name: Registry.NodeDBWriter},
       {Registry, keys: :unique, name: Registry.NodeValues},

@@ -102,11 +102,11 @@ defmodule SecopService.NodeManager do
 
         NodeSupervisor.stop_node_services(node_state.node_id)
 
-       transformed_node_state = DescribeMessageTransformer.transform(node_state)
+        transformed_node_state = DescribeMessageTransformer.transform(node_state)
 
-      case SecNode
-        |> Ash.Changeset.for_create(:upsert, transformed_node_state)
-        |> Ash.create() do
+        case SecNode
+             |> Ash.Changeset.for_create(:upsert, transformed_node_state)
+             |> Ash.create() do
           {:ok, node} ->
             Logger.info(
               "Synced node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
@@ -126,8 +126,6 @@ defmodule SecopService.NodeManager do
             Logger.error("Failed to sync node: #{inspect(changeset.errors)}")
             state
         end
-
-
       else
         state
       end
@@ -152,17 +150,14 @@ defmodule SecopService.NodeManager do
 
   defp sync_nodes_with_db(active_nodes, state) do
     # Store/update nodes in database using upsert
-    uuids = Enum.map(active_nodes,fn {_node_id, node_state} -> node_state.uuid end)
+    uuids = Enum.map(active_nodes, fn {_node_id, node_state} -> node_state.uuid end)
 
-
-    uuids_in_db = SecNode
-      |> Ash.Query.for_read(:exists_by_uuids,%{uuids: uuids})
+    uuids_in_db =
+      SecNode
+      |> Ash.Query.for_read(:exists_by_uuids, %{uuids: uuids})
       |> Ash.read!()
       |> Enum.map(fn node -> node.uuid end)
       |> MapSet.new()
-
-
-
 
     result =
       Enum.reduce(active_nodes, %{}, fn {node_id, node_state}, acc ->
@@ -170,12 +165,13 @@ defmodule SecopService.NodeManager do
           transformed_node_state = DescribeMessageTransformer.transform(node_state)
 
           case SecNode
-          |> Ash.Changeset.for_create(:upsert, transformed_node_state)
-          |> Ash.create() do
+               |> Ash.Changeset.for_create(:upsert, transformed_node_state)
+               |> Ash.create() do
             {:ok, _node} ->
               Logger.info(
                 "Synced node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
               )
+
               Map.put(acc, node_id, node_state)
 
             {:error, changeset} ->

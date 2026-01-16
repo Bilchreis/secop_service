@@ -639,7 +639,6 @@ defmodule SecopServiceWeb.CoreComponents do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
 
-
   def table_opts do
     [
       table_attrs: [
@@ -721,6 +720,4 @@ defmodule SecopServiceWeb.CoreComponents do
       ]
     ]
   end
-
-
 end
