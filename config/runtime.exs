@@ -70,6 +70,13 @@ if config_env() == :prod do
       System.get_env("TOKEN_SIGNING_SECRET") ||
         raise("Missing environment variable `TOKEN_SIGNING_SECRET`!")
 
+  # ## Data Retention Configuration
+  #
+  # Configure the data retention period for sec_nodes and related data.
+  # Nodes older than this period will be automatically deleted by the scheduled job.
+  config :secop_service,
+    data_retention_days: String.to_integer(System.get_env("DATA_RETENTION_DAYS") || "30")
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key

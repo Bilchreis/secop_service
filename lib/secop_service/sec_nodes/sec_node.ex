@@ -2,7 +2,8 @@ defmodule SecopService.SecNodes.SecNode do
   use Ash.Resource,
     domain: SecopService.SecNodes,
     data_layer: AshPostgres.DataLayer,
-    primary_read_warning?: false
+    primary_read_warning?: false,
+    extensions: [AshOban]
 
   alias SecopService.Util
 
@@ -19,6 +20,19 @@ defmodule SecopService.SecNodes.SecNode do
     custom_indexes do
       index [:equipment_id] do
         name "equipment_id_index"
+      end
+    end
+  end
+
+  oban do
+    triggers do
+      trigger :cleanup_old_nodes do
+        scheduler_cron "0 2 * * *"
+        action :destroy
+        where expr(should_cleanup == true)
+        read_action :read_for_cleanup
+        worker_module_name SecopService.SecNodes.SecNode.AshOban.Worker.CleanupOldNodes
+        scheduler_module_name SecopService.SecNodes.SecNode.AshOban.Scheduler.CleanupOldNodes
       end
     end
   end
@@ -65,6 +79,11 @@ defmodule SecopService.SecNodes.SecNode do
                   modules: [:parameters, :commands]
                 ]
               )
+    end
+
+    # Read action for cleanup trigger with keyset pagination
+    read :read_for_cleanup do
+      pagination keyset?: true, required?: false
     end
 
     # Check if single UUID exists
@@ -257,6 +276,15 @@ defmodule SecopService.SecNodes.SecNode do
     calculate :display_equipment_id, :string, fn records, _context ->
       Enum.map(records, fn record ->
         Util.display_name(record.equipment_id)
+      end)
+    end
+
+    calculate :should_cleanup, :boolean, fn records, _context ->
+      retention_days = Application.get_env(:secop_service, :data_retention_days, 30)
+      cutoff_datetime = DateTime.add(DateTime.utc_now(), -retention_days, :day)
+
+      Enum.map(records, fn record ->
+        DateTime.compare(record.inserted_at, cutoff_datetime) == :lt
       end)
     end
   end
