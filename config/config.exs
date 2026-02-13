@@ -12,7 +12,10 @@ config :ash_oban, pro?: false
 config :secop_service, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [default: 10],
+  queues: [
+    default: 10,
+    sec_node_cleanup_old_nodes: 10
+    ],
   repo: SecopService.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
 

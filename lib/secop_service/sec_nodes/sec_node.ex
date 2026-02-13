@@ -84,6 +84,11 @@ defmodule SecopService.SecNodes.SecNode do
     # Read action for cleanup trigger with keyset pagination
     read :read_for_cleanup do
       pagination keyset?: true, required?: false
+      prepare build(
+          load: [
+            :should_cleanup
+          ]
+        )
     end
 
     # Check if single UUID exists
