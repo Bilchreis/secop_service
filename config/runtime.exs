@@ -75,7 +75,8 @@ if config_env() == :prod do
   # Configure the data retention period for sec_nodes and related data.
   # Nodes older than this period will be automatically deleted by the scheduled job.
   config :secop_service,
-    data_retention_days: String.to_integer(System.get_env("DATA_RETENTION_DAYS") || "30")
+    data_retention_days: String.to_integer(System.get_env("DATA_RETENTION_DAYS") || "30"),
+    trash_retention_days: String.to_integer(System.get_env("TRASH_RETENTION_DAYS") || "7")
 
   # ## SSL Support
   #

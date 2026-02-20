@@ -14,10 +14,16 @@ config :secop_service, Oban,
   notifier: Oban.Notifiers.Postgres,
   queues: [
     default: 10,
-    sec_node_cleanup_old_nodes: 10
-    ],
+    sec_node_cleanup_old_nodes: 10,
+    sec_node_purge_trashed_nodes: 10
+  ],
   repo: SecopService.Repo,
-  plugins: [{Oban.Plugins.Cron, []}]
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"*/5 * * * *", SecopService.Workers.SyncNodeStates}
+     ]}
+  ]
 
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},

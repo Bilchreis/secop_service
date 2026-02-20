@@ -45,11 +45,28 @@ defmodule SecopService.NodeManager do
   @impl true
   def handle_cast(:sync_nodes, state) do
     Logger.info("Syncing nodes with database...")
-    # Get active nodes from supervisor
-    active_nodes = SEC_Node_Supervisor.get_active_nodes()
 
-    # Store nodes in database and subscribe to updates
-    updated_state = sync_nodes_with_db(active_nodes, state)
+    updated_state =
+      try do
+        # Get active nodes from supervisor
+        active_nodes = SEC_Node_Supervisor.get_active_nodes()
+
+        # Store nodes in database and subscribe to updates
+        sync_nodes_with_db(active_nodes, state)
+      rescue
+        _e in [DBConnection.OwnershipError] ->
+          Logger.warning("NodeManager sync skipped (no DB connection available)")
+          state
+
+        e ->
+          if Exception.message(e) =~ "OwnershipError" do
+            Logger.warning("NodeManager sync skipped (no DB connection available)")
+          else
+            Logger.error("NodeManager sync failed: #{Exception.message(e)}")
+          end
+
+          state
+      end
 
     # Schedule next sync
     schedule_sync()
@@ -206,6 +223,26 @@ defmodule SecopService.NodeManager do
     MapSet.difference(current_service_node_ids, active_node_ids)
     |> Enum.each(fn node_id ->
       NodeSupervisor.stop_node_services(node_id)
+
+      # Archive the node in the database
+      {host_charlist, port} = node_id
+      host = List.to_string(host_charlist)
+
+      case SecNode
+           |> Ash.Query.filter_input(%{host: %{eq: host}, port: %{eq: port}, state: %{eq: :active}})
+           |> Ash.read_one() do
+        {:ok, %SecNode{} = node} ->
+          case Ash.update(node, %{}, action: :archive) do
+            {:ok, _} ->
+              Logger.info("NodeManager: archived disconnected node #{host}:#{port}")
+
+            {:error, error} ->
+              Logger.warning("NodeManager: failed to archive node #{host}:#{port}: #{inspect(error)}")
+          end
+
+        _ ->
+          :ok
+      end
     end)
 
     old_nodes = state.nodes

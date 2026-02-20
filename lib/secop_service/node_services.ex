@@ -61,6 +61,16 @@ defmodule SecopService.NodeSupervisor do
   def list_node_id_services() do
     Registry.select(Registry.NodeServices, [{{:"$1", :_, :_}, [], [:"$1"]}])
   end
+
+  def list_uuid_services() do
+    list_node_id_services()
+    |> Enum.reduce(MapSet.new(), fn node_id, acc ->
+      case NodeValues.get_node_db(node_id) do
+        {:ok, node_db} -> MapSet.put(acc, node_db.uuid)
+        {:error, _} -> acc
+      end
+    end)
+  end
 end
 
 defmodule SecopService.NodeServices do

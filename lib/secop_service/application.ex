@@ -37,7 +37,18 @@ defmodule SecopService.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: SecopService.Supervisor]
-    Supervisor.start_link(children, opts)
+    result = Supervisor.start_link(children, opts)
+
+    # Trigger initial node state sync after startup
+    case result do
+      {:ok, _pid} ->
+        Oban.insert(SecopService.Workers.SyncNodeStates.new(%{}))
+
+      _ ->
+        :ok
+    end
+
+    result
   end
 
   # Tell Phoenix to update the endpoint configuration
