@@ -15,7 +15,9 @@ config :secop_service, Oban,
   queues: [
     default: 10,
     sec_node_cleanup_old_nodes: 10,
-    sec_node_purge_trashed_nodes: 10
+    sec_node_purge_trashed_nodes: 10,
+    sec_node_recalculate_storage_active: 10,
+    sec_node_recalculate_storage__on_archive: 10
   ],
   repo: SecopService.Repo,
   plugins: [

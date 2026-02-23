@@ -26,6 +26,24 @@ defmodule SecopService.SecNodes.SecNode do
 
   oban do
     triggers do
+      trigger :recalculate_storage__on_archive do
+        scheduler_cron "0 * * * *"
+        action :recalculate_storage
+        read_action :read_for_storage_recalc
+        where expr(state == :processed)
+        worker_module_name SecopService.SecNodes.SecNode.AshOban.Worker.RecalculateStorageTransition
+        scheduler_module_name SecopService.SecNodes.SecNode.AshOban.Scheduler.RecalculateStorageTransition
+      end
+
+      trigger :recalculate_storage_active do
+        scheduler_cron "0 * * * *"
+        action :recalculate_storage
+        where expr(state == :active)
+        read_action :read_for_storage_recalc
+        worker_module_name SecopService.SecNodes.SecNode.AshOban.Worker.RecalculateStorageHourly
+        scheduler_module_name SecopService.SecNodes.SecNode.AshOban.Scheduler.RecalculateStorageHourly
+      end
+
       trigger :cleanup_old_nodes do
         scheduler_cron "0 2 * * *"
         action :trash
@@ -51,9 +69,9 @@ defmodule SecopService.SecNodes.SecNode do
     default_initial_state :active
 
     transitions do
-      transition :activate, from: [:archived, :trashed], to: :active
-      transition :archive, from: :active, to: :archived
-      transition :trash, from: :archived, to: :trashed
+      transition :archive, from: :active, to: :processed
+      transition :recalculate_storage, from: :processed, to: :archived
+      transition :trash, from: [:archived, :processed], to: :trashed
       transition :restore, from: :trashed, to: :archived
     end
   end
@@ -61,10 +79,10 @@ defmodule SecopService.SecNodes.SecNode do
   code_interface do
     define :node_only, action: :node_only
     define :toggle_favourite, action: :toggle_favourite
-    define :activate, action: :activate
     define :archive, action: :archive
     define :trash, action: :trash
     define :restore, action: :restore
+    define :recalculate_storage, action: :recalculate_storage
     define :purge_all_trashed, action: :purge_all_trashed
   end
 
@@ -81,7 +99,9 @@ defmodule SecopService.SecNodes.SecNode do
                   :error_pubsub_topic,
                   :node_id_str,
                   :display_description,
-                  :display_equipment_id
+                  :display_equipment_id,
+                  :datapoint_count,
+                  :disk_size_bytes
                 ]
               )
 
@@ -116,6 +136,15 @@ defmodule SecopService.SecNodes.SecNode do
                 load: [
                   :should_cleanup
                 ]
+              )
+    end
+
+    # Read action for storage recalculation trigger with keyset pagination
+    read :read_for_storage_recalc do
+      pagination keyset?: true, required?: false
+
+      prepare build(
+                load: []
               )
     end
 
@@ -226,12 +255,9 @@ defmodule SecopService.SecNodes.SecNode do
       end
     end
 
-    update :activate do
-      change transition_state(:active)
-    end
-
     update :archive do
-      change transition_state(:archived)
+      change run_oban_trigger(:recalculate_storage__on_archive)
+      change transition_state(:processed)
     end
 
     update :trash do
@@ -240,6 +266,21 @@ defmodule SecopService.SecNodes.SecNode do
 
     update :restore do
       change transition_state(:archived)
+    end
+
+    update :recalculate_storage do
+      accept []
+      require_atomic? false
+
+      change SecopService.SecNodes.Changes.RecalculateStorage
+      change fn changeset, _context ->
+        current_state = Ash.Changeset.get_attribute(changeset, :state)
+        if current_state == :processed do
+          Ash.Changeset.change_attribute(changeset, :state, :archived)
+        else
+          changeset
+        end
+      end
     end
 
     action :purge_all_trashed, :map do
@@ -318,6 +359,18 @@ defmodule SecopService.SecNodes.SecNode do
 
     attribute :favourite, :boolean do
       default false
+      allow_nil? false
+      public? true
+    end
+
+    attribute :datapoint_count, :integer do
+      default 0
+      allow_nil? false
+      public? true
+    end
+
+    attribute :disk_size_bytes, :integer do
+      default 0
       allow_nil? false
       public? true
     end

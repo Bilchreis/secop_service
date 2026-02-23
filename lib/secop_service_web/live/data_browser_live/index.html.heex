@@ -73,7 +73,7 @@
           path={~p"/browse?state_filter=#{@state_filter}"}
           opts={table_opts()}
         >
-          <:col :let={sec_node} label="" field={nil}>
+          <:col :let={sec_node} label="" field={nil} class="w-12">
             <button
               id={"fav-btn-#{sec_node.uuid}"}
               class={[
@@ -95,39 +95,69 @@
               />
             </button>
           </:col>
-          <:col :let={sec_node} label="Created at" field={:inserted_at}>
+          <:col :let={sec_node} label="Created at" field={:inserted_at} class="w-36">
             {sec_node.inserted_at
             |> DateTime.from_naive!("Etc/UTC")
             |> DateTime.shift_zone!("Europe/Berlin")
             |> Calendar.strftime("%d.%m.%Y %H:%M")}
           </:col>
           <:col :let={sec_node} label="UUID" field={:uuid}>
-            <span class="font-mono ">{sec_node.uuid}</span>
-          </:col>
-          <:col :let={sec_node} label="Equipment ID" field={:equipment_id}>
-            {sec_node.equipment_id}
-          </:col>
-          <:col :let={sec_node} label="URI" field={:node_id_str}>{sec_node.node_id_str}</:col>
-
-          <:col :let={sec_node} label="Description" field={:description}>
-            <div
-              class="max-h-35 min-h-35 overflow-y-auto text-sm "
-              title={sec_node.display_description}
-            >
-              {sec_node.display_description}
+            <div class="flex justify-center">
+              <div
+                class="tooltip cursor-pointer hover:bg-base-300 px-2 py-1 rounded transition-colors"
+                data-tip={sec_node.uuid}
+                data-copy={sec_node.uuid}
+                phx-hook="CopyToClipboard"
+                id={"uuid-#{sec_node.uuid}"}
+              >
+                <span class="font-mono">{String.split(sec_node.uuid, "-") |> List.first()}…</span>
+                <.icon name="hero-clipboard-document" class="w-3 h-3 ml-1 inline-block opacity-50" />
+              </div>
             </div>
           </:col>
-          <:col :let={sec_node} label="State">
-            <%= cond do %>
-              <% sec_node.state == :active -> %>
-                <span class="badge badge-success badge-sm">Active</span>
-              <% sec_node.state == :archived -> %>
-                <span class="badge badge-info badge-sm">Archived</span>
-              <% sec_node.state == :trashed -> %>
-                <span class="badge badge-warning badge-sm">Trashed</span>
-              <% true -> %>
-                <span class="badge badge-sm">{sec_node.state}</span>
-            <% end %>
+          <:col :let={sec_node} label="Equipment ID" field={:equipment_id} >
+            <div class="tooltip w-45">
+              <div class="tooltip-content text-left bg-transparent ">
+                <div class="card bg-base-100 border-base-content/30 border-3 p-3 ">
+                  {sec_node.display_description || "No description available."}
+                </div>
+              </div>
+              <div class="truncate">
+                <.icon name="hero-information-circle" class="w-5 h-5 ml-1 inline-block opacity-50" />
+                <span>{sec_node.display_equipment_id}</span>
+              </div>
+            </div>            
+
+
+          </:col>
+          <:col :let={sec_node} label="Disk Size" field={:disk_size_bytes}>
+            <div class={[SecopService.Util.disk_size_gradient_classes(sec_node.disk_size_bytes), "px-3 py-1 rounded font-mono text-sm text-center"]}>
+              {SecopService.Util.format_bytes(sec_node.disk_size_bytes)}
+            </div>
+          </:col>
+          <:col :let={sec_node} label="Datapoints" field={:datapoint_count} class="w-24">
+            <div class="flex justify-center">
+              <span class="font-mono text-sm">{SecopService.Util.format_scientific(sec_node.datapoint_count)}</span>
+            </div>
+          </:col>
+          <:col :let={sec_node} label="URI" field={:node_id_str}>
+            <div class="flex justify-center">
+              {sec_node.node_id_str}
+            </div>
+          </:col>
+          <:col :let={sec_node} label="State" class="w-24">
+            <div class="flex justify-center">
+              <%= cond do %>
+                <% sec_node.state == :active -> %>
+                  <span class="badge badge-success badge-sm">Active</span>
+                <% sec_node.state == :archived -> %>
+                  <span class="badge badge-info badge-sm">Archived</span>
+                <% sec_node.state == :trashed -> %>
+                  <span class="badge badge-warning badge-sm">Trashed</span>
+                <% true -> %>
+                  <span class="badge badge-sm">{sec_node.state}</span>
+              <% end %>
+            </div>
           </:col>
           <:col :let={sec_node} label="Actions">
             <div class="flex flex-col space-y-2 w-full">
