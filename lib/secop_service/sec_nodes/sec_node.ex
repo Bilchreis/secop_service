@@ -387,8 +387,8 @@ defmodule SecopService.SecNodes.SecNode do
   end
 
   aggregates do
-    sum :datapoint_count, :modules, :datapoint_count
-    sum :disk_size_bytes, :modules, :disk_size_bytes
+    sum :datapoint_count, [:modules, :parameters], :datapoint_count
+    sum :disk_size_bytes, [:modules, :parameters], :disk_size_bytes
   end
 
   relationships do
