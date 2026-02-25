@@ -175,6 +175,17 @@
               >
                 View JSON
               </button>
+              <%= if sec_node.state == :active do %>
+                <button
+                  id={"trash-btn-#{sec_node.uuid}"}
+                  class="btn btn-disabled btn-sm"
+                  phx-click="trash_node"
+                  phx-value-uuid={sec_node.uuid}
+                  data-confirm="Move this node to trash?"
+                >
+                  <.icon name="hero-trash" class="w-4 h-4" /> Trash
+                </button>
+              <% end %>
 
               <%= if sec_node.state == :archived do %>
                 <button
