@@ -56,6 +56,16 @@ defmodule SecopService.Util do
     end
   end
 
+  # Handle Decimal values from database aggregates
+  def format_bytes(%Decimal{} = bytes) do
+    bytes
+    |> Decimal.to_integer()
+    |> format_bytes()
+  end
+
+  # Handle nil
+  def format_bytes(nil), do: "0 B"
+
   @doc """
   Calculate log-scaled opacity value (0-100) for a given byte size.
 
@@ -124,6 +134,16 @@ defmodule SecopService.Util do
 
   def format_scientific(0), do: "0"
   def format_scientific(num) when is_integer(num) and num < 0, do: "-#{format_scientific(-num)}"
+
+  # Handle Decimal values from database aggregates
+  def format_scientific(%Decimal{} = num) do
+    num
+    |> Decimal.to_integer()
+    |> format_scientific()
+  end
+
+  # Handle nil
+  def format_scientific(nil), do: "0"
 
   defp opacity_to_class(opacity) when opacity <= 10, do: "opacity-10"
   defp opacity_to_class(opacity) when opacity <= 20, do: "opacity-20"

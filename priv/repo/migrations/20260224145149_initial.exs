@@ -46,6 +46,7 @@ defmodule SecopService.Repo.Migrations.Initial do
       add :describe_message_raw, :text
       add :custom_properties, :map
       add :check_result, :map
+      add :favourite, :boolean, null: false, default: false
 
       add :inserted_at, :utc_datetime_usec,
         null: false,
@@ -54,6 +55,8 @@ defmodule SecopService.Repo.Migrations.Initial do
       add :updated_at, :utc_datetime_usec,
         null: false,
         default: fragment("(now() AT TIME ZONE 'utc')")
+
+      add :state, :text, null: false, default: "active"
     end
 
     create index(:sec_nodes, [:equipment_id], name: "equipment_id_index")
@@ -71,6 +74,8 @@ defmodule SecopService.Repo.Migrations.Initial do
       add :meaning, :map
       add :checkable, :boolean
       add :custom_properties, :map
+      add :datapoint_count, :bigint, null: false, default: 0
+      add :disk_size_bytes, :bigint, null: false, default: 0
 
       add :inserted_at, :utc_datetime_usec,
         null: false,
@@ -104,8 +109,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :bigint,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create index(:parameter_values_string, [:timestamp],
@@ -137,8 +141,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :bigint,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create index(:parameter_values_json, [:value],
@@ -175,8 +178,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :bigint,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create index(:parameter_values_int, [:timestamp],
@@ -208,8 +210,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :bigint,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create index(:parameter_values_double, [:timestamp],
@@ -241,8 +242,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :bigint,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create index(:parameter_values_bool, [:timestamp],
@@ -274,8 +274,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :bigint,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create index(:parameter_values_array_string, [:timestamp],
@@ -307,8 +306,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :bigint,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create index(:parameter_values_array_int, [:timestamp],
@@ -340,8 +338,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :bigint,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create index(:parameter_values_array_double, [:timestamp],
@@ -373,8 +370,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :bigint,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create index(:parameter_values_array_bool, [:timestamp],
@@ -428,8 +424,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create unique_index(:modules, [:sec_node_id, :name], name: "modules_sec_node_id_name_index")
@@ -462,8 +457,7 @@ defmodule SecopService.Repo.Migrations.Initial do
             type: :bigint,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create unique_index(:commands, [:module_id, :name], name: "commands_module_id_name_index")

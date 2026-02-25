@@ -20,7 +20,7 @@ defmodule SecopService.NodeSupervisor do
 
     result = DynamicSupervisor.start_child(__MODULE__, {SecopService.NodeServices, opts})
 
-    IO.inspect(result)
+    Logger.info("Started Node Services for Node : #{inspect(node_db.node_id)} #{inspect(result)}")
 
     result
   end

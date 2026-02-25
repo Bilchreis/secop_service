@@ -26,7 +26,16 @@ defmodule SecopService.SecNodes.SecNode do
 
   oban do
     triggers do
-      trigger :recalculate_storage__on_archive do
+      trigger :sync_node_states do
+        scheduler_cron "0 * * * *"
+        action :sync_node_state
+        where expr(state == :active)
+        read_action :read_for_state_transition
+        worker_module_name SecopService.SecNodes.SecNode.AshOban.Worker.SyncNodeStates
+        scheduler_module_name SecopService.SecNodes.SecNode.AshOban.Scheduler.SyncNodeStates
+      end
+
+      trigger :recalculate_storage_on_archive do
         scheduler_cron "0 * * * *"
         action :recalculate_storage
         read_action :read_for_storage_recalc
@@ -69,6 +78,7 @@ defmodule SecopService.SecNodes.SecNode do
     default_initial_state :active
 
     transitions do
+      transition :sync_node_state, from: :active, to: :processed
       transition :archive, from: :active, to: :processed
       transition :recalculate_storage, from: :processed, to: :archived
       transition :trash, from: [:archived, :processed], to: :trashed
@@ -135,6 +145,17 @@ defmodule SecopService.SecNodes.SecNode do
       prepare build(
                 load: [
                   :should_cleanup
+                ]
+              )
+    end
+
+    read :read_for_state_transition do
+      pagination keyset?: true, required?: false
+
+      prepare build(
+                load: [
+                  :should_cleanup,
+                  :should_purge
                 ]
               )
     end
@@ -256,7 +277,7 @@ defmodule SecopService.SecNodes.SecNode do
     end
 
     update :archive do
-      change run_oban_trigger(:recalculate_storage__on_archive)
+      change run_oban_trigger(:recalculate_storage_on_archive)
       change transition_state(:processed)
     end
 
@@ -268,19 +289,18 @@ defmodule SecopService.SecNodes.SecNode do
       change transition_state(:archived)
     end
 
+    update :sync_node_state do
+      accept []
+      require_atomic? false
+
+      change SecopService.SecNodes.Changes.SyncNodeState
+    end
+
     update :recalculate_storage do
       accept []
       require_atomic? false
 
-      change SecopService.SecNodes.Changes.RecalculateStorage
-      change fn changeset, _context ->
-        current_state = Ash.Changeset.get_attribute(changeset, :state)
-        if current_state == :processed do
-          Ash.Changeset.change_attribute(changeset, :state, :archived)
-        else
-          changeset
-        end
-      end
+      change SecopService.SecNodes.Changes.RecalculateSecNodeStorage
     end
 
     action :purge_all_trashed, :map do
@@ -363,19 +383,12 @@ defmodule SecopService.SecNodes.SecNode do
       public? true
     end
 
-    attribute :datapoint_count, :integer do
-      default 0
-      allow_nil? false
-      public? true
-    end
-
-    attribute :disk_size_bytes, :integer do
-      default 0
-      allow_nil? false
-      public? true
-    end
-
     timestamps(public?: true)
+  end
+
+  aggregates do
+    sum :datapoint_count, :modules, :datapoint_count
+    sum :disk_size_bytes, :modules, :disk_size_bytes
   end
 
   relationships do

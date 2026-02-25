@@ -3,50 +3,50 @@
     {
       "allow_nil?": false,
       "default": "nil",
-      "generated?": false,
+      "generated?": true,
       "precision": null,
       "primary_key?": true,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "uuid",
-      "type": "uuid"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "equipment_id",
-      "type": "text"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "host",
-      "type": "text"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "port",
+      "source": "id",
       "type": "bigint"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "name",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "datainfo",
+      "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": true,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "readonly",
+      "type": "boolean"
     },
     {
       "allow_nil?": true,
@@ -69,7 +69,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "firmware",
+      "source": "group",
       "type": "text"
     },
     {
@@ -81,7 +81,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "implementor",
+      "source": "visibility",
       "type": "text"
     },
     {
@@ -93,19 +93,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "timeout",
-      "type": "bigint"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "describe_message",
+      "source": "meaning",
       "type": "map"
     },
     {
@@ -117,8 +105,8 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "describe_message_raw",
-      "type": "text"
+      "source": "checkable",
+      "type": "boolean"
     },
     {
       "allow_nil?": true,
@@ -131,30 +119,6 @@
       "size": null,
       "source": "custom_properties",
       "type": "map"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "check_result",
-      "type": "map"
-    },
-    {
-      "allow_nil?": false,
-      "default": "false",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "favourite",
-      "type": "boolean"
     },
     {
       "allow_nil?": false,
@@ -206,58 +170,58 @@
     },
     {
       "allow_nil?": false,
-      "default": "\"active\"",
+      "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
-      "references": null,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "parameters_module_id_fkey",
+        "on_delete": "delete",
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "modules"
+      },
       "scale": null,
       "size": null,
-      "source": "state",
-      "type": "text"
+      "source": "module_id",
+      "type": "bigint"
     }
   ],
   "base_filter": null,
   "check_constraints": [],
-  "custom_indexes": [
-    {
-      "all_tenants?": false,
-      "concurrently": false,
-      "error_fields": [
-        "equipment_id"
-      ],
-      "fields": [
-        {
-          "type": "atom",
-          "value": "equipment_id"
-        }
-      ],
-      "include": null,
-      "message": null,
-      "name": "equipment_id_index",
-      "nulls_distinct": true,
-      "prefix": null,
-      "table": null,
-      "unique": false,
-      "using": null,
-      "where": null
-    }
-  ],
+  "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "0CED7130E3D34FC9EC160FD0A2A6331658181CE872B31EEA85592A39ACBD804D",
+  "hash": "04D300635D5FCA0891BCE535E07E8A414A3F87264A519802568395F7034FE656",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "sec_nodes_unique_uuid_index",
+      "index_name": "parameters_module_id_name_index",
       "keys": [
         {
           "type": "atom",
-          "value": "uuid"
+          "value": "module_id"
+        },
+        {
+          "type": "atom",
+          "value": "name"
         }
       ],
-      "name": "unique_uuid",
+      "name": "module_id_name",
       "nils_distinct?": true,
       "where": null
     }
@@ -269,5 +233,5 @@
   },
   "repo": "Elixir.SecopService.Repo",
   "schema": null,
-  "table": "sec_nodes"
+  "table": "parameters"
 }

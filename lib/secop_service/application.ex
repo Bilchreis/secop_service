@@ -16,6 +16,7 @@ defmodule SecopService.Application do
          Application.fetch_env!(:secop_service, :ash_domains),
          Application.fetch_env!(:secop_service, Oban)
        )},
+      SecopService.StartupTriggerRunner,
       # Start the Finch HTTP client for sending emails
       {Phoenix.PubSub, name: SecopService.PubSub},
       {Finch, name: SecopService.Finch},
@@ -34,19 +35,14 @@ defmodule SecopService.Application do
       {AshAuthentication.Supervisor, [otp_app: :secop_service]}
     ]
 
+
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: SecopService.Supervisor]
     result = Supervisor.start_link(children, opts)
 
-    # Trigger initial node state sync after startup
-    case result do
-      {:ok, _pid} ->
-        Oban.insert(SecopService.Workers.SyncNodeStates.new(%{}))
 
-      _ ->
-        :ok
-    end
 
     result
   end

@@ -100,6 +100,8 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
     {:noreply, assign(socket, show_json_modal: false)}
   end
 
+
+
   @impl true
   def handle_event("trigger_cleanup", _params, socket) do
     result = AshOban.schedule_and_run_triggers({SecNode, :cleanup_old_nodes})

@@ -22,7 +22,10 @@
       "scale": null,
       "size": null,
       "source": "value",
-      "type": "map"
+      "type": [
+        "array",
+        "float"
+      ]
     },
     {
       "allow_nil?": false,
@@ -91,7 +94,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "parameter_values_json_parameter_id_fkey",
+        "name": "parameter_values_array_double_parameter_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -126,7 +129,7 @@
       ],
       "include": null,
       "message": null,
-      "name": "parameter_values_json_parameter_id_timestamp_index",
+      "name": "parameter_values_array_double_parameter_id_timestamp_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
@@ -148,40 +151,18 @@
       ],
       "include": null,
       "message": null,
-      "name": "parameter_values_json_timestamp_index",
+      "name": "parameter_values_array_double_timestamp_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
       "unique": false,
       "using": null,
       "where": null
-    },
-    {
-      "all_tenants?": false,
-      "concurrently": false,
-      "error_fields": [
-        "value"
-      ],
-      "fields": [
-        {
-          "type": "atom",
-          "value": "value"
-        }
-      ],
-      "include": null,
-      "message": null,
-      "name": "parameter_values_json_value_index",
-      "nulls_distinct": true,
-      "prefix": null,
-      "table": null,
-      "unique": false,
-      "using": "gin",
-      "where": null
     }
   ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "6031D4D629D4D08DE1BA3CC108878537095BE8067CB1728F9E87D1111A866816",
+  "hash": "F9B01B7AE2C42D455CC6D2816DA7937383A5903A03D1369906F4819BEC6A9401",
   "identities": [],
   "multitenancy": {
     "attribute": null,
@@ -190,5 +171,5 @@
   },
   "repo": "Elixir.SecopService.Repo",
   "schema": null,
-  "table": "parameter_values_json"
+  "table": "parameter_values_array_double"
 }

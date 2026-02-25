@@ -50,6 +50,13 @@ defmodule SecopService.SecNodes.Parameter do
       ]
     end
 
+    update :recalculate_storage do
+      accept []
+      require_atomic? false
+
+      change SecopService.SecNodes.Changes.RecalculateParameterStorage
+    end
+
     read :by_node_uuid do
       argument :node_uuid, :uuid do
         allow_nil? false
@@ -117,7 +124,29 @@ defmodule SecopService.SecNodes.Parameter do
       public? true
     end
 
+    attribute :datapoint_count, :integer do
+      default 0
+      allow_nil? false
+      public? true
+    end
+
+    attribute :disk_size_bytes, :integer do
+      default 0
+      allow_nil? false
+      public? true
+    end
+
     timestamps()
+  end
+
+  calculations do
+    calculate :calculated_datapoint_count,
+              :integer,
+              SecopService.SecNodes.Calculations.ParameterDatapointCount
+
+    calculate :calculated_disk_size_bytes,
+              :integer,
+              SecopService.SecNodes.Calculations.ParameterDiskSize
   end
 
   relationships do

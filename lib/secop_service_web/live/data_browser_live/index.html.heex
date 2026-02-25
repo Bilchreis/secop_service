@@ -131,7 +131,7 @@
 
           </:col>
           <:col :let={sec_node} label="Disk Size" field={:disk_size_bytes}>
-            <div class={[SecopService.Util.disk_size_gradient_classes(sec_node.disk_size_bytes), "px-3 py-1 rounded font-mono text-sm text-center"]}>
+            <div class="px-3 py-1 rounded font-mono text-sm text-center"}>
               {SecopService.Util.format_bytes(sec_node.disk_size_bytes)}
             </div>
           </:col>
@@ -175,6 +175,7 @@
               >
                 View JSON
               </button>
+
               <%= if sec_node.state == :archived do %>
                 <button
                   id={"trash-btn-#{sec_node.uuid}"}
