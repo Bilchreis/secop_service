@@ -14,6 +14,5 @@ defmodule SecopServiceWeb.NodeBrowserLive.Index do
       {:error, _reason} ->
         {:ok, assign(socket, :node, nil)}
     end
-
   end
 end

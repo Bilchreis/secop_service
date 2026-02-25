@@ -7,6 +7,22 @@
 # General application configuration
 import Config
 
+config :ash_oban, pro?: false
+
+config :secop_service, Oban,
+  engine: Oban.Engines.Basic,
+  notifier: Oban.Notifiers.Postgres,
+  plugins: [{Oban.Plugins.Cron, []}],
+  queues: [
+    default: 10,
+    sec_node_cleanup_old_nodes: 10,
+    sec_node_purge_trashed_nodes: 10,
+    sec_node_recalculate_storage_active: 10,
+    sec_node_recalculate_storage_on_archive: 10,
+    sec_node_sync_node_states: 10
+  ],
+  repo: SecopService.Repo
+
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},
   types: %{"application/vnd.api+json" => ["json"]}
@@ -71,8 +87,6 @@ config :secop_service,
   ecto_repos: [SecopService.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [SecopService.SecNodes, SecopService.Accounts]
-
-
 
 # Configures the endpoint
 config :secop_service, SecopServiceWeb.Endpoint,

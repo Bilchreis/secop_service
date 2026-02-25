@@ -46,6 +46,7 @@ defmodule SecopService.Repo.Migrations.Initial do
       add :describe_message_raw, :text
       add :custom_properties, :map
       add :check_result, :map
+      add :favourite, :boolean, null: false, default: false
 
       add :inserted_at, :utc_datetime_usec,
         null: false,
@@ -54,6 +55,8 @@ defmodule SecopService.Repo.Migrations.Initial do
       add :updated_at, :utc_datetime_usec,
         null: false,
         default: fragment("(now() AT TIME ZONE 'utc')")
+
+      add :state, :text, null: false, default: "active"
     end
 
     create index(:sec_nodes, [:equipment_id], name: "equipment_id_index")
@@ -71,6 +74,8 @@ defmodule SecopService.Repo.Migrations.Initial do
       add :meaning, :map
       add :checkable, :boolean
       add :custom_properties, :map
+      add :datapoint_count, :bigint, null: false, default: 0
+      add :disk_size_bytes, :bigint, null: false, default: 0
 
       add :inserted_at, :utc_datetime_usec,
         null: false,

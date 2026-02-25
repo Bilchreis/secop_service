@@ -22,7 +22,7 @@
       "scale": null,
       "size": null,
       "source": "value",
-      "type": "text"
+      "type": "map"
     },
     {
       "allow_nil?": false,
@@ -91,7 +91,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "parameter_values_string_parameter_id_fkey",
+        "name": "parameter_values_json_parameter_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -126,7 +126,7 @@
       ],
       "include": null,
       "message": null,
-      "name": "parameter_values_string_parameter_id_timestamp_index",
+      "name": "parameter_values_json_parameter_id_timestamp_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
@@ -148,18 +148,40 @@
       ],
       "include": null,
       "message": null,
-      "name": "parameter_values_string_timestamp_index",
+      "name": "parameter_values_json_timestamp_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
       "unique": false,
       "using": null,
       "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "value"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "value"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "parameter_values_json_value_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": "gin",
+      "where": null
     }
   ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "0C116FCC345EE96D80FA2EDFA8BEEA07AB7DF4F7FFDCCDF2D5894E1129A00D39",
+  "hash": "2768C22C100E41EFB37D3F5F92B0F78943A0A8A5EF1DC9BB3E2608F1E711DB33",
   "identities": [],
   "multitenancy": {
     "attribute": null,
@@ -168,5 +190,5 @@
   },
   "repo": "Elixir.SecopService.Repo",
   "schema": null,
-  "table": "parameter_values_string"
+  "table": "parameter_values_json"
 }

@@ -50,9 +50,9 @@ defmodule SecopService.SecNodes.ParameterValueInt do
 
     read :for_parameter do
       pagination offset?: true,
-          default_limit: @ash_pagify_options.default_limit,
-          countable: true,
-          required?: false
+                 default_limit: @ash_pagify_options.default_limit,
+                 countable: true,
+                 required?: false
 
       argument :parameter_id, :integer do
         allow_nil? false
@@ -111,7 +111,6 @@ defmodule SecopService.SecNodes.ParameterValueInt do
     attribute :qualifiers, :map do
       public? true
     end
-
 
     timestamps()
   end

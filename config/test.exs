@@ -1,4 +1,5 @@
 import Config
+config :secop_service, Oban, testing: :manual
 config :secop_service, token_signing_secret: "aAAT96csYVHMuEPfYDoDI3pDRgj7THhG"
 config :ash, policies: [show_policy_breakdowns?: true], disable_async?: true
 

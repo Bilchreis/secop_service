@@ -146,6 +146,18 @@
     },
     {
       "allow_nil?": false,
+      "default": "false",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "favourite",
+      "type": "boolean"
+    },
+    {
+      "allow_nil?": false,
       "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
       "generated?": false,
       "precision": null,
@@ -167,6 +179,18 @@
       "size": null,
       "source": "updated_at",
       "type": "utc_datetime_usec"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"active\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "state",
+      "type": "text"
     }
   ],
   "base_filter": null,

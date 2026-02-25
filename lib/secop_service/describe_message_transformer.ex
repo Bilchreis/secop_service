@@ -30,7 +30,6 @@ defmodule SecopService.DescribeMessageTransformer do
     describe_str = Jason.encode!(statem_state[:raw_description])
     check_result = check_description(describe_str)
 
-
     ret = %{
       uuid: statem_state[:uuid] || Ash.UUID.generate(),
       equipment_id: statem_state[:equipment_id] || properties[:equipment_id],
@@ -47,7 +46,6 @@ defmodule SecopService.DescribeMessageTransformer do
       modules: transform_modules(description[:modules] || %{})
     }
 
-
     ret
   end
 
@@ -56,7 +54,6 @@ defmodule SecopService.DescribeMessageTransformer do
       parameters = module_data[:parameters] || %{}
       commands = module_data[:commands] || %{}
       properties = module_data[:properties] || %{}
-
 
       %{
         name: to_string(module_name),
@@ -91,7 +88,6 @@ defmodule SecopService.DescribeMessageTransformer do
     end)
   end
 
-
   defp transform_commands(commands) when is_map(commands) do
     commands
     |> Enum.map(fn {cmd_name, cmd_data} ->
@@ -110,7 +106,6 @@ defmodule SecopService.DescribeMessageTransformer do
         custom_properties: extract_accessible_custom_properties(cmd_data)
       }
     end)
-
   end
 
   # Extract custom properties (fields not part of standard SECoP spec)
@@ -122,16 +117,32 @@ defmodule SecopService.DescribeMessageTransformer do
   end
 
   defp extract_module_custom_properties(properties) when is_map(properties) do
-    standard_keys = [:commands, :parameters, :description, :features, :group,
-                     :implementation, :interface_classes, :visibility, :meaning]
+    standard_keys = [
+      :commands,
+      :parameters,
+      :description,
+      :features,
+      :group,
+      :implementation,
+      :interface_classes,
+      :visibility,
+      :meaning
+    ]
 
     properties
     |> Map.drop(standard_keys)
   end
 
   defp extract_accessible_custom_properties(accessible_data) when is_map(accessible_data) do
-    standard_keys = [:datainfo, :description, :readonly, :group,
-                     :visibility, :meaning, :checkable]
+    standard_keys = [
+      :datainfo,
+      :description,
+      :readonly,
+      :group,
+      :visibility,
+      :meaning,
+      :checkable
+    ]
 
     accessible_data
     |> Map.drop(standard_keys)

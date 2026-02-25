@@ -20,7 +20,7 @@ defmodule SecopService.NodeSupervisor do
 
     result = DynamicSupervisor.start_child(__MODULE__, {SecopService.NodeServices, opts})
 
-    IO.inspect(result)
+    Logger.info("Started Node Services for Node : #{inspect(node_db.node_id)} #{inspect(result)}")
 
     result
   end
@@ -61,12 +61,21 @@ defmodule SecopService.NodeSupervisor do
   def list_node_id_services() do
     Registry.select(Registry.NodeServices, [{{:"$1", :_, :_}, [], [:"$1"]}])
   end
+
+  def list_uuid_services() do
+    list_node_id_services()
+    |> Enum.reduce(MapSet.new(), fn node_id, acc ->
+      case NodeValues.get_node_db(node_id) do
+        {:ok, node_db} -> MapSet.put(acc, node_db.uuid)
+        {:error, _} -> acc
+      end
+    end)
+  end
 end
 
 defmodule SecopService.NodeServices do
   use Supervisor
   require Logger
-
 
   @moduledoc """
   Supervisor for all processes related to a specific SEC Node, including:
@@ -79,8 +88,6 @@ defmodule SecopService.NodeServices do
   """
 
   def start_link(node_db) do
-
-
     Supervisor.start_link(__MODULE__, node_db,
       name: {:via, Registry, {Registry.NodeServices, node_db.node_id}}
     )

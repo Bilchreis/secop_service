@@ -20,7 +20,8 @@ defmodule SecopService.SecNodes.Parameter do
     defaults [:read, :destroy]
 
     create :create do
-    primary? true
+      primary? true
+
       accept [
         :name,
         :datainfo,
@@ -36,8 +37,24 @@ defmodule SecopService.SecNodes.Parameter do
 
       upsert? true
       upsert_identity :module_id_name
-      upsert_fields [:datainfo, :readonly, :description, :group, :visibility, :meaning, :checkable, :custom_properties]
 
+      upsert_fields [
+        :datainfo,
+        :readonly,
+        :description,
+        :group,
+        :visibility,
+        :meaning,
+        :checkable,
+        :custom_properties
+      ]
+    end
+
+    update :recalculate_storage do
+      accept []
+      require_atomic? false
+
+      change SecopService.SecNodes.Changes.RecalculateParameterStorage
     end
 
     read :by_node_uuid do
@@ -107,7 +124,29 @@ defmodule SecopService.SecNodes.Parameter do
       public? true
     end
 
+    attribute :datapoint_count, :integer do
+      default 0
+      allow_nil? false
+      public? true
+    end
+
+    attribute :disk_size_bytes, :integer do
+      default 0
+      allow_nil? false
+      public? true
+    end
+
     timestamps()
+  end
+
+  calculations do
+    calculate :calculated_datapoint_count,
+              :integer,
+              SecopService.SecNodes.Calculations.ParameterDatapointCount
+
+    calculate :calculated_disk_size_bytes,
+              :integer,
+              SecopService.SecNodes.Calculations.ParameterDiskSize
   end
 
   relationships do

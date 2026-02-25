@@ -45,14 +45,14 @@ defmodule SecopService.SecNodes.ParameterValueArrayBool do
     end
 
     read :read do
-        prepare build(sort: [timestamp: :asc])
-      end
+      prepare build(sort: [timestamp: :asc])
+    end
 
     read :for_parameter do
       pagination offset?: true,
-          default_limit: @ash_pagify_options.default_limit,
-          countable: true,
-          required?: false
+                 default_limit: @ash_pagify_options.default_limit,
+                 countable: true,
+                 required?: false
 
       argument :parameter_id, :integer do
         allow_nil? false
@@ -88,7 +88,6 @@ defmodule SecopService.SecNodes.ParameterValueArrayBool do
         where present(:limit)
       end
     end
-
   end
 
   attributes do
@@ -113,9 +112,7 @@ defmodule SecopService.SecNodes.ParameterValueArrayBool do
       public? true
     end
 
-
     timestamps()
-
   end
 
   relationships do

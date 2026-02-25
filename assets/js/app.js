@@ -166,6 +166,39 @@ Hooks.PlotlyChart = {
   }
 }
 
+// CopyToClipboard hook for copying text with visual feedback
+Hooks.CopyToClipboard = {
+  mounted() {
+    this.originalTooltip = this.el.dataset.tip;
+    
+    this.el.addEventListener('click', () => {
+      const textToCopy = this.el.dataset.copy;
+      
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        // Change tooltip to show success
+        this.el.dataset.tip = '✓ Copied!';
+        this.el.classList.add('tooltip-success');
+        
+        // Revert back after 2 seconds
+        setTimeout(() => {
+          this.el.dataset.tip = this.originalTooltip;
+          this.el.classList.remove('tooltip-success');
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        // Show error feedback
+        this.el.dataset.tip = '✗ Failed to copy';
+        this.el.classList.add('tooltip-error');
+        
+        setTimeout(() => {
+          this.el.dataset.tip = this.originalTooltip;
+          this.el.classList.remove('tooltip-error');
+        }, 2000);
+      });
+    });
+  }
+}
+
 // Register hooks with LiveSocket
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,

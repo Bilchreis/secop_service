@@ -14,19 +14,17 @@ defmodule SecopService.PlotDB do
           "No values found in DB for param_id: #{param_id}, trying to read from device"
         )
 
-
-        parameter = Parameter
+        parameter =
+          Parameter
           |> Ash.Query.for_read(:get_with_context, %{id: param_id})
           |> Ash.read_first!()
 
-
-
         # Retry indefinitely until we get a valid reading
         read_until_valid(
-          parameter.module.sec_node.node_id ,
+          parameter.module.sec_node.node_id,
           parameter.module.name,
           parameter.name
-          )
+        )
 
       {_, _} ->
         readings
@@ -62,10 +60,8 @@ defmodule SecopService.PlotDB do
 
   defp get_values(parameter) do
     ParameterValue.get_resource_module(parameter)
-    |> Ash.Query.for_read(:for_parameter,%{parameter_id: parameter.id})
+    |> Ash.Query.for_read(:for_parameter, %{parameter_id: parameter.id})
     |> Ash.read!()
-
-
   end
 
   def get_layout(%{plotly: nil} = plot_map) do

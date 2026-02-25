@@ -52,6 +52,4 @@ defmodule SecopService.SecNodes do
       |> Ash.create()
     end)
   end
-
-
 end

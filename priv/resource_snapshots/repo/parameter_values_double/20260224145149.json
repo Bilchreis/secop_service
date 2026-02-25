@@ -22,10 +22,7 @@
       "scale": null,
       "size": null,
       "source": "value",
-      "type": [
-        "array",
-        "float"
-      ]
+      "type": "decimal"
     },
     {
       "allow_nil?": false,
@@ -94,7 +91,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "parameter_values_array_double_parameter_id_fkey",
+        "name": "parameter_values_double_parameter_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -129,7 +126,7 @@
       ],
       "include": null,
       "message": null,
-      "name": "parameter_values_array_double_parameter_id_timestamp_index",
+      "name": "parameter_values_double_parameter_id_timestamp_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
@@ -151,7 +148,7 @@
       ],
       "include": null,
       "message": null,
-      "name": "parameter_values_array_double_timestamp_index",
+      "name": "parameter_values_double_timestamp_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
@@ -162,7 +159,7 @@
   ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "343E71DF09CBE193ABC49F7E4F318E796BFADFF5B0B559911F96CDAAF16929CE",
+  "hash": "17CB29DB258AFED5B7761EC3A65311004141D90E69AFFE2E6AA23C865538349D",
   "identities": [],
   "multitenancy": {
     "attribute": null,
@@ -171,5 +168,5 @@
   },
   "repo": "Elixir.SecopService.Repo",
   "schema": null,
-  "table": "parameter_values_array_double"
+  "table": "parameter_values_double"
 }

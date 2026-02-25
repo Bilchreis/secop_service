@@ -45,11 +45,28 @@ defmodule SecopService.NodeManager do
   @impl true
   def handle_cast(:sync_nodes, state) do
     Logger.info("Syncing nodes with database...")
-    # Get active nodes from supervisor
-    active_nodes = SEC_Node_Supervisor.get_active_nodes()
 
-    # Store nodes in database and subscribe to updates
-    updated_state = sync_nodes_with_db(active_nodes, state)
+    updated_state =
+      try do
+        # Get active nodes from supervisor
+        active_nodes = SEC_Node_Supervisor.get_active_nodes()
+
+        # Store nodes in database and subscribe to updates
+        sync_nodes_with_db(active_nodes, state)
+      rescue
+        _e in [DBConnection.OwnershipError] ->
+          Logger.warning("NodeManager sync skipped (no DB connection available)")
+          state
+
+        e ->
+          if Exception.message(e) =~ "OwnershipError" do
+            Logger.warning("NodeManager sync skipped (no DB connection available)")
+          else
+            Logger.error("NodeManager sync failed: #{Exception.message(e)}")
+          end
+
+          state
+      end
 
     # Schedule next sync
     schedule_sync()
@@ -102,11 +119,11 @@ defmodule SecopService.NodeManager do
 
         NodeSupervisor.stop_node_services(node_state.node_id)
 
-       transformed_node_state = DescribeMessageTransformer.transform(node_state)
+        transformed_node_state = DescribeMessageTransformer.transform(node_state)
 
-      case SecNode
-        |> Ash.Changeset.for_create(:upsert, transformed_node_state)
-        |> Ash.create() do
+        case SecNode
+             |> Ash.Changeset.for_create(:upsert, transformed_node_state)
+             |> Ash.create() do
           {:ok, node} ->
             Logger.info(
               "Synced node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
@@ -126,8 +143,6 @@ defmodule SecopService.NodeManager do
             Logger.error("Failed to sync node: #{inspect(changeset.errors)}")
             state
         end
-
-
       else
         state
       end
@@ -152,17 +167,14 @@ defmodule SecopService.NodeManager do
 
   defp sync_nodes_with_db(active_nodes, state) do
     # Store/update nodes in database using upsert
-    uuids = Enum.map(active_nodes,fn {_node_id, node_state} -> node_state.uuid end)
+    uuids = Enum.map(active_nodes, fn {_node_id, node_state} -> node_state.uuid end)
 
-
-    uuids_in_db = SecNode
-      |> Ash.Query.for_read(:exists_by_uuids,%{uuids: uuids})
+    uuids_in_db =
+      SecNode
+      |> Ash.Query.for_read(:exists_by_uuids, %{uuids: uuids})
       |> Ash.read!()
       |> Enum.map(fn node -> node.uuid end)
       |> MapSet.new()
-
-
-
 
     result =
       Enum.reduce(active_nodes, %{}, fn {node_id, node_state}, acc ->
@@ -170,12 +182,13 @@ defmodule SecopService.NodeManager do
           transformed_node_state = DescribeMessageTransformer.transform(node_state)
 
           case SecNode
-          |> Ash.Changeset.for_create(:upsert, transformed_node_state)
-          |> Ash.create() do
+               |> Ash.Changeset.for_create(:upsert, transformed_node_state)
+               |> Ash.create() do
             {:ok, _node} ->
               Logger.info(
                 "Synced node: #{node_state.equipment_id} #{node_state.host}:#{node_state.port}"
               )
+
               Map.put(acc, node_id, node_state)
 
             {:error, changeset} ->
@@ -210,6 +223,26 @@ defmodule SecopService.NodeManager do
     MapSet.difference(current_service_node_ids, active_node_ids)
     |> Enum.each(fn node_id ->
       NodeSupervisor.stop_node_services(node_id)
+
+      # Archive the node in the database
+      {host_charlist, port} = node_id
+      host = List.to_string(host_charlist)
+
+      case SecNode
+           |> Ash.Query.filter_input(%{host: %{eq: host}, port: %{eq: port}, state: %{eq: :active}})
+           |> Ash.read_one() do
+        {:ok, %SecNode{} = node} ->
+          case Ash.update(node, %{}, action: :archive) do
+            {:ok, _} ->
+              Logger.info("NodeManager: archived disconnected node #{host}:#{port}")
+
+            {:error, error} ->
+              Logger.warning("NodeManager: failed to archive node #{host}:#{port}: #{inspect(error)}")
+          end
+
+        _ ->
+          :ok
+      end
     end)
 
     old_nodes = state.nodes

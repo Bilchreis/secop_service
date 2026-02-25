@@ -5,7 +5,6 @@ defmodule SecopServiceWeb.Router do
 
   import AshAuthentication.Plug.Helpers
 
-
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -64,8 +63,6 @@ defmodule SecopServiceWeb.Router do
     live "/browse/node/:uuid", NodeBrowserLive.Index, :index
     auth_routes AuthController, SecopService.Accounts.User, path: "/auth"
     sign_out_route AuthController
-
-
   end
 
   # Other scopes may use custom stacks.
@@ -96,7 +93,6 @@ defmodule SecopServiceWeb.Router do
   end
 
   ## Authentication routes
-
 
   if Application.compile_env(:secop_service, :dev_routes) do
     import AshAdmin.Router

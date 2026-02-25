@@ -206,7 +206,9 @@ defmodule SecopService.SecNodes.ParameterValue do
       "double" ->
         format_string = parameter.datainfo["fmtstr"] || "%.6g"
         # Convert Decimal to float for formatting
-        float_value = if is_struct(raw_value, Decimal), do: Decimal.to_float(raw_value), else: raw_value
+        float_value =
+          if is_struct(raw_value, Decimal), do: Decimal.to_float(raw_value), else: raw_value
+
         formatted = ExPrintf.sprintf(format_string, [float_value])
         append_unit(formatted, unit)
 
@@ -261,8 +263,6 @@ defmodule SecopService.SecNodes.ParameterValue do
   rescue
     _ -> "error_#{value}"
   end
-
-
 
   def extract_value_timestamp_lists(parameter_values, parameter) do
     values =

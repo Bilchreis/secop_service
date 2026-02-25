@@ -122,6 +122,30 @@
     },
     {
       "allow_nil?": false,
+      "default": "0",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "datapoint_count",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": false,
+      "default": "0",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "disk_size_bytes",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": false,
       "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
       "generated?": false,
       "precision": null,
@@ -181,7 +205,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "7B5D56599ED7D3BF48D3CCED6DAE3C911F95047866851BA7A7EF9EC473E5ED88",
+  "hash": "04D300635D5FCA0891BCE535E07E8A414A3F87264A519802568395F7034FE656",
   "identities": [
     {
       "all_tenants?": false,

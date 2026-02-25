@@ -1,16 +1,16 @@
 <Layouts.app flash={@flash}>
   <%= if @active_nodes != %{} and @current_node != nil do %>
-    <div class = "flex">
-      <div class = "sticky   top-0 self-start ">
-      <.module_indicators
-        node={@current_node}
-        node_state={@active_nodes[@current_node.node_id].state}
-        values={@values}
-        node_id_str={@current_node.node_id_str}
-      />
+    <div class="flex">
+      <div class="sticky   top-0 self-start ">
+        <.module_indicators
+          node={@current_node}
+          node_state={@active_nodes[@current_node.node_id].state}
+          values={@values}
+          node_id_str={@current_node.node_id_str}
+        />
       </div>
 
-      <div class = "flex-1">
+      <div class="flex-1">
         <ul class="flex flex-wrap text-sm font-medium text-center text-neutral-content items-cente ml-4">
           <%= for {_addr,node} <- @active_nodes do %>
             <li class="me-2 mb-2">
@@ -25,16 +25,15 @@
             </li>
           <% end %>
           <li class="flex flex-col me-2 mb-2 justify-center">
-            
             <button
               onclick="connect_modal.showModal()"
               phx-click="open_connect_modal"
               class="btn btn-primary justify-between"
             >
-              <.icon name="hero-link"  class="" />
+              <.icon name="hero-link" class="" />
               <div class="text-lg">Connect Node</div>
             </button>
-                        
+
             <button
               phx-click="trigger-node-scan"
               class="mt-2 btn btn-primary justify-between"
@@ -42,11 +41,8 @@
               <.icon name="hero-globe-alt" class="" />
               <div class="text-lg">Trigger Scan</div>
             </button>
-
           </li>
         </ul>
-
-
 
         <.dash_sec_node
           node={@current_node}

@@ -4,7 +4,6 @@ defmodule SecopService.NodeDBWriter do
 
   alias SecopService.SecNodes.ParameterValue
 
-
   @pubsub_name :secop_client_pubsub
   # Batch parameter values for 5 seconds
   @batch_interval 10_000
@@ -231,7 +230,9 @@ defmodule SecopService.NodeDBWriter do
                    return_records?: false
                  ) do
               %Ash.BulkResult{status: :success} ->
-                Logger.debug("Successfully inserted #{length(valid_batch)} #{storage_type} values")
+                Logger.debug(
+                  "Successfully inserted #{length(valid_batch)} #{storage_type} values"
+                )
 
               %Ash.BulkResult{status: :partial_success, error_count: error_count, errors: errors} ->
                 Logger.warning(
@@ -240,7 +241,8 @@ defmodule SecopService.NodeDBWriter do
 
                 # Log details about the first few errors for debugging
                 errors
-                |> Enum.take(3)  # Only log first 3 to avoid spam
+                # Only log first 3 to avoid spam
+                |> Enum.take(3)
                 |> Enum.each(fn error ->
                   Logger.warning("Sample #{storage_type} insert error: #{inspect(error)}")
                 end)
