@@ -45,6 +45,7 @@ defmodule SecopService.SecNodes.ParameterValueString do
     end
 
     read :read do
+      primary? true
       prepare build(sort: [timestamp: :asc])
     end
 
