@@ -11,62 +11,37 @@ defmodule SecopService.SecNodes.Calculations.ParameterDatapointCount do
 
   alias SecopService.SecNodes.ParameterValue
 
-  @table_by_storage_type %{
-    int: "parameter_values_int",
-    double: "parameter_values_double",
-    bool: "parameter_values_bool",
-    string: "parameter_values_string",
-    array_int: "parameter_values_array_int",
-    array_double: "parameter_values_array_double",
-    array_bool: "parameter_values_array_bool",
-    array_string: "parameter_values_array_string",
-    json: "parameter_values_json"
+  @aggregate_by_storage_type %{
+    int: :parameter_values_ints_count,
+    double: :parameter_values_doubles_count,
+    bool: :parameter_values_bools_count,
+    string: :parameter_values_strings_count,
+    array_int: :parameter_values_array_ints_count,
+    array_double: :parameter_values_array_doubles_count,
+    array_bool: :parameter_values_array_bools_count,
+    array_string: :parameter_values_array_strings_count,
+    json: :parameter_values_jsons_count
   }
 
   @impl true
   def load(_query, _opts, _context) do
-    [:datainfo]
+    [:datainfo] ++ Map.values(@aggregate_by_storage_type)
   end
 
   @impl true
   def calculate(parameters, _opts, _context) do
-    counts_by_parameter_id =
-      parameters
-      |> Enum.group_by(fn parameter ->
-        parameter
-        |> ParameterValue.get_storage_type()
-        |> then(&Map.fetch!(@table_by_storage_type, &1))
-      end)
-      |> Enum.reduce(%{}, fn {table_name, table_parameters}, acc ->
-        parameter_ids = Enum.map(table_parameters, & &1.id)
-        table_counts = query_counts_for_table(table_name, parameter_ids)
-        Map.merge(acc, table_counts)
-      end)
-
     Enum.map(parameters, fn parameter ->
-      Map.get(counts_by_parameter_id, parameter.id, 0)
+      storage_type = ParameterValue.get_storage_type(parameter)
+      aggregate_name = Map.fetch!(@aggregate_by_storage_type, storage_type)
+      aggregate_value(parameter, aggregate_name)
     end)
   end
 
-  defp query_counts_for_table(_table_name, []), do: %{}
-
-  defp query_counts_for_table(table_name, parameter_ids) do
-    query =
-      """
-      SELECT parameter_id, COUNT(*)
-      FROM #{table_name}
-      WHERE parameter_id = ANY($1)
-      GROUP BY parameter_id
-      """
-
-    case Ecto.Adapters.SQL.query(SecopService.Repo, query, [parameter_ids]) do
-      {:ok, %{rows: rows}} ->
-        Map.new(rows, fn [parameter_id, count] ->
-          {parameter_id, count}
-        end)
-
-      {:error, _reason} ->
-        %{}
+  defp aggregate_value(parameter, aggregate_name) do
+    case Map.get(parameter, aggregate_name) do
+      %Ash.NotLoaded{} -> 0
+      nil -> 0
+      value -> value
     end
   end
 end
