@@ -65,6 +65,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
           socket
           |> assign(:table_data, nil)
           |> assign(:plot, nil)
+          |> assign(:rangeslider_visible, false)
 
         socket =
           cond do
@@ -227,6 +228,19 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   end
 
   @impl true
+  def handle_event("toggle-rangeslider", _params, socket) do
+    visible = !socket.assigns.rangeslider_visible
+    socket = assign(socket, :rangeslider_visible, visible)
+
+    socket =
+      push_event(socket, "relayout-#{socket.assigns.id}", %{
+        "xaxis.rangeslider.visible" => visible
+      })
+
+    {:noreply, socket}
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class={["flex flex-1", assigns[:class]]}>
@@ -259,6 +273,20 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
             </div>
           </button>
+
+          <%= if @display_mode == :graph do %>
+            <button
+              class={[
+                "btn btn-outline btn-primary",
+                @rangeslider_visible && "btn-active btn-primary"
+              ]}
+              phx-click={JS.push("toggle-rangeslider", target: @myself)}
+            >
+              <div class="flex items-center">
+                <.icon name="hero-arrows-right-left-solid" class="h-5 w-5 flex-none mr-1" /> Range Slider
+              </div>
+            </button>
+          <% end %>
         </div>
       <% end %>
 
@@ -276,22 +304,13 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               </:failed>
 
               <div class="flex-1 bg-gray-300 p-1 rounded-lg">
-                <!-- Loading overlay - will be hidden by the JS hook when Plotly is ready -->
-                <div
-                  id={"#{@id}-loading"}
-                  class="flex flex-1 h-[340px] items-center justify-center bg-gray-300  rounded-lg"
-                >
-                  <div class="text-center animate-pulse">
-                    <p class="text-gray-700">Initializing chart...</p>
-                  </div>
-                </div>
+
 
                 <div
                   id={@id}
                   class=""
                   phx-hook="PlotlyChart"
                   phx-update="ignore"
-                  data-loading-id={"#{@id}-loading"}
                 >
                 </div>
               </div>

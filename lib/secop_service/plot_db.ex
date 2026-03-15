@@ -129,32 +129,7 @@ defmodule SecopService.PlotDB do
       ## background color of plot area
       plot_bgcolor: "rgba(0,0,0,0)",
       autosize: true,
-      height: 340,
-
-      # Add range slider toggle buttons positioned next to rangeselector
-      updatemenus: [
-        %{
-          type: "buttons",
-          direction: "left",
-          buttons: [
-            %{
-              args: [%{"xaxis.rangeslider.visible" => false}],
-              args2: [%{"xaxis.rangeslider.visible" => true}],
-              label: "Range Selector",
-              method: "relayout"
-            }
-          ],
-          pad: %{r: 0, t: 0, l: 0, b: 0},
-          showactive: false,
-          x: 0.28,
-          xanchor: "left",
-          y: 0.99,
-          yanchor: "bottom",
-          # Transparent background
-          bgcolor: "rgba(200,200,200,1)",
-          font: %{size: 11}
-        }
-      ]
+      height: 340
     }
 
     Map.put(plot_map, :layout, layout)
