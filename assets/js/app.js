@@ -167,9 +167,16 @@ Hooks.PlotlyChart = {
       },
     );
 
-    this.handleEvent(`relayout-${this.el.id}`, (layout) => {
-      Plotly.relayout(this.el, layout);
-    });
+    this._toggleRangeslider = (e) => {
+      if (e.target.dataset.chartId === this.el.id) {
+        const currentVisible =
+          this.el.layout?.xaxis?.rangeslider?.visible ?? false;
+        Plotly.relayout(this.el, {
+          "xaxis.rangeslider.visible": !currentVisible,
+        });
+      }
+    };
+    document.addEventListener("toggle-rangeslider", this._toggleRangeslider);
 
     // Handle cleanup event
     this.handleEvent(`cleanup-plots`, () => {
@@ -181,7 +188,12 @@ Hooks.PlotlyChart = {
   },
 
   destroyed() {
-    Plotly.purge(this.el);
+    if (this._toggleRangeslider) {
+      document.removeEventListener("toggle-rangeslider", this._toggleRangeslider);
+    }
+    if (this.el) {
+      Plotly.purge(this.el);
+    }
   },
 };
 

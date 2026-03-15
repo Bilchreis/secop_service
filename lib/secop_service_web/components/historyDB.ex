@@ -65,7 +65,6 @@ defmodule SecopServiceWeb.Components.HistoryDB do
           socket
           |> assign(:table_data, nil)
           |> assign(:plot, nil)
-          |> assign(:rangeslider_visible, false)
 
         socket =
           cond do
@@ -228,19 +227,6 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   end
 
   @impl true
-  def handle_event("toggle-rangeslider", _params, socket) do
-    visible = !socket.assigns.rangeslider_visible
-    socket = assign(socket, :rangeslider_visible, visible)
-
-    socket =
-      push_event(socket, "relayout-#{socket.assigns.id}", %{
-        "xaxis.rangeslider.visible" => visible
-      })
-
-    {:noreply, socket}
-  end
-
-  @impl true
   def render(assigns) do
     ~H"""
     <div class={["flex flex-1", assigns[:class]]}>
@@ -276,11 +262,13 @@ defmodule SecopServiceWeb.Components.HistoryDB do
 
           <%= if @display_mode == :graph do %>
             <button
-              class={[
-                "btn btn-outline btn-primary",
-                @rangeslider_visible && "btn-active btn-primary"
-              ]}
-              phx-click={JS.push("toggle-rangeslider", target: @myself)}
+              id={"rangeslider-btn-#{@id}"}
+              class="btn btn-outline btn-primary"
+              data-chart-id={@id}
+              phx-click={
+                JS.toggle_class("btn-active")
+                |> JS.dispatch("toggle-rangeslider")
+              }
             >
               <div class="flex items-center">
                 <.icon name="hero-arrows-right-left-solid" class="h-5 w-5 flex-none mr-1" /> Range Slider

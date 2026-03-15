@@ -32,7 +32,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
       "value_update:processed:#{elem(node_id, 0)}:#{elem(node_id, 1)}"
     )
 
-    Phoenix.PubSub.subscribe(
+    Phoenix.PubSub.unsubscribe(
       SecopService.PubSub,
       "plot_data:#{elem(node_id, 0)}:#{elem(node_id, 1)}"
     )
