@@ -64,6 +64,24 @@ defmodule SecopService.PlotDB do
     |> Ash.read!()
   end
 
+  def get_layout(%{plotly: nil, mode: :historical} = plot_map) do
+    layout = %{
+      xaxis: %{
+        title: %{text: "Time"},
+        type: "date",
+        rangeslider: %{visible: false}
+      },
+      yaxis: %{title: %{text: "#{plot_map.unit}"}},
+      margin: %{t: 10, b: 40, l: 50, r: 20},
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)",
+      autosize: true,
+      height: 340
+    }
+
+    Map.put(plot_map, :layout, layout)
+  end
+
   def get_layout(%{plotly: nil} = plot_map) do
     # Define the buttons first so we can reference them
     buttons = [
@@ -129,32 +147,7 @@ defmodule SecopService.PlotDB do
       ## background color of plot area
       plot_bgcolor: "rgba(0,0,0,0)",
       autosize: true,
-      height: 340,
-
-      # Add range slider toggle buttons positioned next to rangeselector
-      updatemenus: [
-        %{
-          type: "buttons",
-          direction: "left",
-          buttons: [
-            %{
-              args: [%{"xaxis.rangeslider.visible" => false}],
-              args2: [%{"xaxis.rangeslider.visible" => true}],
-              label: "Range Selector",
-              method: "relayout"
-            }
-          ],
-          pad: %{r: 0, t: 0, l: 0, b: 0},
-          showactive: false,
-          x: 0.28,
-          xanchor: "left",
-          y: 0.99,
-          yanchor: "bottom",
-          # Transparent background
-          bgcolor: "rgba(200,200,200,1)",
-          font: %{size: 11}
-        }
-      ]
+      height: 340
     }
 
     Map.put(plot_map, :layout, layout)
@@ -505,32 +498,32 @@ defmodule SecopService.PlotDB do
     Map.put(plot_map, :chart_id, chart_id)
   end
 
-  def module_plot(module) do
+  def module_plot(module, mode \\ :live) do
     plotmap =
       case Util.get_highest_if_class(module.interface_classes) do
-        :readable -> readable_plot(module)
-        :drivable -> drivable_plot(module)
+        :readable -> readable_plot(module, mode)
+        :drivable -> drivable_plot(module, mode)
         :communicator -> not_plottable()
-        :acquisition -> readable_plot(module)
+        :acquisition -> readable_plot(module, mode)
         _ -> not_plottable()
       end
 
     plotmap
   end
 
-  def init(secop_obj) do
+  def init(secop_obj, mode \\ :live) do
     case secop_obj do
       %SecopService.SecNodes.Parameter{} = param ->
-        parameter_plot(param)
+        parameter_plot(param, mode)
 
       %SecopService.SecNodes.Module{} = module ->
-        module_plot(module)
+        module_plot(module, mode)
     end
   end
 
   #
-  def drivable_plot(module) do
-    plot_map = %{}
+  def drivable_plot(module, mode \\ :live) do
+    plot_map = %{mode: mode}
 
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
     target_param = Enum.find(module.parameters, fn param -> param.name == "target" end)
@@ -570,8 +563,8 @@ defmodule SecopService.PlotDB do
     end
   end
 
-  def readable_plot(module) do
-    plot_map = %{}
+  def readable_plot(module, mode \\ :live) do
+    plot_map = %{mode: mode}
 
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
 
@@ -608,8 +601,8 @@ defmodule SecopService.PlotDB do
     plot_map
   end
 
-  def parameter_plot(parameter) do
-    plot_map = %{}
+  def parameter_plot(parameter, mode \\ :live) do
+    plot_map = %{mode: mode}
 
     plot_map =
       if plottable?(parameter) do

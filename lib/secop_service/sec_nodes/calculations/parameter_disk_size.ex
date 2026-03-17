@@ -42,7 +42,8 @@ defmodule SecopService.SecNodes.Calculations.ParameterDiskSize do
         |> then(&Map.fetch!(@table_by_storage_type, &1))
 
       case calculate_disk_size_safe(parameter.id, table_name, repo) do
-        {:ok, size} -> size
+        {:ok, size} ->
+          size
 
         {:error, reason} ->
           Logger.warning(
@@ -61,7 +62,6 @@ defmodule SecopService.SecNodes.Calculations.ParameterDiskSize do
     rescue
       e ->
         {:error, Exception.message(e)}
-
     catch
       :error, reason ->
         {:error, inspect(reason)}

@@ -139,28 +139,6 @@ defmodule SecopService.SecNodes.Parameter do
     timestamps()
   end
 
-  calculations do
-    calculate :calculated_datapoint_count,
-              :integer,
-              SecopService.SecNodes.Calculations.ParameterDatapointCount
-
-    calculate :calculated_disk_size_bytes,
-              :integer,
-              SecopService.SecNodes.Calculations.ParameterDiskSize
-  end
-
-  aggregates do
-    count :parameter_values_array_bools_count, :parameter_values_array_bools
-    count :parameter_values_array_doubles_count, :parameter_values_array_doubles
-    count :parameter_values_array_ints_count, :parameter_values_array_ints
-    count :parameter_values_array_strings_count, :parameter_values_array_strings
-    count :parameter_values_bools_count, :parameter_values_bools
-    count :parameter_values_doubles_count, :parameter_values_doubles
-    count :parameter_values_ints_count, :parameter_values_ints
-    count :parameter_values_jsons_count, :parameter_values_jsons
-    count :parameter_values_strings_count, :parameter_values_strings
-  end
-
   relationships do
     belongs_to :module, SecopService.SecNodes.Module do
       allow_nil? false
@@ -205,6 +183,28 @@ defmodule SecopService.SecNodes.Parameter do
     has_many :parameter_values_strings, SecopService.SecNodes.ParameterValueString do
       public? true
     end
+  end
+
+  calculations do
+    calculate :calculated_datapoint_count,
+              :integer,
+              SecopService.SecNodes.Calculations.ParameterDatapointCount
+
+    calculate :calculated_disk_size_bytes,
+              :integer,
+              SecopService.SecNodes.Calculations.ParameterDiskSize
+  end
+
+  aggregates do
+    count :parameter_values_array_bools_count, :parameter_values_array_bools
+    count :parameter_values_array_doubles_count, :parameter_values_array_doubles
+    count :parameter_values_array_ints_count, :parameter_values_array_ints
+    count :parameter_values_array_strings_count, :parameter_values_array_strings
+    count :parameter_values_bools_count, :parameter_values_bools
+    count :parameter_values_doubles_count, :parameter_values_doubles
+    count :parameter_values_ints_count, :parameter_values_ints
+    count :parameter_values_jsons_count, :parameter_values_jsons
+    count :parameter_values_strings_count, :parameter_values_strings
   end
 
   identities do

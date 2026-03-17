@@ -229,7 +229,11 @@ defmodule SecopService.NodeManager do
       host = List.to_string(host_charlist)
 
       case SecNode
-           |> Ash.Query.filter_input(%{host: %{eq: host}, port: %{eq: port}, state: %{eq: :active}})
+           |> Ash.Query.filter_input(%{
+             host: %{eq: host},
+             port: %{eq: port},
+             state: %{eq: :active}
+           })
            |> Ash.read_one() do
         {:ok, %SecNode{} = node} ->
           case Ash.update(node, %{}, action: :archive) do
@@ -237,7 +241,9 @@ defmodule SecopService.NodeManager do
               Logger.info("NodeManager: archived disconnected node #{host}:#{port}")
 
             {:error, error} ->
-              Logger.warning("NodeManager: failed to archive node #{host}:#{port}: #{inspect(error)}")
+              Logger.warning(
+                "NodeManager: failed to archive node #{host}:#{port}: #{inspect(error)}"
+              )
           end
 
         _ ->

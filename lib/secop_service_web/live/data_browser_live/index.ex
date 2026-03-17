@@ -24,7 +24,9 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
          assign(socket, %{sec_nodes: sec_nodes, meta: meta, state_filter: state_filter})}
 
       {:error, meta} ->
-        valid_path = AshPagify.Components.build_path(~p"/browse?state_filter=#{state_filter}", meta.params)
+        valid_path =
+          AshPagify.Components.build_path(~p"/browse?state_filter=#{state_filter}", meta.params)
+
         {:noreply, push_navigate(socket, to: valid_path)}
     end
   end
@@ -100,8 +102,6 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
     {:noreply, assign(socket, show_json_modal: false)}
   end
 
-
-
   @impl true
   def handle_event("trigger_cleanup", _params, socket) do
     result = AshOban.schedule_and_run_triggers({SecNode, :cleanup_old_nodes})
@@ -136,8 +136,7 @@ defmodule SecopServiceWeb.DataBrowserLive.Index do
     flash =
       cond do
         failure > 0 ->
-          {:error,
-           "Purge finished with #{failure} failure(s) and #{success} success(es)."}
+          {:error, "Purge finished with #{failure} failure(s) and #{success} success(es)."}
 
         total > 0 ->
           {:info, "Purge completed. #{total} node(s) permanently deleted."}

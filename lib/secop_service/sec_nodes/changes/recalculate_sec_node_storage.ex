@@ -15,16 +15,11 @@ defmodule SecopService.SecNodes.Changes.RecalculateSecNodeStorage do
 
     current_state = Ash.Changeset.get_attribute(changeset, :state)
 
-
     if current_state == :processed do
-        AshStateMachine.transition_state(changeset, :archived)
+      AshStateMachine.transition_state(changeset, :archived)
     else
       changeset
     end
-
-
-
-
   end
 
   defp recalculate_all_parameter_storage(sec_node_uuid) do

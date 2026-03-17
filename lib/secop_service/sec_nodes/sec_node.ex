@@ -40,7 +40,9 @@ defmodule SecopService.SecNodes.SecNode do
         action :recalculate_storage
         read_action :read_for_storage_recalc
         where expr(state == :processed)
+
         worker_module_name SecopService.SecNodes.SecNode.AshOban.Worker.RecalculateStorageTransition
+
         scheduler_module_name SecopService.SecNodes.SecNode.AshOban.Scheduler.RecalculateStorageTransition
       end
 
@@ -50,6 +52,7 @@ defmodule SecopService.SecNodes.SecNode do
         where expr(state == :active)
         read_action :read_for_storage_recalc
         worker_module_name SecopService.SecNodes.SecNode.AshOban.Worker.RecalculateStorageHourly
+
         scheduler_module_name SecopService.SecNodes.SecNode.AshOban.Scheduler.RecalculateStorageHourly
       end
 
@@ -164,9 +167,7 @@ defmodule SecopService.SecNodes.SecNode do
     read :read_for_storage_recalc do
       pagination keyset?: true, required?: false
 
-      prepare build(
-                load: []
-              )
+      prepare build(load: [])
     end
 
     # Read action for purge trigger with keyset pagination
@@ -386,11 +387,6 @@ defmodule SecopService.SecNodes.SecNode do
     timestamps(public?: true)
   end
 
-  aggregates do
-    sum :datapoint_count, [:modules, :parameters], :datapoint_count
-    sum :disk_size_bytes, [:modules, :parameters], :disk_size_bytes
-  end
-
   relationships do
     has_many :modules, SecopService.SecNodes.Module do
       source_attribute :uuid
@@ -450,6 +446,11 @@ defmodule SecopService.SecNodes.SecNode do
     calculate :should_purge,
               :boolean,
               SecopService.SecNodes.Calculations.ShouldPurge
+  end
+
+  aggregates do
+    sum :datapoint_count, [:modules, :parameters], :datapoint_count
+    sum :disk_size_bytes, [:modules, :parameters], :disk_size_bytes
   end
 
   identities do

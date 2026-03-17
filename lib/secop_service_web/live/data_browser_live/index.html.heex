@@ -111,11 +111,14 @@
                 id={"uuid-#{sec_node.uuid}"}
               >
                 <span class="font-mono">{String.split(sec_node.uuid, "-") |> List.first()}…</span>
-                <.icon name="hero-clipboard-document" class="w-3 h-3 ml-1 inline-block opacity-50" />
+                <.icon
+                  name="hero-clipboard-document"
+                  class="w-3 h-3 ml-1 inline-block opacity-50"
+                />
               </div>
             </div>
           </:col>
-          <:col :let={sec_node} label="Equipment ID" field={:equipment_id} >
+          <:col :let={sec_node} label="Equipment ID" field={:equipment_id}>
             <div class="tooltip w-45">
               <div class="tooltip-content text-left bg-transparent ">
                 <div class="card bg-base-100 border-base-content/30 border-3 p-3 ">
@@ -123,21 +126,24 @@
                 </div>
               </div>
               <div class="truncate">
-                <.icon name="hero-information-circle" class="w-5 h-5 ml-1 inline-block opacity-50" />
+                <.icon
+                  name="hero-information-circle"
+                  class="w-5 h-5 ml-1 inline-block opacity-50"
+                />
                 <span>{sec_node.display_equipment_id}</span>
               </div>
-            </div>            
-
-
+            </div>
           </:col>
           <:col :let={sec_node} label="Disk Size" field={:disk_size_bytes}>
-            <div class="px-3 py-1 rounded font-mono text-sm text-center"}>
+            <div class="px-3 py-1 rounded font-mono text-sm text-center" }>
               {SecopService.Util.format_bytes(sec_node.disk_size_bytes)}
             </div>
           </:col>
           <:col :let={sec_node} label="Datapoints" field={:datapoint_count} class="w-24">
             <div class="flex justify-center">
-              <span class="font-mono text-sm">{SecopService.Util.format_scientific(sec_node.datapoint_count)}</span>
+              <span class="font-mono text-sm">
+                {SecopService.Util.format_scientific(sec_node.datapoint_count)}
+              </span>
             </div>
           </:col>
           <:col :let={sec_node} label="URI" field={:node_id_str}>
