@@ -169,6 +169,7 @@ defmodule SecopServiceWeb.BrowseComponents do
       n_modules={@n_modules}
       interface_class={@interface_class}
       node_id_str={@node_id_str}
+      plot_mode={:historical}
     >
       <:parameter_preview></:parameter_preview>
 

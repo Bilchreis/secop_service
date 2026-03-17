@@ -19,7 +19,10 @@ defmodule SecopService.StartupTriggerRunner do
 
     # any Nodes that were left on processed state (e.g. due to a crash during recalculation) will have their storage
     # recalculated on the next transition to archived
-    AshOban.schedule_and_run_triggers({SecopService.SecNodes.SecNode, :recalculate_storage_on_archive})
+    AshOban.schedule_and_run_triggers(
+      {SecopService.SecNodes.SecNode, :recalculate_storage_on_archive}
+    )
+
     {:noreply, state}
   end
 end

@@ -107,11 +107,6 @@ defmodule SecopService.SecNodes.Module do
     timestamps()
   end
 
-  aggregates do
-    sum :datapoint_count, :parameters, :datapoint_count
-    sum :disk_size_bytes, :parameters, :disk_size_bytes
-  end
-
   relationships do
     belongs_to :sec_node, SecopService.SecNodes.SecNode do
       destination_attribute :uuid
@@ -126,6 +121,11 @@ defmodule SecopService.SecNodes.Module do
     has_many :parameters, SecopService.SecNodes.Parameter do
       public? true
     end
+  end
+
+  aggregates do
+    sum :datapoint_count, :parameters, :datapoint_count
+    sum :disk_size_bytes, :parameters, :disk_size_bytes
   end
 
   identities do

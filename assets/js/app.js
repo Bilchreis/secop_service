@@ -189,7 +189,10 @@ Hooks.PlotlyChart = {
 
   destroyed() {
     if (this._toggleRangeslider) {
-      document.removeEventListener("toggle-rangeslider", this._toggleRangeslider);
+      document.removeEventListener(
+        "toggle-rangeslider",
+        this._toggleRangeslider,
+      );
     }
     if (this.el) {
       Plotly.purge(this.el);

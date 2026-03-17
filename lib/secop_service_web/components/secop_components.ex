@@ -483,6 +483,7 @@ defmodule SecopServiceWeb.SECoPComponents do
 
   attr :interface_class, :string
   attr :node_id_str, :string, required: true
+  attr :plot_mode, :atom, default: :live
 
   slot :parameter_preview
   slot :command_preview
@@ -627,6 +628,7 @@ defmodule SecopServiceWeb.SECoPComponents do
           module={SecopServiceWeb.Components.HistoryDB}
           id={"module-plot:" <> to_string(@module.name)}
           secop_obj={@module}
+          plot_mode={@plot_mode}
           class="w-3/5 hidden xl:block"
         />
       <% end %>

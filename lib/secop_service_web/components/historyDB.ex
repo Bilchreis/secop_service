@@ -66,21 +66,26 @@ defmodule SecopServiceWeb.Components.HistoryDB do
           |> assign(:table_data, nil)
           |> assign(:plot, nil)
 
+        plot_mode = assigns[:plot_mode] || :live
+
         socket =
           cond do
             PlotDB.plottable?(secop_obj) ->
               assign(socket, :display_mode, :graph)
               |> assign(:plottable, true)
-              |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
+              |> assign(:plot_mode, plot_mode)
+              |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj, plot_mode)}} end)
 
             tabular?(secop_obj) ->
               assign(socket, :display_mode, :table)
               |> assign(:plottable, false)
+              |> assign(:plot_mode, plot_mode)
               |> assign_async(:table_data, fn -> get_tabledata(secop_obj) end)
 
             true ->
               assign(socket, :display_mode, :empty)
               |> assign(:plottable, false)
+              |> assign(:plot_mode, plot_mode)
           end
 
         socket
@@ -207,7 +212,10 @@ defmodule SecopServiceWeb.Components.HistoryDB do
       case display_mode do
         :graph ->
           if socket.assigns.plot == nil do
-            socket |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj)}} end)
+            plot_mode = socket.assigns[:plot_mode] || :live
+
+            socket
+            |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj, plot_mode)}} end)
           else
             socket
           end
@@ -271,7 +279,8 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               }
             >
               <div class="flex items-center">
-                <.icon name="hero-arrows-right-left-solid" class="h-5 w-5 flex-none mr-1" /> Range Slider
+                <.icon name="hero-arrows-right-left-solid" class="h-5 w-5 flex-none mr-1" />
+                Range Slider
               </div>
             </button>
           <% end %>
@@ -292,8 +301,6 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               </:failed>
 
               <div class="flex-1 bg-gray-300 p-1 rounded-lg">
-
-
                 <div
                   id={@id}
                   class=""

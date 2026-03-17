@@ -35,14 +35,10 @@ defmodule SecopService.Application do
       {AshAuthentication.Supervisor, [otp_app: :secop_service]}
     ]
 
-
-
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: SecopService.Supervisor]
     result = Supervisor.start_link(children, opts)
-
-
 
     result
   end

@@ -151,6 +151,7 @@ defmodule SecopServiceWeb.DashboardComponents do
       status={@status}
       interface_class={@interface_class}
       node_id_str={@node_id_str}
+      plot_mode={:live}
     >
       <:parameter_preview>
         {render_slot(@parameter_preview)}

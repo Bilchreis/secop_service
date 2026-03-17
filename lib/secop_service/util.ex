@@ -76,8 +76,10 @@ defmodule SecopService.Util do
   """
   def calculate_log_gradient(bytes) when is_integer(bytes) and bytes >= 0 do
     # Define min and max thresholds in bytes
-    min_bytes = 1024  # 1 KB
-    max_bytes = 100 * 1024 * 1024 * 1024  # 100 GB
+    # 1 KB
+    min_bytes = 1024
+    # 100 GB
+    max_bytes = 100 * 1024 * 1024 * 1024
 
     clamped = min(max(bytes, min_bytes), max_bytes)
 

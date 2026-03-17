@@ -16,13 +16,18 @@ defmodule SecopService.SecNodes.Changes.RecalculateParameterStorage do
   def change(changeset, _opts, _context) do
     parameter = changeset.data
 
-
     # Load the parameter with calculations
     case load_calculated_metrics(parameter) do
       {:ok, loaded_parameter} ->
         changeset
-        |> Ash.Changeset.change_attribute(:datapoint_count, loaded_parameter.calculated_datapoint_count)
-        |> Ash.Changeset.change_attribute(:disk_size_bytes, loaded_parameter.calculated_disk_size_bytes)
+        |> Ash.Changeset.change_attribute(
+          :datapoint_count,
+          loaded_parameter.calculated_datapoint_count
+        )
+        |> Ash.Changeset.change_attribute(
+          :disk_size_bytes,
+          loaded_parameter.calculated_disk_size_bytes
+        )
 
       {:error, reason} ->
         Logger.warning(
