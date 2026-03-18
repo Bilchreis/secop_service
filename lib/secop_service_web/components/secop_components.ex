@@ -453,6 +453,8 @@ defmodule SecopServiceWeb.SECoPComponents do
               </.property>
             </ul>
 
+
+
             <fieldset
               :if={@state_map}
               class="absolute right-0 bottom-0  fieldset bg-base-100 border-base-300 rounded-box border p-4"
@@ -468,7 +470,18 @@ defmodule SecopServiceWeb.SECoPComponents do
             </fieldset>
           </div>
         </div>
+
+        <a
+          :if={@node.ophyd_class}
+          href={"data:text/x-python;base64,#{Base.encode64(@node.ophyd_class)}"}
+          download={Util.display_name(@node.equipment_id) <> "_" <> String.slice(to_string(@node.uuid), 0, 8) <> ".py"}
+          class="mt-2 btn btn-primary w-fit"
+        >
+          <.icon name="hero-arrow-down-tray" class="h-4 w-4" /> Download ophyd class
+        </a>
       </div>
+
+
 
       {render_slot(@inner_block)}
     </div>
