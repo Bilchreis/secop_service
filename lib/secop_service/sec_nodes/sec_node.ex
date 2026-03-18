@@ -220,7 +220,8 @@ defmodule SecopService.SecNodes.SecNode do
         :describe_message,
         :describe_message_raw,
         :custom_properties,
-        :check_result
+        :check_result,
+        :ophyd_class
       ]
 
       argument :modules, {:array, :map}
@@ -241,7 +242,8 @@ defmodule SecopService.SecNodes.SecNode do
         :describe_message,
         :describe_message_raw,
         :custom_properties,
-        :check_result
+        :check_result,
+        :ophyd_class
       ]
 
       argument :modules, {:array, :map}
@@ -261,7 +263,8 @@ defmodule SecopService.SecNodes.SecNode do
         :describe_message_raw,
         :custom_properties,
         :check_result,
-        :state
+        :state,
+        :ophyd_class
       ]
 
       change manage_relationship(:modules, type: :create)
@@ -375,6 +378,10 @@ defmodule SecopService.SecNodes.SecNode do
     end
 
     attribute :check_result, :map do
+      public? true
+    end
+
+    attribute :ophyd_class, :string do
       public? true
     end
 

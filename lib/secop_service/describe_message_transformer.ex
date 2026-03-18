@@ -28,7 +28,14 @@ defmodule SecopService.DescribeMessageTransformer do
     properties = description[:properties] || %{}
 
     describe_str = Jason.encode!(statem_state[:raw_description])
+
     check_result = check_description(describe_str)
+
+    ophyd_class =
+      case ophyd_class(describe_str) do
+        {:ok, class_str} -> class_str
+        {:error, _} -> nil
+      end
 
     ret = %{
       uuid: statem_state[:uuid] || Ash.UUID.generate(),
@@ -42,6 +49,7 @@ defmodule SecopService.DescribeMessageTransformer do
       describe_message: statem_state[:raw_description],
       describe_message_raw: describe_str,
       check_result: check_result,
+      ophyd_class: ophyd_class,
       custom_properties: extract_custom_properties(properties),
       modules: transform_modules(description[:modules] || %{})
     }
@@ -148,6 +156,39 @@ defmodule SecopService.DescribeMessageTransformer do
     |> Map.drop(standard_keys)
   end
 
+  defp ophyd_class(describe_str) do
+    try do
+      {result, _globals} =
+        Pythonx.eval(
+          """
+          import json
+          from secop_ophyd.GenNodeCode import GenNodeCode
+
+          descr_str = descr.decode('utf-8') if isinstance(descr, bytes) else descr
+          descr_dict = json.loads(descr_str)
+
+          GenCode = GenNodeCode()
+
+          GenCode.from_json_describe(json_data=descr_dict)
+
+          GenCode.generate_code()
+
+          """,
+          %{"descr" => describe_str},
+          stdout_device: File.open!("/dev/null", [:write]),
+          stderr_device: File.open!("/dev/null", [:write])
+        )
+
+      class_str = Pythonx.decode(result)
+
+      {:ok, class_str}
+    rescue
+      e in Pythonx.Error ->
+        Logger.error("Python runtime error in ophyd_class gen: #{inspect(e)}")
+        {:error, "could not generate ophyd-async class"}
+    end
+  end
+
   defp check_description(describe_str, version \\ "1.0", output \\ "json") do
     result =
       try do
@@ -184,7 +225,9 @@ defmodule SecopService.DescribeMessageTransformer do
 
             diag_list
             """,
-            %{"descr" => describe_str, "version" => version, "output" => output}
+            %{"descr" => describe_str, "version" => version, "output" => output},
+            stdout_device: File.open!("/dev/null", [:write]),
+            stderr_device: File.open!("/dev/null", [:write])
           )
 
         Pythonx.decode(result)

@@ -468,6 +468,15 @@ defmodule SecopServiceWeb.SECoPComponents do
             </fieldset>
           </div>
         </div>
+
+        <a
+          :if={@node.ophyd_class}
+          href={"data:text/x-python;base64,#{Base.encode64(@node.ophyd_class)}"}
+          download={Util.display_name(@node.equipment_id) <> "_" <> String.slice(to_string(@node.uuid), 0, 8) <> ".py"}
+          class="mt-2 btn btn-primary w-fit"
+        >
+          <.icon name="hero-arrow-down-tray" class="h-4 w-4" /> Download ophyd class
+        </a>
       </div>
 
       {render_slot(@inner_block)}
