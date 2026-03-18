@@ -29,16 +29,13 @@ defmodule SecopService.DescribeMessageTransformer do
 
     describe_str = Jason.encode!(statem_state[:raw_description])
 
-    check_result =  check_description(describe_str)
+    check_result = check_description(describe_str)
 
-
-
-    ophyd_class = case ophyd_class(describe_str) do
-      {:ok, class_str} -> class_str
-      {:error, _} -> nil
-
-    end
-
+    ophyd_class =
+      case ophyd_class(describe_str) do
+        {:ok, class_str} -> class_str
+        {:error, _} -> nil
+      end
 
     ret = %{
       uuid: statem_state[:uuid] || Ash.UUID.generate(),
@@ -159,40 +156,37 @@ defmodule SecopService.DescribeMessageTransformer do
     |> Map.drop(standard_keys)
   end
 
-
   defp ophyd_class(describe_str) do
-      try do
-        {result, _globals} =
-          Pythonx.eval(
-            """
-            import json
-            from secop_ophyd.GenNodeCode import GenNodeCode
+    try do
+      {result, _globals} =
+        Pythonx.eval(
+          """
+          import json
+          from secop_ophyd.GenNodeCode import GenNodeCode
 
-            descr_str = descr.decode('utf-8') if isinstance(descr, bytes) else descr
-            descr_dict = json.loads(descr_str)
+          descr_str = descr.decode('utf-8') if isinstance(descr, bytes) else descr
+          descr_dict = json.loads(descr_str)
 
-            GenCode = GenNodeCode()
+          GenCode = GenNodeCode()
 
-            GenCode.from_json_describe(json_data=descr_dict)
+          GenCode.from_json_describe(json_data=descr_dict)
 
-            GenCode.generate_code()
+          GenCode.generate_code()
 
-            """,
-            %{"descr" => describe_str},
-            stdout_device: File.open!("/dev/null", [:write]),
-            stderr_device: File.open!("/dev/null", [:write])
-          )
+          """,
+          %{"descr" => describe_str},
+          stdout_device: File.open!("/dev/null", [:write]),
+          stderr_device: File.open!("/dev/null", [:write])
+        )
 
-        class_str = Pythonx.decode(result)
+      class_str = Pythonx.decode(result)
 
-        {:ok, class_str}
-      rescue
-        e in Pythonx.Error ->
-          Logger.error("Python runtime error in ophyd_class gen: #{inspect(e)}")
-          {:error, "could not generate ophyd-async class"}
-      end
-
-
+      {:ok, class_str}
+    rescue
+      e in Pythonx.Error ->
+        Logger.error("Python runtime error in ophyd_class gen: #{inspect(e)}")
+        {:error, "could not generate ophyd-async class"}
+    end
   end
 
   defp check_description(describe_str, version \\ "1.0", output \\ "json") do

@@ -453,8 +453,6 @@ defmodule SecopServiceWeb.SECoPComponents do
               </.property>
             </ul>
 
-
-
             <fieldset
               :if={@state_map}
               class="absolute right-0 bottom-0  fieldset bg-base-100 border-base-300 rounded-box border p-4"
@@ -480,8 +478,6 @@ defmodule SecopServiceWeb.SECoPComponents do
           <.icon name="hero-arrow-down-tray" class="h-4 w-4" /> Download ophyd class
         </a>
       </div>
-
-
 
       {render_slot(@inner_block)}
     </div>
