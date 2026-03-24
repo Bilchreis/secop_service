@@ -51,6 +51,8 @@ defmodule SecopService.NodeValues do
     Phoenix.PubSub.subscribe(@pubsub_name, state.node_db.values_pubsub_topic)
     Phoenix.PubSub.subscribe(@pubsub_name, state.node_db.error_pubsub_topic)
 
+    # Remove any stale NodeTable entry before starting, so we always get a fresh table
+    :ets.delete(:node_table_lookup, {:service, state.node_db.node_id})
     {:ok, table} = NodeTable.start({:service, state.node_db.node_id})
 
     values = get_val_map(state.node_db, table)

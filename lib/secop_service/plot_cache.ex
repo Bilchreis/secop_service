@@ -16,25 +16,30 @@ defmodule SecopService.PlotCacheSupervisor do
 
   def start_plot_cache(node_db) do
     node_id = node_db.node_id
-    [{cache_supervisor, _value}] = Registry.lookup(Registry.PlotCacheSupervisor, node_id)
 
-    count =
-      Enum.reduce(node_db.modules, 0, fn module, acc ->
-        Enum.reduce(module.parameters, acc, fn parameter, inner_acc ->
-          opts = %{
-            node_id: node_id,
-            module: module.name,
-            parameter: parameter.name
-          }
+    case Registry.lookup(Registry.PlotCacheSupervisor, node_id) do
+      [{cache_supervisor, _value}] ->
+        count =
+          Enum.reduce(node_db.modules, 0, fn module, acc ->
+            Enum.reduce(module.parameters, acc, fn parameter, inner_acc ->
+              opts = %{
+                node_id: node_id,
+                module: module.name,
+                parameter: parameter.name
+              }
 
-          DynamicSupervisor.start_child(cache_supervisor, {PlotCache, opts})
-          inner_acc + 1
-        end)
-      end)
+              DynamicSupervisor.start_child(cache_supervisor, {PlotCache, opts})
+              inner_acc + 1
+            end)
+          end)
 
-    Logger.info("Started #{count} plot cache(s) for node #{inspect(node_id)}")
+        Logger.info("Started #{count} plot cache(s) for node #{inspect(node_id)}")
+        :ok
 
-    :ok
+      [] ->
+        Logger.error("PlotCacheSupervisor not found for node #{inspect(node_id)}, skipping plot cache start")
+        {:error, :supervisor_not_found}
+    end
   end
 end
 
