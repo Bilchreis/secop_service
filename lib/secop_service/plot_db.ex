@@ -611,11 +611,11 @@ defmodule SecopService.PlotDB do
           |> ParameterValue.extract_value_timestamp_lists(parameter)
           |> read_from_device_if_empty(parameter.id)
 
+
         plot_map =
           Map.put(plot_map, :plottable, true)
           |> get_unit(parameter)
           |> Map.put(:plotly, Map.get(parameter.custom_properties, "_plotly", nil))
-          |> set_chart_id(parameter.chart_id)
 
         plot_map = plot_available(plot_map, value_val)
 
@@ -623,6 +623,8 @@ defmodule SecopService.PlotDB do
           plot_map
           |> get_data(value_ts, value_val)
           |> get_layout()
+
+
 
         config =
           %{

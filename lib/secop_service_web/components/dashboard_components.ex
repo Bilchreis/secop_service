@@ -11,6 +11,8 @@ defmodule SecopServiceWeb.DashboardComponents do
 
   import SecopServiceWeb.SECoPComponents
   import SecopServiceWeb.Components.ParameterFormFieldComponents
+  import SecopServiceWeb.CoreComponents
+  alias Phoenix.LiveView.JS
 
   defp sort_commands_with_priority(commands) do
     priority_order = [
@@ -39,6 +41,7 @@ defmodule SecopServiceWeb.DashboardComponents do
 
   attr :node, :map, required: true
   attr :state_map, :map, required: true
+  attr :selected_parameter, :map, default: nil
 
   slot :inner_block
 
@@ -81,6 +84,17 @@ defmodule SecopServiceWeb.DashboardComponents do
         <% end %>
       </div>
     </.sec_node>
+
+    <.modal id="parameter-history-modal"}>
+      <.live_component
+        :if={@selected_parameter}
+        module={SecopServiceWeb.Components.HistoryDB}
+        id={"parameter-plot:" <> to_string(@selected_parameter.id)}
+        secop_obj={@selected_parameter}
+        plot_mode={:historical}
+        class="w-3/5 hidden xl:block"
+      />
+    </.modal>
     """
   end
 
@@ -476,6 +490,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           </div>
         </div>
 
+
         <div class="flex text-sm text-base-content pt-1 ">
           <div class="ml-2 px-2 py-0.5 rounded-full bg-base-100 font-mono">
             {@parameter.datainfo["type"]}
@@ -491,6 +506,12 @@ defmodule SecopServiceWeb.DashboardComponents do
           <% end %>
         </div>
       </div>
+
+      <button
+        class="btn btn-warning btn-sm"
+        phx-click={JS.push("open_parameter_modal", value: %{id: @parameter.id}) |> JS.set_attribute({"open", ""}, to: "#parameter-history-modal")}
+      >Open</button>
+
       <ul class="mt-2 text-sm text-neutral-content/80">
         <!-- Description -->
         <.property
@@ -500,7 +521,7 @@ defmodule SecopServiceWeb.DashboardComponents do
         >
           {@parameter.description}
         </.property>
-        
+
     <!-- Optional Properties -->
         <%= if @parameter.meaning do %>
           <.property prop_key="Meaning" key_class="text-neutral-content/80 font-semibold">
@@ -513,7 +534,7 @@ defmodule SecopServiceWeb.DashboardComponents do
             {@parameter.checkable}
           </.property>
         <% end %>
-        
+
     <!-- Custom Properties -->
         <%= for {property_name, property_value} <- @parameter.custom_properties do %>
           <.property
@@ -545,7 +566,7 @@ defmodule SecopServiceWeb.DashboardComponents do
   def dash_command(assigns) do
     ~H"""
     <div class="card mb-4 bg-neutral p-4 shadow-md">
-      
+
     <!-- Parameter Name -->
       <div>
         <div class="flex ">
@@ -566,7 +587,7 @@ defmodule SecopServiceWeb.DashboardComponents do
           >
             {@command.description}
           </.property>
-          
+
     <!-- Optional Properties -->
           <%= if @command.group do %>
             <.property prop_key="Group" key_class="text-neutral-content font-semibold">
@@ -594,7 +615,7 @@ defmodule SecopServiceWeb.DashboardComponents do
               {@command.checkable}
             </.property>
           <% end %>
-          
+
     <!-- Custom Properties -->
           <%= for {property_name, property_value} <- @command.custom_properties || %{} do %>
             <.property

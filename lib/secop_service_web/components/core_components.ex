@@ -78,10 +78,10 @@ defmodule SecopServiceWeb.CoreComponents do
         <div :if={@title} class="modal-header mb-4">
           <h3 class="text-lg font-bold">{@title}</h3>
         </div>
-        {render_slot(@inner_block)}
+        {render_slot(@inner_block, @show)}
       </div>
       <div class="modal-backdrop">
-        <button phx-click={JS.dispatch("myapp:close-modal")}>
+        <button phx-click={ JS.dispatch("myapp:close-modal")}>
           close
         </button>
       </div>

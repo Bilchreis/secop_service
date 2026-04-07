@@ -183,6 +183,14 @@ Hooks.PlotlyChart = {
       this.destroyed();
     });
 
+    // Purge plot when a parent modal closes
+    this._onCloseModal = () => {
+      if (this.el.closest("dialog")) {
+        Plotly.purge(this.el);
+      }
+    };
+    window.addEventListener("myapp:close-modal", this._onCloseModal);
+
     // Request initial data when the hook is mounted, include the chart ID
     this.pushEventTo(this.el, "request-plotly-data", { id: this.el.id });
   },
@@ -193,6 +201,9 @@ Hooks.PlotlyChart = {
         "toggle-rangeslider",
         this._toggleRangeslider,
       );
+    }
+    if (this._onCloseModal) {
+      window.removeEventListener("myapp:close-modal", this._onCloseModal);
     }
     if (this.el) {
       Plotly.purge(this.el);
