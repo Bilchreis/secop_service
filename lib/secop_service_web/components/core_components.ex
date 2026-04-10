@@ -40,6 +40,7 @@ defmodule SecopServiceWeb.CoreComponents do
   attr :title, :string, default: nil
   attr :id, :string, required: true
   attr :show, :boolean, default: false
+  attr :on_cancel, JS, default: %JS{}
   slot :inner_block, required: true
 
   def modal(assigns) do
@@ -71,7 +72,7 @@ defmodule SecopServiceWeb.CoreComponents do
       <div class="modal-box overflow-visible w-[1500px]">
         <button
           class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-          phx-click={JS.dispatch("myapp:close-modal")}
+          phx-click={@on_cancel |> JS.dispatch("myapp:close-modal")}
         >
           ✕
         </button>
@@ -81,7 +82,7 @@ defmodule SecopServiceWeb.CoreComponents do
         {render_slot(@inner_block, @show)}
       </div>
       <div class="modal-backdrop">
-        <button phx-click={ JS.dispatch("myapp:close-modal")}>
+        <button phx-click={@on_cancel |> JS.dispatch("myapp:close-modal")}>
           close
         </button>
       </div>

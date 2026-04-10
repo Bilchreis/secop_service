@@ -55,7 +55,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
       socket
       |> Model.to_socket(model)
       |> assign(:show_connect_modal, false)
-      |> assign(:selected_parameter, nil)
 
     {:ok, socket}
   end
@@ -283,22 +282,6 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     )
 
     {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("open_parameter_modal", %{"id" => id}, socket) do
-    parameter =
-      socket.assigns.current_node.modules
-      |> Enum.flat_map(& &1.parameters)
-      |> Enum.find(&(&1.id == id))
-
-    {:noreply, assign(socket, :selected_parameter, parameter)}
-  end
-
-  @impl true
-  def handle_event("close_parameter_modal", _params, socket) do
-    Logger.warning("closing modal")
-    {:noreply, assign(socket, :selected_parameter, nil)}
   end
 
   def handle_event("toggle-conn-state", _unsigned_params, socket) do
