@@ -3,23 +3,14 @@ defmodule SecopServiceWeb.Components.DashParameter do
 
   alias SecopService.Util
   alias SecopServiceWeb.Components.ParameterValueDisplay
-  alias SecopServiceWeb.Components.HistoryDB
   import SecopServiceWeb.SECoPComponents
   import SecopServiceWeb.Components.ParameterFormFieldComponents
   import SecopServiceWeb.CoreComponents
   alias Phoenix.LiveView.JS
 
-  def mount(socket) do
-    {:ok, assign(socket, :show_graph, false)}
-  end
-
   def handle_event("show_graph", _params, socket) do
-    {:noreply, assign(socket, :show_graph, true)}
-  end
-
-
-  def handle_event("close_graph", _params, socket) do
-    {:noreply, assign(socket, :show_graph, false)}
+    send(self(), {:show_parameter_graph, socket.assigns.parameter})
+    {:noreply, socket}
   end
 
 
@@ -108,16 +99,6 @@ defmodule SecopServiceWeb.Components.DashParameter do
         />
       </div>
 
-      <.modal id={"parameter-history-modal-#{@parameter.id}"} on_cancel={JS.push("close_graph", target: @myself)} show={@show_graph} >
-        <.live_component
-          :if={@show_graph}
-          module={HistoryDB}
-          id={"parameter-plot:" <> to_string(@parameter.id)}
-          secop_obj={@parameter}
-          plot_mode={:historical}
-          class="hidden xl:block"
-        />
-      </.modal>
     </div>
     """
   end

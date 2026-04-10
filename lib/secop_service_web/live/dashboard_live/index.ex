@@ -8,6 +8,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
 
   alias SecopService.NodeValues
   alias SecopService.NodeSupervisor
+  alias SecopServiceWeb.Components.HistoryDB
   require Logger
 
   alias SEC_Node_Statem
@@ -55,6 +56,7 @@ defmodule SecopServiceWeb.DashboardLive.Index do
       socket
       |> Model.to_socket(model)
       |> assign(:show_connect_modal, false)
+      |> assign(:selected_parameter, nil)
 
     {:ok, socket}
   end
@@ -236,6 +238,11 @@ defmodule SecopServiceWeb.DashboardLive.Index do
   end
 
   @impl true
+  def handle_info({:show_parameter_graph, parameter}, socket) do
+    {:noreply, assign(socket, :selected_parameter, parameter)}
+  end
+
+  @impl true
   def handle_info({:put_flash, [type, message]}, socket) do
     Process.send_after(self(), :clear_flash, 5000)
     {:noreply, put_flash(socket, type, message)}
@@ -343,6 +350,11 @@ defmodule SecopServiceWeb.DashboardLive.Index do
     )
 
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("close_parameter_graph", _params, socket) do
+    {:noreply, assign(socket, :selected_parameter, nil)}
   end
 
   @impl true

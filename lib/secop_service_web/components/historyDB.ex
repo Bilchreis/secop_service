@@ -237,7 +237,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class={["flex flex-1", assigns[:class]]}>
+    <div class={["flex flex-col flex-1", assigns[:class]]}>
       <%= if @display_mode != :empty  do %>
         <div class="flex space-x-2 mb-2">
           <button

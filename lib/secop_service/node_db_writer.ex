@@ -58,12 +58,16 @@ defmodule SecopService.NodeDBWriter do
     # Start batch flush timer
     schedule_batch_flush()
 
+    # Write initial values after init completes
+    send(self(), :write_initial_values)
+
     {:ok,
      %{
        host: node_db.host,
        port: node_db.port,
        equipment_id: node_db.equipment_id,
        uuid: node_db.uuid,
+       node_id: node_db.node_id,
        # Separate batches at top level
        batch_int: [],
        batch_double: [],
@@ -184,6 +188,69 @@ defmodule SecopService.NodeDBWriter do
       end
 
     {:noreply, new_state}
+  end
+
+  @impl true
+  def handle_info(:write_initial_values, state) do
+    case SecopService.NodeValues.get_values(state.node_id) do
+      {:ok, values} ->
+        initial_maps =
+          Enum.flat_map(state.parameter_cache, fn {{module_name, param_name}, parameter_db} ->
+            case get_in(values, [module_name, param_name]) do
+              %{data_report: [value, qualifiers]} when not is_nil(value) ->
+                timestamp =
+                  case qualifiers do
+                    %{t: t} -> t
+                    %{"t" => t} -> t
+                    _ -> DateTime.utc_now()
+                  end
+
+                param_val_map =
+                  ParameterValue.create_map(value, parameter_db, timestamp, qualifiers || %{})
+
+                [{ParameterValue.get_storage_type(parameter_db), param_val_map}]
+
+              _ ->
+                []
+            end
+          end)
+
+        grouped =
+          Enum.group_by(initial_maps, fn {type, _} -> type end, fn {_, map} -> map end)
+
+        count = length(initial_maps)
+        Logger.info("Writing #{count} initial parameter values for node #{state.equipment_id}")
+
+        Task.start(fn ->
+          Enum.each(grouped, fn {storage_type, maps} ->
+            resource_module = ParameterValue.get_resource_module(storage_type)
+            valid = Enum.reject(maps, fn m -> is_nil(m.value) end)
+
+            unless Enum.empty?(valid) do
+              case Ash.bulk_create(valid, resource_module, :bulk_create,
+                     return_errors?: true,
+                     stop_on_error?: false,
+                     return_records?: false
+                   ) do
+                %Ash.BulkResult{status: :success} ->
+                  :ok
+
+                %Ash.BulkResult{status: status, error_count: error_count} ->
+                  Logger.warning(
+                    "Initial #{storage_type} insert: #{status}, #{error_count} errors"
+                  )
+              end
+            end
+          end)
+        end)
+
+      {:error, reason} ->
+        Logger.warning(
+          "Could not get initial values for node #{state.equipment_id}: #{inspect(reason)}"
+        )
+    end
+
+    {:noreply, state}
   end
 
   @impl true
