@@ -13,8 +13,6 @@ defmodule SecopServiceWeb.Components.DashParameter do
     {:noreply, socket}
   end
 
-
-
   def render(assigns) do
     ~H"""
     <div>
@@ -98,7 +96,6 @@ defmodule SecopServiceWeb.Components.DashParameter do
           id_str={"parameter_value:" <> @node_id_str <> ":" <> @module_name <> ":" <> @parameter.name}
         />
       </div>
-
     </div>
     """
   end

@@ -9,7 +9,6 @@ defmodule SecopService.PlotDB do
 
   @markersize 5
 
-
   defp read_from_device_if_empty({_value_val, _value_ts} = readings, param_id) do
     case readings do
       {[], []} ->
@@ -238,7 +237,7 @@ defmodule SecopService.PlotDB do
         type: "scatter",
         mode: "lines+markers",
         name: "value",
-        marker: %{ size: @markersize }
+        marker: %{size: @markersize}
       }
     ]
 
@@ -290,7 +289,7 @@ defmodule SecopService.PlotDB do
         type: "scatter",
         mode: "lines+markers",
         name: "value",
-        marker: %{ size: @markersize }
+        marker: %{size: @markersize}
       },
       %{
         x: target_ts,
@@ -298,7 +297,7 @@ defmodule SecopService.PlotDB do
         type: "scatter",
         mode: "lines+markers",
         name: "target",
-        marker: %{ size: @markersize }
+        marker: %{size: @markersize}
       }
     ]
 
@@ -617,7 +616,6 @@ defmodule SecopService.PlotDB do
           |> ParameterValue.extract_value_timestamp_lists(parameter)
           |> read_from_device_if_empty(parameter.id)
 
-
         plot_map =
           Map.put(plot_map, :plottable, true)
           |> get_unit(parameter)
@@ -629,8 +627,6 @@ defmodule SecopService.PlotDB do
           plot_map
           |> get_data(value_ts, value_val)
           |> get_layout()
-
-
 
         config =
           %{
