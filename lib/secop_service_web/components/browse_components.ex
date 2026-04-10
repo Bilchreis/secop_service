@@ -6,6 +6,7 @@ defmodule SecopServiceWeb.BrowseComponents do
 
   import SecopServiceWeb.CoreComponents
   import SecopServiceWeb.SECoPComponents
+  alias Phoenix.LiveView.JS
 
   attr :node, :map, required: true
 
@@ -249,19 +250,29 @@ defmodule SecopServiceWeb.BrowseComponents do
         <div class="text-lg font-bold text-neutral-content">
           {Util.display_name(@parameter.name)}:
         </div>
-        <div class="flex text-sm text-base-content pt-1 ">
-          <div class="ml-2 px-2 py-0.5 rounded-full bg-base-100 font-mono">
+        <div class="flex text-sm text-base-content pt-1 gap-2">
+          <div class="px-2 py-0.5 rounded-full bg-base-100 font-mono">
             {@parameter.datainfo["type"]}
           </div>
           <%= if @parameter.readonly do %>
-            <div class="ml-2 px-2 py-0.5 rounded-full bg-base-100 font-mono">
+            <div class="px-2 py-0.5 rounded-full bg-base-100 font-mono">
               r
             </div>
           <% else %>
-            <div class="ml-2 px-2 py-0.5 rounded-full bg-base-100 font-mono">
+            <div class="px-2 py-0.5 rounded-full bg-base-100 font-mono">
               r/w
             </div>
           <% end %>
+          <button
+            class="btn btn-warning btn-sm"
+            phx-click={
+              JS.push("show_parameter_graph", value: %{parameter_id: to_string(@parameter.id)})
+            }
+          >
+            <div class="flex items-center">
+              <.icon name="hero-chart-bar-solid" class="h-5 w-5 flex-none mr-1" /> Graph
+            </div>
+          </button>
         </div>
       </div>
       <ul class="mt-2 text-sm text-neutral-content/80">

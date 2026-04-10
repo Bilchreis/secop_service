@@ -37,7 +37,10 @@ defmodule SecopService.PlotCacheSupervisor do
         :ok
 
       [] ->
-        Logger.error("PlotCacheSupervisor not found for node #{inspect(node_id)}, skipping plot cache start")
+        Logger.error(
+          "PlotCacheSupervisor not found for node #{inspect(node_id)}, skipping plot cache start"
+        )
+
         {:error, :supervisor_not_found}
     end
   end

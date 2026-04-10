@@ -7,6 +7,8 @@ defmodule SecopService.PlotDB do
   alias SecopService.SecNodes.Parameter
   require Logger
 
+  @markersize 5
+
   defp read_from_device_if_empty({_value_val, _value_ts} = readings, param_id) do
     case readings do
       {[], []} ->
@@ -233,8 +235,9 @@ defmodule SecopService.PlotDB do
         x: value_ts,
         y: value_val,
         type: "scatter",
-        mode: "lines",
-        name: "value"
+        mode: "lines+markers",
+        name: "value",
+        marker: %{size: @markersize}
       }
     ]
 
@@ -284,15 +287,17 @@ defmodule SecopService.PlotDB do
         x: value_ts,
         y: value_val,
         type: "scatter",
-        mode: "lines",
-        name: "value"
+        mode: "lines+markers",
+        name: "value",
+        marker: %{size: @markersize}
       },
       %{
         x: target_ts,
         y: target_val,
         type: "scatter",
-        mode: "lines",
-        name: "target"
+        mode: "lines+markers",
+        name: "target",
+        marker: %{size: @markersize}
       }
     ]
 
@@ -615,7 +620,6 @@ defmodule SecopService.PlotDB do
           Map.put(plot_map, :plottable, true)
           |> get_unit(parameter)
           |> Map.put(:plotly, Map.get(parameter.custom_properties, "_plotly", nil))
-          |> set_chart_id(parameter.chart_id)
 
         plot_map = plot_available(plot_map, value_val)
 

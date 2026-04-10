@@ -11,6 +11,8 @@ defmodule SecopServiceWeb.DashboardComponents do
 
   import SecopServiceWeb.SECoPComponents
   import SecopServiceWeb.Components.ParameterFormFieldComponents
+  import SecopServiceWeb.CoreComponents
+  alias Phoenix.LiveView.JS
 
   defp sort_commands_with_priority(commands) do
     priority_order = [
@@ -192,7 +194,9 @@ defmodule SecopServiceWeb.DashboardComponents do
             </div>
             <div class="collapse-content text-sm">
               <%= for parameter <- parameters do %>
-                <.dash_parameter
+                <.live_component
+                  module={SecopServiceWeb.Components.DashParameter}
+                  id={"dash_parameter:" <> @node_id_str <> ":" <> @module.name <> ":" <> parameter.name}
                   host={@host}
                   port={@port}
                   node_id_str={@node_id_str}
@@ -452,91 +456,6 @@ defmodule SecopServiceWeb.DashboardComponents do
         <div></div>
       </:parameter_preview>
     </.dash_base_module>
-    """
-  end
-
-  attr :parameter, :map, required: true
-  attr :host, :string, required: true
-  attr :port, :integer, required: true
-  attr :module_name, :string, required: true
-  attr :node_id_str, :string, required: true
-
-  def dash_parameter(assigns) do
-    ~H"""
-    <!-- Parameter Name -->
-    <div class="card mb-4 bg-neutral p-4 shadow-md">
-      <div class="flex justify-between">
-        <div class="flex ">
-          <div>
-            <.datainfo_tooltip datainfo={@parameter.datainfo} position="tooltip-right" />
-          </div>
-
-          <div class="text-lg font-bold text-neutral-content">
-            {Util.display_name(@parameter.name)}:
-          </div>
-        </div>
-
-        <div class="flex text-sm text-base-content pt-1 ">
-          <div class="ml-2 px-2 py-0.5 rounded-full bg-base-100 font-mono">
-            {@parameter.datainfo["type"]}
-          </div>
-          <%= if @parameter.readonly do %>
-            <div class="ml-2 px-2 py-0.5 rounded-full bg-base-100 font-mono">
-              r
-            </div>
-          <% else %>
-            <div class="ml-2 px-2 py-0.5 rounded-full bg-base-100 font-mono">
-              r/w
-            </div>
-          <% end %>
-        </div>
-      </div>
-      <ul class="mt-2 text-sm text-neutral-content/80">
-        <!-- Description -->
-        <.property
-          prop_key="Description"
-          class=""
-          key_class="text-neutral-content/80 text-sm font-bold"
-        >
-          {@parameter.description}
-        </.property>
-        
-    <!-- Optional Properties -->
-        <%= if @parameter.meaning do %>
-          <.property prop_key="Meaning" key_class="text-neutral-content/80 font-semibold">
-            {inspect(@parameter.meaning)}
-          </.property>
-        <% end %>
-
-        <%= if @parameter.checkable do %>
-          <.property prop_key="Checkable" key_class="text-neutral-content/80 font-semibold">
-            {@parameter.checkable}
-          </.property>
-        <% end %>
-        
-    <!-- Custom Properties -->
-        <%= for {property_name, property_value} <- @parameter.custom_properties do %>
-          <.property
-            prop_key={String.replace_prefix(property_name, "_", "")}
-            key_class="text-neutral-content/80 font-semibold"
-          >
-            > {inspect(property_value)}
-          </.property>
-        <% end %>
-      </ul>
-
-      <.live_component
-        module={ParameterValueDisplay}
-        id={"parameter_value:"<> @node_id_str <>":" <> @module_name <> ":" <> @parameter.name}
-        class=""
-        host={@host}
-        port={@port}
-        location="parameter_value"
-        module_name={@module_name}
-        parameter={@parameter}
-        id_str={"parameter_value:"<> @node_id_str <> ":" <> @module_name <> ":" <> @parameter.name}
-      />
-    </div>
     """
   end
 

@@ -63,4 +63,19 @@
   >
     <.connect_node />
   </.modal>
+
+  <.modal
+    :if={@selected_parameter != nil}
+    id="parameter-history-modal"
+    on_cancel={JS.push("close_parameter_graph")}
+    show={true}
+  >
+    <.live_component
+      module={HistoryDB}
+      id={"parameter-plot:" <> to_string(@selected_parameter.id)}
+      secop_obj={@selected_parameter}
+      plot_mode={:historical}
+      class=""
+    />
+  </.modal>
 </Layouts.app>
