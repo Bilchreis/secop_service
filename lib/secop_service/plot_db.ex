@@ -5,6 +5,8 @@ defmodule SecopService.PlotDB do
 
   alias SecopService.SecNodes.ParameterValue
   alias SecopService.SecNodes.Parameter
+  alias SecopService.SecNodes.Module
+  alias SecopService.NodeValues
   require Logger
 
   @markersize 5
@@ -695,8 +697,22 @@ defmodule SecopService.PlotDB do
   end
 
   def calibration_plot(%SecopService.SecNodes.Module{} = module) do
-    fwd_coeffs = [0,1,0]
-    inv_coeffs = [0,1,0]
+    %{sec_node: %{node_id: node_id}} =
+      Module
+      |> Ash.Query.for_read(:get_node_id, %{id: module.id})
+      |> Ash.read_first!()
+
+    fwd_coeffs =
+      case NodeValues.get_value(node_id, module.name, "_forward_calibration_coefficients") do
+        {:ok, %{data_report: [value, _]}} -> value
+        _ -> nil
+      end
+
+    inv_coeffs =
+      case NodeValues.get_value(node_id, module.name, "_inverse_calibration_coefficients") do
+        {:ok, %{data_report: [value, _]}} -> value
+        _ -> nil
+      end
 
     case {fwd_coeffs, inv_coeffs} do
       {nil, _} ->
