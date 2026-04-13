@@ -58,6 +58,15 @@ defmodule SecopServiceWeb.SECoPComponents do
           icon: "hero-cog"
         }
 
+      "calibratable" ->
+        %{
+          border: "border-indigo-500 dark:border-indigo-600/40",
+          bg:
+            "bg-gradient-to-r from-indigo-200 to-indigo-300 dark:from-indigo-900/30 dark:to-indigo-900/40",
+          header_bg: "bg-indigo-300 dark:bg-indigo-800/50",
+          icon: "hero-wrench"
+        }
+
       "acquisition" ->
         %{
           border: "border-blue-500 dark:border-blue-600/40",

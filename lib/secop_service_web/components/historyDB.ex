@@ -65,8 +65,14 @@ defmodule SecopServiceWeb.Components.HistoryDB do
           socket
           |> assign(:table_data, nil)
           |> assign(:plot, nil)
+          |> assign(:calibration_plot, nil)
 
         plot_mode = assigns[:plot_mode] || :live
+
+        ifclass = case secop_obj do
+          %SecopService.SecNodes.Parameter{} = _param -> nil
+          %SecopService.SecNodes.Module{} = module -> module.highest_interface_class
+        end
 
         socket =
           cond do
@@ -94,6 +100,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
         |> assign(:class, assigns.class)
         |> assign(:parameter, get_parameter(secop_obj))
         |> assign(:secop_obj, secop_obj)
+        |> assign(:interface_class, ifclass)
       end
 
     {:ok, socket}
@@ -109,6 +116,7 @@ defmodule SecopServiceWeb.Components.HistoryDB do
           case module.highest_interface_class do
             "readable" -> ["value"]
             "drivable" -> ["value", "target"]
+            "calibratable" -> ["value", "_value_uncalibrated", "target", "_target_calibrated"]
             "communicator" -> []
             "acquisition" -> ["value"]
             _ -> []
@@ -151,13 +159,23 @@ defmodule SecopServiceWeb.Components.HistoryDB do
   end
 
   @impl true
-  def handle_event("request-plotly-data", %{"id" => _chart_id}, %{assigns: assigns} = socket) do
-    {:noreply,
-     push_event(socket, "plotly-data-#{socket.assigns.id}", %{
-       data: assigns.plot.result.data,
-       layout: assigns.plot.result.layout,
-       config: assigns.plot.result.config
-     })}
+  def handle_event("request-plotly-data", %{"id" => chart_id}, %{assigns: assigns} = socket) do
+    if String.ends_with?(chart_id, "-calib") do
+      calib = assigns.calibration_plot.result
+      {:noreply,
+       push_event(socket, "plotly-data-#{chart_id}", %{
+         data: calib.data,
+         layout: calib.layout,
+         config: calib.config
+       })}
+    else
+      {:noreply,
+       push_event(socket, "plotly-data-#{socket.assigns.id}", %{
+         data: assigns.plot.result.data,
+         layout: assigns.plot.result.layout,
+         config: assigns.plot.result.config
+       })}
+    end
   end
 
   @impl true
@@ -227,6 +245,16 @@ defmodule SecopServiceWeb.Components.HistoryDB do
             socket
           end
 
+        :calibration ->
+          if socket.assigns.calibration_plot == nil do
+            secop_obj = socket.assigns.secop_obj
+            socket |> assign_async(:calibration_plot, fn ->
+              {:ok, %{calibration_plot: PlotDB.calibration_plot(secop_obj)}}
+            end)
+          else
+            socket
+          end
+
         _ ->
           socket
       end
@@ -267,6 +295,23 @@ defmodule SecopServiceWeb.Components.HistoryDB do
               <.icon name="hero-table-cells-solid" class="h-5 w-5 flex-none mr-1" /> Table
             </div>
           </button>
+          <%= if @interface_class == "calibratable" do %>
+            <button
+              class={[
+                "btn btn-neutral",
+                @display_mode == :calibration &&
+                  "btn-active btn-primary",
+                @plottable == false &&
+                  "btn-disabled"
+              ]}
+              phx-click={JS.push("set-display-mode", value: %{mode: "calibration"}, target: @myself)}
+            >
+              <div class="flex items-center">
+                <.icon name="hero-calculator-solid" class="h-5 w-5 flex-none mr-1" />
+                Calibration Coefficients
+              </div>
+            </button>
+          <% end %>
 
           <%= if @display_mode == :graph do %>
             <button
@@ -370,6 +415,25 @@ defmodule SecopServiceWeb.Components.HistoryDB do
                 on_paginate={JS.push("paginate", target: @myself)}
                 opts={history_pagination_opts()}
               />
+            </div>
+          </.async_result>
+        <% :calibration -> %>
+          <.async_result :let={_calib} assign={@calibration_plot}>
+            <:loading>
+              <div class="flex flex-1 h-[520px] animate-pulse items-center justify-center text-center bg-gray-300 p-4 rounded-lg">
+                <span class="text-gray-700">Computing calibration curves...</span>
+              </div>
+            </:loading>
+            <:failed>
+              ERROR
+            </:failed>
+            <div class="flex-1 bg-gray-300 p-1 rounded-lg">
+              <div
+                id={"#{@id}-calib"}
+                phx-hook="PlotlyChart"
+                phx-update="ignore"
+              >
+              </div>
             </div>
           </.async_result>
         <% :empty -> %>
