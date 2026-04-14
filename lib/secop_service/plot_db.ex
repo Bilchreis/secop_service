@@ -7,6 +7,7 @@ defmodule SecopService.PlotDB do
   alias SecopService.SecNodes.Parameter
   alias SecopService.SecNodes.Module
   alias SecopService.NodeValues
+  alias NodeTable
   require Logger
 
   @markersize 5
@@ -668,30 +669,69 @@ defmodule SecopService.PlotDB do
     |> Enum.reduce(0.0, fn {c, i}, acc -> acc + c * :math.pow(x, i) end)
   end
 
-  defp get_calib_range(value_param) do
-    datainfo = value_param.datainfo || %{}
-    min_val = Map.get(datainfo, "min")
-    max_val = Map.get(datainfo, "max")
+  defp get_calib_range(node_id, module) do
+    module_atom = String.to_existing_atom(module.name)
 
-    cond do
-      is_number(min_val) and is_number(max_val) and min_val < max_val ->
-        {min_val * 1.0, max_val * 1.0}
+    lookup_param_value = fn param_name ->
+        case NodeTable.lookup(
+          {:service, node_id},
+          {:data_report, module_atom, String.to_existing_atom(param_name)}
+          ) do
+          {:ok, %{data_report: [value, _]}} -> value
+          {:error, _} -> nil
+        end
+    end
 
-      true ->
-        values =
-          get_values(value_param)
-          |> ParameterValue.extract_value_timestamp_lists(value_param)
-          |> elem(0)
-          |> Enum.filter(&is_number/1)
+    # 1. target_limits
+    case lookup_param_value.("target_limits") do
+      [min, max] when is_number(min) and is_number(max) and min < max ->
+        {min * 1.0, max * 1.0}
+      _ ->
+        target_param = Enum.find(module.parameters, fn p -> p.name == "target" end)
+        target_datainfo = if target_param, do: target_param.datainfo || %{}, else: %{}
 
-        case values do
-          [] ->
-            {0.0, 100.0}
+        # 2. target_min / target_max parameters, filling the missing bound from target datainfo
+        target_min_val = lookup_param_value.("target_min")
+        target_max_val = lookup_param_value.("target_max")
 
-          vals ->
-            lo = Enum.min(vals) * 1.0
-            hi = Enum.max(vals) * 1.0
-            if lo == hi, do: {lo - 1.0, hi + 1.0}, else: {lo, hi}
+        datainfo_min = Map.get(target_datainfo, "min")
+        datainfo_max = Map.get(target_datainfo, "max")
+
+        resolved_min =
+          cond do
+            is_number(target_min_val) -> target_min_val * 1.0
+            is_number(target_max_val) and is_number(datainfo_min) -> datainfo_min * 1.0
+            # 3. min from target datainfo
+            is_number(datainfo_min) -> datainfo_min * 1.0
+            true -> nil
+          end
+
+        resolved_max =
+          cond do
+            is_number(target_max_val) -> target_max_val * 1.0
+            is_number(target_min_val) and is_number(datainfo_max) -> datainfo_max * 1.0
+            # 3. max from target datainfo
+            is_number(datainfo_max) -> datainfo_max * 1.0
+            true -> nil
+          end
+
+        case {resolved_min, resolved_max} do
+          {min, max} when is_number(min) and is_number(max) and min < max ->
+            {min, max}
+
+          _ ->
+            # 4. value datainfo
+            value_param = Enum.find(module.parameters, fn p -> p.name == "value" end)
+            value_datainfo = if value_param, do: value_param.datainfo || %{}, else: %{}
+            val_min = Map.get(value_datainfo, "min")
+            val_max = Map.get(value_datainfo, "max")
+
+            if is_number(val_min) and is_number(val_max) and val_min < val_max do
+              {val_min * 1.0, val_max * 1.0}
+            else
+              # 5. default
+              {-50.0, 50.0}
+            end
         end
     end
   end
@@ -702,17 +742,30 @@ defmodule SecopService.PlotDB do
       |> Ash.Query.for_read(:get_node_id, %{id: module.id})
       |> Ash.read_first!()
 
-    fwd_coeffs =
-      case NodeValues.get_value(node_id, module.name, "_forward_calibration_coefficients") do
-        {:ok, %{data_report: [value, _]}} -> value
-        _ -> nil
+    fwd_coeffs = case NodeTable.lookup(
+           {:service, node_id},
+           {:data_report, String.to_existing_atom(module.name),
+            String.to_existing_atom("_forward_calibration_coefficients")}
+         ) do
+      {:ok, %{data_report: [value, _]}} ->   value
+
+      {:error,_} -> nil
       end
 
-    inv_coeffs =
-      case NodeValues.get_value(node_id, module.name, "_inverse_calibration_coefficients") do
-        {:ok, %{data_report: [value, _]}} -> value
-        _ -> nil
+    inv_coeffs = case NodeTable.lookup(
+           {:service, node_id},
+           {:data_report, String.to_existing_atom(module.name),
+            String.to_existing_atom("_inverse_calibration_coefficients")}
+         ) do
+      {:ok, %{data_report: [value, _]}} ->   value
+
+      {:error,_} -> nil
       end
+
+
+    # Ranges
+
+
 
     case {fwd_coeffs, inv_coeffs} do
       {nil, _} ->
@@ -723,9 +776,9 @@ defmodule SecopService.PlotDB do
 
       {fwd, inv} ->
         value_param = Enum.find(module.parameters, fn p -> p.name == "value" end)
-        {x_min, x_max} = get_calib_range(value_param)
+        {x_min, x_max} = get_calib_range(node_id, module)
 
-        n = 300
+        n = 100
         step = (x_max - x_min) / (n - 1)
         setpoints = Enum.map(0..(n - 1), fn i -> x_min + step * i end)
 
@@ -785,7 +838,7 @@ defmodule SecopService.PlotDB do
           paper_bgcolor: "rgba(0,0,0,0)",
           plot_bgcolor: "rgba(0,0,0,0)",
           autosize: true,
-          height: 520,
+          height: 700,
           margin: %{t: 50, b: 50, l: 60, r: 20},
           annotations: [
             %{text: "Forward Calibration: Setpoint → Hardware",
