@@ -35,6 +35,19 @@ defmodule SecopService.NodeValues do
     end
   end
 
+  def get_value(node_id, module, parameter) do
+    case get_values(node_id) do
+      {:ok, values} ->
+        case get_in(values, [module, parameter]) do
+          nil -> {:error, :not_found}
+          value -> {:ok, value}
+        end
+
+      error ->
+        error
+    end
+  end
+
   def get_table(node_id) do
     case Registry.lookup(Registry.NodeValues, node_id) do
       [] ->

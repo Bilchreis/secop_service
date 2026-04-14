@@ -5,6 +5,9 @@ defmodule SecopService.PlotDB do
 
   alias SecopService.SecNodes.ParameterValue
   alias SecopService.SecNodes.Parameter
+  alias SecopService.SecNodes.Module
+  alias SecopService.NodeValues
+  alias NodeTable
   require Logger
 
   @markersize 5
@@ -304,6 +307,49 @@ defmodule SecopService.PlotDB do
     Map.put(plot_map, :data, data)
   end
 
+
+  # calibratable with scalar data
+  def get_data(%{plotly: nil} = plot_map, value_ts, value_val, value_uncalibrated_ts, value_uncalibrated_val, target_ts, target_val, target_calibrated_ts, target_calibrated_val) do
+    data = [
+      %{
+        x: value_ts,
+        y: value_val,
+        type: "scatter",
+        mode: "lines+markers",
+        name: "value",
+        marker: %{size: @markersize}
+      },
+      %{
+        x: target_ts,
+        y: target_val,
+        type: "scatter",
+        mode: "lines+markers",
+        name: "target",
+        marker: %{size: @markersize}
+      },
+      %{
+        x: value_uncalibrated_ts,
+        y: value_uncalibrated_val,
+        type: "scatter",
+        mode: "lines+markers",
+        name: "_value_uncalibrated",
+        marker: %{size: @markersize},
+        visible: "legendonly"
+      },
+      %{
+        x: target_calibrated_ts,
+        y: target_calibrated_val,
+        type: "scatter",
+        mode: "lines+markers",
+        name: "_target_calibrated",
+        marker: %{size: @markersize},
+        visible: "legendonly"
+      }
+    ]
+
+    Map.put(plot_map, :data, data)
+  end
+
   # drivable with plotly specification
   def get_data(%{plotly: plotly} = plot_map, value_ts, value_val, target_ts, target_val) do
     raw_data = %{
@@ -504,30 +550,36 @@ defmodule SecopService.PlotDB do
   end
 
   def module_plot(module, mode \\ :live) do
-    plotmap =
-      case Util.get_highest_if_class(module.interface_classes) do
-        :readable -> readable_plot(module, mode)
-        :drivable -> drivable_plot(module, mode)
-        :communicator -> not_plottable()
-        :acquisition -> readable_plot(module, mode)
-        _ -> not_plottable()
-      end
-
-    plotmap
+    module_plot(module, Util.get_highest_if_class(module.interface_classes), mode)
   end
 
-  def init(secop_obj, mode \\ :live) do
-    case secop_obj do
-      %SecopService.SecNodes.Parameter{} = param ->
-        parameter_plot(param, mode)
+  def module_plot(module, :readable, mode) do
+    plot_map = %{mode: mode}
 
-      %SecopService.SecNodes.Module{} = module ->
-        module_plot(module, mode)
+    value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
+
+    if plottable?(value_param) do
+      plot_map =
+        Map.put(plot_map, :plottable, true)
+        |> get_unit(value_param)
+        |> Map.put(:plotly, Map.get(module.custom_properties || %{}, "_plotly", nil))
+
+      {value_val, value_ts} =
+        get_values(value_param)
+        |> ParameterValue.extract_value_timestamp_lists(value_param)
+        |> read_from_device_if_empty(value_param.id)
+
+      plot_map
+      |> plot_available(value_val)
+      |> get_data(value_ts, value_val)
+      |> get_layout()
+      |> Map.put(:config, %{responsive: true, displayModeBar: false})
+    else
+      not_plottable()
     end
   end
 
-  #
-  def drivable_plot(module, mode \\ :live) do
+  def module_plot(module, :drivable, mode) do
     plot_map = %{mode: mode}
 
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
@@ -549,62 +601,286 @@ defmodule SecopService.PlotDB do
         |> ParameterValue.extract_value_timestamp_lists(target_param)
         |> read_from_device_if_empty(target_param.id)
 
-      plot_map = plot_available(plot_map, value_val)
-
-      plot_map =
-        plot_map
-        |> get_data(value_ts, value_val, target_ts, target_val)
-        |> get_layout()
-
-      config =
-        %{
-          responsive: true,
-          displayModeBar: false
-        }
-
-      Map.put(plot_map, :config, config)
+      plot_map
+      |> plot_available(value_val)
+      |> get_data(value_ts, value_val, target_ts, target_val)
+      |> get_layout()
+      |> Map.put(:config, %{responsive: true, displayModeBar: false})
     else
       not_plottable()
     end
   end
 
-  def readable_plot(module, mode \\ :live) do
+    def module_plot(module, :calibratable, mode) do
     plot_map = %{mode: mode}
 
     value_param = Enum.find(module.parameters, fn param -> param.name == "value" end)
+    target_param = Enum.find(module.parameters, fn param -> param.name == "target" end)
 
-    plot_map =
-      if plottable?(value_param) do
-        plot_map =
-          Map.put(plot_map, :plottable, true)
-          |> get_unit(value_param)
-          |> Map.put(:plotly, Map.get(module.custom_properties || %{}, "_plotly", nil))
+    value_uncalibrated_param = Enum.find(module.parameters, fn param -> param.name == "_value_uncalibrated" end)
+    target_calibrated_param = Enum.find(module.parameters, fn param -> param.name == "_target_calibrated" end)
 
-        {value_val, value_ts} =
-          get_values(value_param)
-          |> ParameterValue.extract_value_timestamp_lists(value_param)
-          |> read_from_device_if_empty(value_param.id)
 
-        plot_map = plot_available(plot_map, value_val)
+    if plottable?(value_param) or Map.has_key?(module.custom_properties || %{}, "_plotly") do
+      plot_map =
+        Map.put(plot_map, :plottable, true)
+        |> get_unit(value_param)
+        |> Map.put(:plotly, Map.get(module.custom_properties || %{}, "_plotly", nil))
 
-        plot_map =
-          plot_map
-          |> get_data(value_ts, value_val)
-          |> get_layout()
+      {value_val, value_ts} =
+        get_values(value_param)
+        |> ParameterValue.extract_value_timestamp_lists(value_param)
+        |> read_from_device_if_empty(value_param.id)
 
-        config =
-          %{
-            responsive: true,
-            displayModeBar: false
-          }
+      {target_val, target_ts} =
+        get_values(target_param)
+        |> ParameterValue.extract_value_timestamp_lists(target_param)
+        |> read_from_device_if_empty(target_param.id)
 
-        Map.put(plot_map, :config, config)
-      else
-        not_plottable()
+      {value_uncalibrated_val, value_uncalibrated_ts} =
+        get_values(value_uncalibrated_param)
+        |> ParameterValue.extract_value_timestamp_lists(value_uncalibrated_param)
+        |> read_from_device_if_empty(value_uncalibrated_param.id)
+
+      {target_calibrated_val, target_calibrated_ts} =
+        get_values(target_calibrated_param)
+        |> ParameterValue.extract_value_timestamp_lists(target_calibrated_param)
+        |> read_from_device_if_empty(target_calibrated_param.id)
+
+      plot_map
+      |> plot_available(value_val)
+      |> get_data(value_ts, value_val, value_uncalibrated_ts, value_uncalibrated_val, target_ts, target_val, target_calibrated_ts, target_calibrated_val)
+      |> get_layout()
+      |> Map.put(:config, %{responsive: true, displayModeBar: false})
+    else
+      not_plottable()
+    end
+  end
+
+
+  def module_plot(_module, :acquisition, mode), do: module_plot(_module, :readable, mode)
+  def module_plot(_module, _interface_class, _mode), do: not_plottable()
+
+  # Evaluate polynomial with ascending-order coefficients [c0, c1, c2, ...]
+  # i.e. result = c0 + c1*x + c2*x^2 + ...
+  defp polyval(coeffs, x) do
+    coeffs
+    |> Enum.with_index()
+    |> Enum.reduce(0.0, fn {c, i}, acc -> acc + c * :math.pow(x, i) end)
+  end
+
+  defp get_calib_range(node_id, module) do
+    module_atom = String.to_existing_atom(module.name)
+
+    lookup_param_value = fn param_name ->
+        case NodeTable.lookup(
+          {:service, node_id},
+          {:data_report, module_atom, String.to_existing_atom(param_name)}
+          ) do
+          {:ok, %{data_report: [value, _]}} -> value
+          {:error, _} -> nil
+        end
+    end
+
+    # 1. target_limits
+    case lookup_param_value.("target_limits") do
+      [min, max] when is_number(min) and is_number(max) and min < max ->
+        {min * 1.0, max * 1.0}
+      _ ->
+        target_param = Enum.find(module.parameters, fn p -> p.name == "target" end)
+        target_datainfo = if target_param, do: target_param.datainfo || %{}, else: %{}
+
+        # 2. target_min / target_max parameters, filling the missing bound from target datainfo
+        target_min_val = lookup_param_value.("target_min")
+        target_max_val = lookup_param_value.("target_max")
+
+        datainfo_min = Map.get(target_datainfo, "min")
+        datainfo_max = Map.get(target_datainfo, "max")
+
+        resolved_min =
+          cond do
+            is_number(target_min_val) -> target_min_val * 1.0
+            is_number(target_max_val) and is_number(datainfo_min) -> datainfo_min * 1.0
+            # 3. min from target datainfo
+            is_number(datainfo_min) -> datainfo_min * 1.0
+            true -> nil
+          end
+
+        resolved_max =
+          cond do
+            is_number(target_max_val) -> target_max_val * 1.0
+            is_number(target_min_val) and is_number(datainfo_max) -> datainfo_max * 1.0
+            # 3. max from target datainfo
+            is_number(datainfo_max) -> datainfo_max * 1.0
+            true -> nil
+          end
+
+        case {resolved_min, resolved_max} do
+          {min, max} when is_number(min) and is_number(max) and min < max ->
+            {min, max}
+
+          _ ->
+            # 4. value datainfo
+            value_param = Enum.find(module.parameters, fn p -> p.name == "value" end)
+            value_datainfo = if value_param, do: value_param.datainfo || %{}, else: %{}
+            val_min = Map.get(value_datainfo, "min")
+            val_max = Map.get(value_datainfo, "max")
+
+            if is_number(val_min) and is_number(val_max) and val_min < val_max do
+              {val_min * 1.0, val_max * 1.0}
+            else
+              # 5. default
+              {-50.0, 50.0}
+            end
+        end
+    end
+  end
+
+  def calibration_plot(%SecopService.SecNodes.Module{} = module) do
+    %{sec_node: %{node_id: node_id}} =
+      Module
+      |> Ash.Query.for_read(:get_node_id, %{id: module.id})
+      |> Ash.read_first!()
+
+    fwd_coeffs = case NodeTable.lookup(
+           {:service, node_id},
+           {:data_report, String.to_existing_atom(module.name),
+            String.to_existing_atom("_forward_calibration_coefficients")}
+         ) do
+      {:ok, %{data_report: [value, _]}} ->   value
+
+      {:error,_} -> nil
       end
 
-    plot_map
+    inv_coeffs = case NodeTable.lookup(
+           {:service, node_id},
+           {:data_report, String.to_existing_atom(module.name),
+            String.to_existing_atom("_inverse_calibration_coefficients")}
+         ) do
+      {:ok, %{data_report: [value, _]}} ->   value
+
+      {:error,_} -> nil
+      end
+
+
+    # Ranges
+
+
+
+    case {fwd_coeffs, inv_coeffs} do
+      {nil, _} ->
+        not_plottable()
+
+      {_, nil} ->
+        not_plottable()
+
+      {fwd, inv} ->
+        value_param = Enum.find(module.parameters, fn p -> p.name == "value" end)
+        {x_min, x_max} = get_calib_range(node_id, module)
+
+        n = 100
+        step = (x_max - x_min) / (n - 1)
+        setpoints = Enum.map(0..(n - 1), fn i -> x_min + step * i end)
+
+        hw_values = Enum.map(setpoints, fn sp -> polyval(fwd, sp) end)
+        calib_readback = Enum.map(hw_values, fn hw -> polyval(inv, hw) end)
+        roundtrip_err = Enum.zip_with(calib_readback, setpoints, fn rb, sp -> rb - sp end)
+
+        unit = Map.get(value_param.datainfo || %{}, "unit", "")
+        unit_label = if unit != "", do: " (#{unit})", else: ""
+
+        identity_style = %{color: "gray", dash: "dash"}
+
+        data = [
+          # --- subplot 1: forward ---
+          %{x: setpoints, y: hw_values, type: "scatter", mode: "lines",
+            name: "hardware value", line: %{color: "steelblue"},
+            xaxis: "x", yaxis: "y"},
+          %{x: setpoints, y: setpoints, type: "scatter", mode: "lines",
+            name: "identity", line: identity_style, opacity: 0.5,
+            showlegend: false, xaxis: "x", yaxis: "y"},
+          # --- subplot 2: inverse ---
+          %{x: hw_values, y: calib_readback, type: "scatter", mode: "lines",
+            name: "calibrated readback", line: %{color: "crimson"},
+            xaxis: "x2", yaxis: "y2"},
+          %{x: hw_values, y: hw_values, type: "scatter", mode: "lines",
+            name: "identity2", line: identity_style, opacity: 0.5,
+            showlegend: false, xaxis: "x2", yaxis: "y2"},
+          # --- subplot 3: roundtrip ---
+          %{x: setpoints, y: calib_readback, type: "scatter", mode: "lines",
+            name: "roundtrip result", line: %{color: "seagreen"},
+            xaxis: "x3", yaxis: "y3"},
+          %{x: setpoints, y: setpoints, type: "scatter", mode: "lines",
+            name: "identity3", line: identity_style, opacity: 0.5,
+            showlegend: false, xaxis: "x3", yaxis: "y3"},
+          # --- subplot 4: error ---
+          %{x: setpoints, y: roundtrip_err, type: "scatter", mode: "lines",
+            name: "roundtrip error", line: %{color: "mediumpurple"},
+            xaxis: "x4", yaxis: "y4"}
+        ]
+
+        layout = %{
+          grid: %{rows: 2, columns: 2, pattern: "independent"},
+          xaxis:  %{title: %{text: "Setpoint#{unit_label}"}, gridcolor: "rgba(128,128,128,0.3)"},
+          yaxis:  %{title: %{text: "Hardware value#{unit_label}"}, gridcolor: "rgba(128,128,128,0.3)"},
+          xaxis2: %{title: %{text: "Raw hardware value#{unit_label}"}, gridcolor: "rgba(128,128,128,0.3)"},
+          yaxis2: %{title: %{text: "Calibrated readback#{unit_label}"}, gridcolor: "rgba(128,128,128,0.3)"},
+          xaxis3: %{title: %{text: "Setpoint#{unit_label}"}, gridcolor: "rgba(128,128,128,0.3)"},
+          yaxis3: %{title: %{text: "Calibrated readback#{unit_label}"}, gridcolor: "rgba(128,128,128,0.3)"},
+          xaxis4: %{title: %{text: "Setpoint#{unit_label}"}, gridcolor: "rgba(128,128,128,0.3)"},
+          yaxis4: %{
+            title: %{text: "Error#{unit_label}"},
+            gridcolor: "rgba(128,128,128,0.3)",
+            zeroline: true,
+            zerolinecolor: "gray",
+            zerolinewidth: 1
+          },
+          paper_bgcolor: "rgba(0,0,0,0)",
+          plot_bgcolor: "rgba(0,0,0,0)",
+          autosize: true,
+          height: 700,
+          margin: %{t: 50, b: 50, l: 60, r: 20},
+          annotations: [
+            %{text: "Forward Calibration: Setpoint → Hardware",
+              showarrow: false, x: 0.225, xref: "paper", y: 1.04, yref: "paper",
+              xanchor: "center", font: %{size: 12}},
+            %{text: "Inverse Calibration: Hardware → Readback",
+              showarrow: false, x: 0.775, xref: "paper", y: 1.04, yref: "paper",
+              xanchor: "center", font: %{size: 12}},
+            %{text: "Roundtrip: Setpoint → Forward → Inverse",
+              showarrow: false, x: 0.225, xref: "paper", y: 0.46, yref: "paper",
+              xanchor: "center", font: %{size: 12}},
+            %{text: "Roundtrip Error",
+              showarrow: false, x: 0.775, xref: "paper", y: 0.46, yref: "paper",
+              xanchor: "center", font: %{size: 12}}
+          ]
+        }
+
+        %{
+          plottable: true,
+          plot_available: true,
+          data: data,
+          layout: layout,
+          config: %{responsive: true, displayModeBar: false},
+          fwd_coeffs: fwd,
+          inv_coeffs: inv
+        }
+    end
   end
+
+  def init(secop_obj, mode \\ :live) do
+    case secop_obj do
+      %SecopService.SecNodes.Parameter{} = param ->
+        parameter_plot(param, mode)
+
+      %SecopService.SecNodes.Module{} = module ->
+        module_plot(module, mode)
+    end
+  end
+
+  def drivable_plot(module, mode \\ :live), do: module_plot(module, :drivable, mode)
+
+  def readable_plot(module, mode \\ :live), do: module_plot(module, :readable, mode)
 
   def parameter_plot(parameter, mode \\ :live) do
     plot_map = %{mode: mode}

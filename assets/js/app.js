@@ -37,6 +37,13 @@ let Hooks = {};
 
 Hooks.PlotlyChart = {
   mounted() {
+    // Buffer for incoming trace data: { traceIndex -> { x: [], y: [] } }
+    this._traceBuffer = {};
+
+    // Flush buffered trace data to Plotly at a fixed render rate (2s),
+    // decoupled from however often the server sends push_events.
+    this._flushInterval = setInterval(() => this._flushTraceBuffer(), 3000);
+
     // Send the chart ID when requesting data
     this.handleEvent(
       `plotly-data-${this.el.id}`,
@@ -68,102 +75,19 @@ Hooks.PlotlyChart = {
       config = null;
     });
 
-    // Add new handler for extending traces (real-time updates)
+    // Buffer incoming trace updates instead of calling Plotly immediately.
+    // The _flushTraceBuffer timer will drain the buffer and call extendTraces once.
     this.handleEvent(
       `extend-traces-${this.el.id}`,
       ({ x, y, traceIndices }) => {
-        try {
-          // Ensure we have an initialized plot before trying to extend it
-          if (this.el._fullData) {
-            // Use extendTraces to efficiently add new points
-            Plotly.extendTraces(
-              this.el,
-              {
-                x: x, // Array of x arrays
-                y: y, // Array of y arrays
-              },
-              traceIndices || [0],
-              maxPoints,
-            );
-
-            const now = new Date();
-            const layout = this.el.layout;
-            const currentXRange = layout.xaxis.range;
-
-            // Check if we should update the range
-            let shouldUpdateRange = false;
-            let newRange = null;
-
-            // Get the active range selector button (if any)
-            const rangeSelector = layout.xaxis.rangeselector;
-            const activeButton = rangeSelector
-              ? rangeSelector.activebutton
-              : null;
-
-            if (activeButton !== null && activeButton !== undefined) {
-              // A range selector button is active - calculate new range based on button
-              const button = rangeSelector.buttons[activeButton];
-
-              if (button.step === "all") {
-                // "All" button is selected - don't update range, show all data
-                shouldUpdateRange = false;
-              } else {
-                // Calculate range based on the active button
-                let startTime;
-                if (button.step === "minute") {
-                  startTime = new Date(
-                    now.getTime() - button.count * 60 * 1000,
-                  );
-                } else if (button.step === "hour") {
-                  startTime = new Date(
-                    now.getTime() - button.count * 60 * 60 * 1000,
-                  );
-                } else if (button.step === "day") {
-                  startTime = new Date(
-                    now.getTime() - button.count * 24 * 60 * 60 * 1000,
-                  );
-                }
-
-                if (startTime) {
-                  newRange = [startTime, now];
-                  shouldUpdateRange = true;
-                }
-              }
-            } else if (currentXRange && currentXRange.length === 2) {
-              // Custom range is set - check if the right edge is at the most recent data
-              const rightEdge = new Date(currentXRange[1]);
-              const timeDiff = Math.abs(rightEdge.getTime() - now.getTime());
-
-              // If the right edge is within 1 minute of the most recent data,
-              // consider it to be tracking live data and update the window
-              if (timeDiff < 60000) {
-                // 1 minute tolerance
-                const windowSize =
-                  rightEdge.getTime() - new Date(currentXRange[0]).getTime();
-                const newStartTime = new Date(now.getTime() - windowSize);
-                newRange = [newStartTime, now];
-                shouldUpdateRange = true;
-              }
-              // If custom range doesn't include the most recent data, leave it alone
-            } else {
-              // No specific range set, default to 10-minute sliding window
-              const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
-              newRange = [tenMinutesAgo, now];
-              shouldUpdateRange = true;
-            }
-
-            // Update the range if needed
-            if (shouldUpdateRange && newRange) {
-              Plotly.relayout(this.el, {
-                "xaxis.range": newRange,
-              });
-            }
-          } else {
-            console.warn("Plotly chart is not initialized yet.");
+        const indices = traceIndices || [0];
+        indices.forEach((traceIdx, i) => {
+          if (!this._traceBuffer[traceIdx]) {
+            this._traceBuffer[traceIdx] = { x: [], y: [] };
           }
-        } catch (error) {
-          console.error("Error extending traces:", error);
-        }
+          this._traceBuffer[traceIdx].x.push(...x[i]);
+          this._traceBuffer[traceIdx].y.push(...y[i]);
+        });
       },
     );
 
@@ -195,7 +119,84 @@ Hooks.PlotlyChart = {
     this.pushEventTo(this.el, "request-plotly-data", { id: this.el.id });
   },
 
+  _flushTraceBuffer() {
+    if (!this.el._fullData) return;
+
+    const indices = Object.keys(this._traceBuffer).map(Number);
+    if (indices.length === 0) return;
+
+    // Drain the buffer atomically so concurrent events don't race
+    const buffer = this._traceBuffer;
+    this._traceBuffer = {};
+
+    const sortedIndices = indices.sort((a, b) => a - b);
+    const xData = sortedIndices.map((i) => buffer[i].x);
+    const yData = sortedIndices.map((i) => buffer[i].y);
+
+    try {
+      Plotly.extendTraces(
+        this.el,
+        { x: xData, y: yData },
+        sortedIndices,
+        maxPoints,
+      );
+
+      // Update x-axis range once per flush, not once per incoming event
+      const now = new Date();
+      const layout = this.el.layout;
+      const currentXRange = layout.xaxis.range;
+      let shouldUpdateRange = false;
+      let newRange = null;
+
+      const rangeSelector = layout.xaxis.rangeselector;
+      const activeButton = rangeSelector ? rangeSelector.activebutton : null;
+
+      if (activeButton !== null && activeButton !== undefined) {
+        const button = rangeSelector.buttons[activeButton];
+        if (button.step !== "all") {
+          let startTime;
+          if (button.step === "minute") {
+            startTime = new Date(now.getTime() - button.count * 60 * 1000);
+          } else if (button.step === "hour") {
+            startTime = new Date(
+              now.getTime() - button.count * 60 * 60 * 1000,
+            );
+          } else if (button.step === "day") {
+            startTime = new Date(
+              now.getTime() - button.count * 24 * 60 * 60 * 1000,
+            );
+          }
+          if (startTime) {
+            newRange = [startTime, now];
+            shouldUpdateRange = true;
+          }
+        }
+      } else if (currentXRange && currentXRange.length === 2) {
+        const rightEdge = new Date(currentXRange[1]);
+        const timeDiff = Math.abs(rightEdge.getTime() - now.getTime());
+        if (timeDiff < 60000) {
+          const windowSize =
+            rightEdge.getTime() - new Date(currentXRange[0]).getTime();
+          newRange = [new Date(now.getTime() - windowSize), now];
+          shouldUpdateRange = true;
+        }
+      } else {
+        newRange = [new Date(now.getTime() - 10 * 60 * 1000), now];
+        shouldUpdateRange = true;
+      }
+
+      if (shouldUpdateRange && newRange) {
+        Plotly.relayout(this.el, { "xaxis.range": newRange });
+      }
+    } catch (error) {
+      console.error("Error flushing trace buffer:", error);
+    }
+  },
+
   destroyed() {
+    if (this._flushInterval) {
+      clearInterval(this._flushInterval);
+    }
     if (this._toggleRangeslider) {
       document.removeEventListener(
         "toggle-rangeslider",

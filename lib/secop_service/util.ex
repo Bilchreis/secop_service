@@ -15,6 +15,10 @@ defmodule SecopService.Util do
       # removed later
       Enum.member?(iflist, "Measurable") -> :acquisition
       Enum.member?(iflist, "Acquisition") -> :acquisition
+
+      # custom calibratable IF class
+      Enum.member?(iflist, "_Calibratable") -> :calibratable
+
       Enum.member?(iflist, "Drivable") -> :drivable
       Enum.member?(iflist, "Readable") -> :readable
       Enum.member?(iflist, "Communicator") -> :communicator
