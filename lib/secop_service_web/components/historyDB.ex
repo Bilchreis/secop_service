@@ -229,13 +229,30 @@ defmodule SecopServiceWeb.Components.HistoryDB do
     socket =
       case display_mode do
         :graph ->
-          if socket.assigns.plot == nil do
-            plot_mode = socket.assigns[:plot_mode] || :live
+          socket =
+            if socket.assigns.plot == nil do
+              plot_mode = socket.assigns[:plot_mode] || :live
 
-            socket
-            |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj, plot_mode)}} end)
-          else
-            socket
+              socket
+              |> assign_async(:plot, fn -> {:ok, %{plot: PlotDB.init(secop_obj, plot_mode)}} end)
+            else
+              socket
+            end
+
+          # Eagerly push already-loaded plot data so it is batched with the DOM
+          # diff. LiveView guarantees push_events fire only after the diff is
+          # applied (hook mounted, handleEvent registered), avoiding the round-
+          # trip race between pushEventTo → request-plotly-data → push_event.
+          case socket.assigns[:plot] do
+            %{ok?: true, result: plot} ->
+              push_event(socket, "plotly-data-#{socket.assigns.id}", %{
+                data: plot.data,
+                layout: plot.layout,
+                config: plot.config
+              })
+
+            _ ->
+              socket
           end
 
         :table ->
