@@ -1,9 +1,9 @@
-defmodule SecopService.MixProject do
+defmodule SecantService.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :secop_service,
+      app: :secant_service,
       version: "0.0.15",
       elixir: "~> 1.19.3",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -21,7 +21,7 @@ defmodule SecopService.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {SecopService.Application, []},
+      mod: {SecantService.Application, []},
       extra_applications: [:logger, :wx, :runtime_tools, :observer, :os_mon, :secop_client]
     ]
   end
@@ -102,10 +102,10 @@ defmodule SecopService.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ash.setup --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind secop_service", "esbuild secop_service"],
+      "assets.build": ["tailwind secant_service", "esbuild secant_service"],
       "assets.deploy": [
-        "tailwind secop_service --minify",
-        "esbuild secop_service --minify",
+        "tailwind secant_service --minify",
+        "esbuild secant_service --minify",
         "phx.digest"
       ]
     ]

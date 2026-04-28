@@ -1,4 +1,4 @@
-defmodule SecopService.Repo.Migrations.InitialExtensions1 do
+defmodule SecantService.Repo.Migrations.InitialExtensions1 do
   @moduledoc """
   Installs any extensions that are mentioned in the repo's `installed_extensions/0` callback
 

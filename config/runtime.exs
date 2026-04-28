@@ -12,12 +12,12 @@ import Config
 # If you use `mix release`, you need to explicitly enable the server
 # by passing the PHX_SERVER=true when you start it:
 #
-#     PHX_SERVER=true bin/secop_service start
+#     PHX_SERVER=true bin/secant_service start
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") do
-  config :secop_service, SecopServiceWeb.Endpoint, server: true
+  config :secant_service, SecantServiceWeb.Endpoint, server: true
 end
 
 if config_env() == :prod do
@@ -30,7 +30,7 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
-  config :secop_service, SecopService.Repo,
+  config :secant_service, SecantService.Repo,
     # ssl: true,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
@@ -51,9 +51,9 @@ if config_env() == :prod do
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
-  config :secop_service, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+  config :secant_service, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
-  config :secop_service, SecopServiceWeb.Endpoint,
+  config :secant_service, SecantServiceWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
@@ -65,7 +65,7 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  config :secop_service,
+  config :secant_service,
     token_signing_secret:
       System.get_env("TOKEN_SIGNING_SECRET") ||
         raise("Missing environment variable `TOKEN_SIGNING_SECRET`!")
@@ -74,7 +74,7 @@ if config_env() == :prod do
   #
   # Configure the data retention period for sec_nodes and related data.
   # Nodes older than this period will be automatically deleted by the scheduled job.
-  config :secop_service,
+  config :secant_service,
     data_retention_days: String.to_integer(System.get_env("DATA_RETENTION_DAYS") || "30"),
     trash_retention_days: String.to_integer(System.get_env("TRASH_RETENTION_DAYS") || "7")
 
@@ -83,7 +83,7 @@ if config_env() == :prod do
   # To get SSL working, you will need to add the `https` key
   # to your endpoint configuration:
   #
-  #     config :secop_service, SecopServiceWeb.Endpoint,
+  #     config :secant_service, SecantServiceWeb.Endpoint,
   #       https: [
   #         ...,
   #         port: 443,
@@ -105,7 +105,7 @@ if config_env() == :prod do
   # We also recommend setting `force_ssl` in your config/prod.exs,
   # ensuring no data is ever sent via http, always redirecting to https:
   #
-  #     config :secop_service, SecopServiceWeb.Endpoint,
+  #     config :secant_service, SecantServiceWeb.Endpoint,
   #       force_ssl: [hsts: true]
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
@@ -116,7 +116,7 @@ if config_env() == :prod do
   # Also, you may need to configure the Swoosh API client of your choice if you
   # are not using SMTP. Here is an example of the configuration:
   #
-  #     config :secop_service, SecopService.Mailer,
+  #     config :secant_service, SecantService.Mailer,
   #       adapter: Swoosh.Adapters.Mailgun,
   #       api_key: System.get_env("MAILGUN_API_KEY"),
   #       domain: System.get_env("MAILGUN_DOMAIN")

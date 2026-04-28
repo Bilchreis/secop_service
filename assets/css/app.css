@@ -5,7 +5,7 @@
 @source "../../deps/ash_authentication_phoenix";
 @source "../css";
 @source "../js";
-@source "../../lib/secop_service_web";
+@source "../../lib/secant_service_web";
 
 /* A Tailwind plugin that makes "hero-#{ICON}" classes available.
    The heroicons installation itself is managed by your mix.exs */

@@ -1,4 +1,4 @@
-defmodule SecopService.Repo.Migrations.Initial do
+defmodule SecantService.Repo.Migrations.Initial do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
