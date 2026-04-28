@@ -2,13 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="100mm"
+   width="295mm"
    height="100mm"
-   viewBox="0 0 100 100"
+   viewBox="0 0 295 100"
    version="1.1"
    id="svg2268"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
-   sodipodi:docname="secant_base.svg"
+   sodipodi:docname="secant-service.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -26,9 +26,9 @@
      inkscape:document-units="mm"
      showgrid="false"
      showguides="false"
-     inkscape:zoom="1.204675"
-     inkscape:cx="39.429723"
-     inkscape:cy="350.71701"
+     inkscape:zoom="1.2330566"
+     inkscape:cx="738.40893"
+     inkscape:cy="96.102645"
      inkscape:window-width="2494"
      inkscape:window-height="1531"
      inkscape:window-x="0"
@@ -39,9 +39,15 @@
      id="defs2265">
     <style>
       @media (prefers-color-scheme: light) {
-        #path5025 { fill: #8f8f8f !important; }
+        #path5025 { fill: #8f8f8f  !important; }
       }
     </style>
+    <rect
+       x="431.56415"
+       y="288.55682"
+       width="258.22903"
+       height="69.828873"
+       id="rect6945" />
     <linearGradient
        inkscape:collect="always"
        id="linearGradient5227">
@@ -86,7 +92,7 @@
        cy="39.564423"
        fx="36.270851"
        fy="39.564423"
-       r="34.719462"
+       r="34.719463"
        gradientTransform="matrix(0.96212178,0,0,0.82405884,3.6035827,10.640265)"
        gradientUnits="userSpaceOnUse" />
     <radialGradient
@@ -97,7 +103,7 @@
        cy="44.011578"
        fx="36.912567"
        fy="44.011578"
-       r="33.149191"
+       r="33.149193"
        gradientTransform="matrix(0.96212178,0,0,0.75494853,3.6035827,10.260128)"
        gradientUnits="userSpaceOnUse" />
     <radialGradient
@@ -146,5 +152,51 @@
        id="path5213"
        sodipodi:nodetypes="cczcczcc"
        inkscape:label="path5213" />
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:7.7611px;font-family:monospace;-inkscape-font-specification:'monospace Bold';white-space:pre;inline-size:71.7263;display:inline;fill:#5a5423;fill-opacity:1;stroke:#383b9d;stroke-width:0"
+       x="110.23219"
+       y="56.225399"
+       id="text6889" />
+    <text
+       xml:space="preserve"
+       transform="scale(0.26458333)"
+       id="text6943"
+       style="font-weight:bold;font-size:29.3333px;font-family:monospace;-inkscape-font-specification:'monospace Bold';white-space:pre;shape-inside:url(#rect6945);display:inline;fill:#5a5423;fill-opacity:1;stroke:#383b9d;stroke-width:0" />
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:7.7611px;font-family:monospace;-inkscape-font-specification:'monospace Bold';fill:#000000;fill-opacity:1;stroke:#383b9d;stroke-width:0"
+       x="106.73989"
+       y="57.048424"
+       id="text6951"><tspan
+         sodipodi:role="line"
+         id="tspan6949"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:29.9861px;font-family:'TeX Gyre Heros';-inkscape-font-specification:'TeX Gyre Heros, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke-width:0"
+         x="106.73989"
+         y="57.048424"><tspan
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:29.9861px;font-family:'TeX Gyre Heros';-inkscape-font-specification:'TeX Gyre Heros, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal"
+   id="tspan7329">secant</tspan>-client</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:7.7611px;font-family:monospace;-inkscape-font-specification:'monospace Bold';fill:#5a5423;fill-opacity:1;stroke:#383b9d;stroke-width:0"
+       x="133.72278"
+       y="68.926689"
+       id="text6955"><tspan
+         sodipodi:role="line"
+         id="tspan6953"
+         style="stroke-width:0"
+         x="133.72278"
+         y="68.926689" /></text>
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:7.7611px;font-family:monospace;-inkscape-font-specification:'monospace Bold';fill:#5a5423;fill-opacity:1;stroke:#383b9d;stroke-width:0"
+       x="139.92964"
+       y="31.734562"
+       id="text6959"><tspan
+         sodipodi:role="line"
+         id="tspan6957"
+         style="stroke-width:0"
+         x="139.92964"
+         y="31.734562" /></text>
   </g>
 </svg>
