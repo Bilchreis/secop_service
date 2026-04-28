@@ -9,7 +9,7 @@ import Config
 
 config :ash_oban, pro?: false
 
-config :secop_service, Oban,
+config :secant_service, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
   plugins: [{Oban.Plugins.Cron, []}],
@@ -21,7 +21,7 @@ config :secop_service, Oban,
     sec_node_recalculate_storage_on_archive: 10,
     sec_node_sync_node_states: 10
   ],
-  repo: SecopService.Repo
+  repo: SecantService.Repo
 
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},
@@ -83,20 +83,20 @@ config :spark,
     ]
   ]
 
-config :secop_service,
-  ecto_repos: [SecopService.Repo],
+config :secant_service,
+  ecto_repos: [SecantService.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [SecopService.SecNodes, SecopService.Accounts]
+  ash_domains: [SecantService.SecNodes, SecantService.Accounts]
 
 # Configures the endpoint
-config :secop_service, SecopServiceWeb.Endpoint,
+config :secant_service, SecantServiceWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: SecopServiceWeb.ErrorHTML, json: SecopServiceWeb.ErrorJSON],
+    formats: [html: SecantServiceWeb.ErrorHTML, json: SecantServiceWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: SecopService.PubSub,
+  pubsub_server: SecantService.PubSub,
   live_view: [signing_salt: "JEmZCdo/"]
 
 # Configures the mailer
@@ -106,12 +106,12 @@ config :secop_service, SecopServiceWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :secop_service, SecopService.Mailer, adapter: Swoosh.Adapters.Local
+config :secant_service, SecantService.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.5",
-  secop_service: [
+  secant_service: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
@@ -121,7 +121,7 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "4.1.7",
-  secop_service: [
+  secant_service: [
     args: ~w(
       --input=assets/css/app.css
       --output=priv/static/assets/css/app.css

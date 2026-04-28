@@ -1,4 +1,4 @@
-defmodule SecopService.Repo.Migrations.AddObanTables do
+defmodule SecantService.Repo.Migrations.AddObanTables do
   use Ecto.Migration
 
   def up do

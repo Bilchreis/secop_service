@@ -169,7 +169,7 @@
     "global": null,
     "strategy": null
   },
-  "repo": "Elixir.SecopService.Repo",
+  "repo": "Elixir.SecantService.Repo",
   "schema": null,
   "table": "parameter_values_array_bool"
 }

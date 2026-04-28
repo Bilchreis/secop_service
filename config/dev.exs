@@ -2,11 +2,11 @@ import Config
 config :ash, policies: [show_policy_breakdowns?: true]
 
 # Configure your database
-config :secop_service, SecopService.Repo,
+config :secant_service, SecantService.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "secop_service_dev",
+  database: "secant_service_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 20,
@@ -20,7 +20,7 @@ config :secop_service, SecopService.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :secop_service, SecopServiceWeb.Endpoint,
+config :secant_service, SecantServiceWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {0, 0, 0, 0}, port: 4000],
@@ -29,8 +29,8 @@ config :secop_service, SecopServiceWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "7UOA/+8zNANcQZisNos432hRFTnldwEKAjIjwCI/e1ZdmW4xYecfjSZ3CSuvF7xU",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:secop_service, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:secop_service, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:secant_service, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:secant_service, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -57,17 +57,17 @@ config :secop_service, SecopServiceWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :secop_service, SecopServiceWeb.Endpoint,
+config :secant_service, SecantServiceWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/secop_service_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/secant_service_web/(controllers|live|components)/.*(ex|heex)$"
     ]
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :secop_service, dev_routes: true, token_signing_secret: "FRcr0lkCVZSbVYKzKjl2MtPHp7KAbdx0"
+config :secant_service, dev_routes: true, token_signing_secret: "FRcr0lkCVZSbVYKzKjl2MtPHp7KAbdx0"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

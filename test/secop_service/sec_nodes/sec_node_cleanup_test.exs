@@ -1,14 +1,14 @@
-defmodule SecopService.SecNodes.SecNodeCleanupTest do
-  use SecopService.DataCase, async: false
+defmodule SecantService.SecNodes.SecNodeCleanupTest do
+  use SecantService.DataCase, async: false
 
-  use Oban.Testing, repo: SecopService.Repo
+  use Oban.Testing, repo: SecantService.Repo
 
-  alias SecopService.SecNodes.SecNode
+  alias SecantService.SecNodes.SecNode
 
   describe "cleanup_old_nodes job" do
     test "enqueues cleanup job for old nodes based on should_cleanup calculation" do
       # Get the configured retention days (default 30)
-      retention_days = Application.get_env(:secop_service, :data_retention_days, 30)
+      retention_days = Application.get_env(:secant_service, :data_retention_days, 30)
 
       # Create an old node that should be cleaned up
       old_datetime = DateTime.add(DateTime.utc_now(), -(retention_days + 1), :day)
@@ -28,7 +28,7 @@ defmodule SecopService.SecNodes.SecNodeCleanupTest do
       old_node =
         old_node
         |> Ecto.Changeset.change(inserted_at: old_datetime)
-        |> SecopService.Repo.update!()
+        |> SecantService.Repo.update!()
 
       # Create a recent node that should NOT be cleaned up
       recent_node =
@@ -52,7 +52,7 @@ defmodule SecopService.SecNodes.SecNodeCleanupTest do
     end
 
     test "cleanup job only processes nodes that match should_cleanup filter" do
-      retention_days = Application.get_env(:secop_service, :data_retention_days, 30)
+      retention_days = Application.get_env(:secant_service, :data_retention_days, 30)
 
       # Create multiple old nodes
       old_datetime = DateTime.add(DateTime.utc_now(), -(retention_days + 5), :day)
@@ -68,7 +68,7 @@ defmodule SecopService.SecNodes.SecNodeCleanupTest do
         })
         |> Ash.create!()
         |> Ecto.Changeset.change(inserted_at: old_datetime)
-        |> SecopService.Repo.update!()
+        |> SecantService.Repo.update!()
 
       _old_node_2 =
         SecNode
@@ -81,7 +81,7 @@ defmodule SecopService.SecNodes.SecNodeCleanupTest do
         })
         |> Ash.create!()
         |> Ecto.Changeset.change(inserted_at: old_datetime)
-        |> SecopService.Repo.update!()
+        |> SecantService.Repo.update!()
 
       # Create a recent node
       recent_node =
@@ -126,11 +126,11 @@ defmodule SecopService.SecNodes.SecNodeCleanupTest do
 
     test "should_cleanup calculation respects custom retention days" do
       # Test with custom retention period
-      original_retention = Application.get_env(:secop_service, :data_retention_days, 30)
+      original_retention = Application.get_env(:secant_service, :data_retention_days, 30)
 
       try do
         # Set custom retention to 7 days
-        Application.put_env(:secop_service, :data_retention_days, 7)
+        Application.put_env(:secant_service, :data_retention_days, 7)
 
         # Create a node that's 10 days old (should be cleaned up with 7-day retention)
         old_datetime = DateTime.add(DateTime.utc_now(), -10, :day)
@@ -146,7 +146,7 @@ defmodule SecopService.SecNodes.SecNodeCleanupTest do
           })
           |> Ash.create!()
           |> Ecto.Changeset.change(inserted_at: old_datetime)
-          |> SecopService.Repo.update!()
+          |> SecantService.Repo.update!()
 
         # Load and verify
         node_with_calc = Ash.load!(node, :should_cleanup)
@@ -166,18 +166,18 @@ defmodule SecopService.SecNodes.SecNodeCleanupTest do
           })
           |> Ash.create!()
           |> Ecto.Changeset.change(inserted_at: recent_datetime)
-          |> SecopService.Repo.update!()
+          |> SecantService.Repo.update!()
 
         recent_node_with_calc = Ash.load!(recent_node, :should_cleanup)
         assert recent_node_with_calc.should_cleanup == false
       after
         # Restore original retention setting
-        Application.put_env(:secop_service, :data_retention_days, original_retention)
+        Application.put_env(:secant_service, :data_retention_days, original_retention)
       end
     end
 
     test "boundary test: node exactly at retention cutoff is not cleaned up" do
-      retention_days = Application.get_env(:secop_service, :data_retention_days, 30)
+      retention_days = Application.get_env(:secant_service, :data_retention_days, 30)
 
       # Create a node slightly newer than the retention boundary
       # Add 1 minute buffer to avoid timing drift between test setup and calculation
@@ -194,7 +194,7 @@ defmodule SecopService.SecNodes.SecNodeCleanupTest do
         })
         |> Ash.create!()
         |> Ecto.Changeset.change(inserted_at: cutoff_datetime)
-        |> SecopService.Repo.update!()
+        |> SecantService.Repo.update!()
 
       node_with_calc = Ash.load!(node, :should_cleanup)
 

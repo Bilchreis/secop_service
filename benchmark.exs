@@ -1,5 +1,5 @@
-alias SecopService.PlotDB
-alias SecopService.Sec_Nodes
+alias SecantService.PlotDB
+alias SecantService.Sec_Nodes
 alias Ecto.UUID
 
 abstract_modules =

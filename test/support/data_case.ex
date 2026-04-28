@@ -1,4 +1,4 @@
-defmodule SecopService.DataCase do
+defmodule SecantService.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring
   access to the application's data layer.
@@ -12,7 +12,7 @@ defmodule SecopService.DataCase do
 
   using do
     quote do
-      alias SecopService.Repo
+      alias SecantService.Repo
 
       import Ecto
       import Ecto.Changeset
@@ -21,7 +21,7 @@ defmodule SecopService.DataCase do
   end
 
   setup tags do
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(SecopService.Repo, shared: not tags[:async])
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(SecantService.Repo, shared: not tags[:async])
 
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
 

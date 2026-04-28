@@ -1,4 +1,4 @@
-defmodule SecopService.Repo.Migrations.AddOphydClass do
+defmodule SecantService.Repo.Migrations.AddOphydClass do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
