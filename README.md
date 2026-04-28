@@ -1,4 +1,4 @@
-# SecopService
+# ![# secant-service](https://github.com/Bilchreis/secant-service/blob/main/priv/static/images/secant-service.svg)
 
 To start your Phoenix server:
 
