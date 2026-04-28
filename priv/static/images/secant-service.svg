@@ -40,6 +40,7 @@
     <style>
       @media (prefers-color-scheme: light) {
         #path5025 { fill: #8f8f8f  !important; }
+        #text6951, #tspan6949, #tspan7329 { fill: #8f8f8f !important; }
       }
     </style>
     <rect
@@ -165,13 +166,13 @@
        style="font-weight:bold;font-size:29.3333px;font-family:monospace;-inkscape-font-specification:'monospace Bold';white-space:pre;shape-inside:url(#rect6945);display:inline;fill:#5a5423;fill-opacity:1;stroke:#383b9d;stroke-width:0" />
     <text
        xml:space="preserve"
-       style="font-weight:bold;font-size:7.7611px;font-family:monospace;-inkscape-font-specification:'monospace Bold';fill:#000000;fill-opacity:1;stroke:#383b9d;stroke-width:0"
+       style="font-weight:bold;font-size:7.7611px;font-family:monospace;-inkscape-font-specification:'monospace Bold';fill:#3a3a3a;fill-opacity:1;stroke:#383b9d;stroke-width:0"
        x="106.73989"
        y="57.048424"
        id="text6951"><tspan
          sodipodi:role="line"
          id="tspan6949"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:29.9861px;font-family:'TeX Gyre Heros';-inkscape-font-specification:'TeX Gyre Heros, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke-width:0"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:29.9861px;font-family:'TeX Gyre Heros';-inkscape-font-specification:'TeX Gyre Heros, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#3a3a3a;fill-opacity:1;stroke-width:0"
          x="106.73989"
          y="57.048424"><tspan
    style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:29.9861px;font-family:'TeX Gyre Heros';-inkscape-font-specification:'TeX Gyre Heros, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal"
