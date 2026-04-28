@@ -2,13 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="320mm"
+   width="295mm"
    height="100mm"
-   viewBox="0 0 320 100"
+   viewBox="0 0 295 100"
    version="1.1"
    id="svg2268"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
-   sodipodi:docname="secant-service-service.svg"
+   sodipodi:docname="secant-service.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -28,17 +28,16 @@
      showguides="false"
      inkscape:zoom="1.2330566"
      inkscape:cx="738.40893"
-     inkscape:cy="96.913637"
-     inkscape:window-width="3774"
-     inkscape:window-height="2091"
+     inkscape:cy="96.102645"
+     inkscape:window-width="2494"
+     inkscape:window-height="1531"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
   <defs
      id="defs2265">
-    <style
-       id="style112">
+    <style>
       @media (prefers-color-scheme: light) {
         #path5025 { fill: #8f8f8f  !important; }
         #text6951, #tspan6949, #tspan7329 { fill: #8f8f8f !important; }
@@ -177,7 +176,7 @@
          x="106.73989"
          y="57.048424"><tspan
    style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:29.9861px;font-family:'TeX Gyre Heros';-inkscape-font-specification:'TeX Gyre Heros, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal"
-   id="tspan7329">secant</tspan>-service</tspan></text>
+   id="tspan7329">secant</tspan>-client</tspan></text>
     <text
        xml:space="preserve"
        style="font-weight:bold;font-size:7.7611px;font-family:monospace;-inkscape-font-specification:'monospace Bold';fill:#5a5423;fill-opacity:1;stroke:#383b9d;stroke-width:0"
