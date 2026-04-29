@@ -22,7 +22,10 @@
       "scale": null,
       "size": null,
       "source": "value",
-      "type": "map"
+      "type": [
+        "array",
+        "text"
+      ]
     },
     {
       "allow_nil?": false,
@@ -91,7 +94,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "parameter_values_json_parameter_id_fkey",
+        "name": "parameter_values_array_string_parameter_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -106,6 +109,7 @@
   ],
   "base_filter": null,
   "check_constraints": [],
+  "create_table_options": null,
   "custom_indexes": [
     {
       "all_tenants?": false,
@@ -126,7 +130,7 @@
       ],
       "include": null,
       "message": null,
-      "name": "parameter_values_json_parameter_id_timestamp_index",
+      "name": "parameter_values_array_string_parameter_id_timestamp_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
@@ -148,40 +152,18 @@
       ],
       "include": null,
       "message": null,
-      "name": "parameter_values_json_timestamp_index",
+      "name": "parameter_values_array_string_timestamp_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
       "unique": false,
       "using": null,
       "where": null
-    },
-    {
-      "all_tenants?": false,
-      "concurrently": false,
-      "error_fields": [
-        "value"
-      ],
-      "fields": [
-        {
-          "type": "atom",
-          "value": "value"
-        }
-      ],
-      "include": null,
-      "message": null,
-      "name": "parameter_values_json_value_index",
-      "nulls_distinct": true,
-      "prefix": null,
-      "table": null,
-      "unique": false,
-      "using": "gin",
-      "where": null
     }
   ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "2768C22C100E41EFB37D3F5F92B0F78943A0A8A5EF1DC9BB3E2608F1E711DB33",
+  "hash": "C64D5E30966B0BF2B31F86025CDE7EB8B449AA62C6118FE78A3E68D82F7EA8FB",
   "identities": [],
   "multitenancy": {
     "attribute": null,
@@ -190,5 +172,5 @@
   },
   "repo": "Elixir.SecantService.Repo",
   "schema": null,
-  "table": "parameter_values_json"
+  "table": "parameter_values_array_string"
 }

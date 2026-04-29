@@ -46,6 +46,7 @@ defmodule SecantService.Repo.Migrations.Initial do
       add :describe_message_raw, :text
       add :custom_properties, :map
       add :check_result, :map
+      add :ophyd_class, :text
       add :favourite, :boolean, null: false, default: false
 
       add :inserted_at, :utc_datetime_usec,

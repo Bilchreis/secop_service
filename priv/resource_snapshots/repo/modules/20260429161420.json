@@ -21,23 +21,8 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "value",
-      "type": [
-        "array",
-        "boolean"
-      ]
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "timestamp",
-      "type": "utc_datetime_usec"
+      "source": "name",
+      "type": "text"
     },
     {
       "allow_nil?": true,
@@ -48,7 +33,94 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "qualifiers",
+      "source": "description",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "interface_classes",
+      "type": [
+        "array",
+        "text"
+      ]
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "highest_interface_class",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "visibility",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "group",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "meaning",
+      "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "implementor",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "custom_properties",
       "type": "map"
     },
     {
@@ -83,7 +155,7 @@
       "primary_key?": false,
       "references": {
         "deferrable": false,
-        "destination_attribute": "id",
+        "destination_attribute": "uuid",
         "destination_attribute_default": null,
         "destination_attribute_generated": null,
         "index?": false,
@@ -94,76 +166,46 @@
           "global": null,
           "strategy": null
         },
-        "name": "parameter_values_array_bool_parameter_id_fkey",
+        "name": "modules_sec_node_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "parameters"
+        "table": "sec_nodes"
       },
       "scale": null,
       "size": null,
-      "source": "parameter_id",
-      "type": "bigint"
+      "source": "sec_node_id",
+      "type": "uuid"
     }
   ],
   "base_filter": null,
   "check_constraints": [],
-  "custom_indexes": [
+  "create_table_options": null,
+  "custom_indexes": [],
+  "custom_statements": [],
+  "has_create_action": true,
+  "hash": "172DB7CC9072347BD9E70673AFAB3984CB342B32151A1FA31409252E31E2C700",
+  "identities": [
     {
       "all_tenants?": false,
-      "concurrently": false,
-      "error_fields": [
-        "parameter_id",
-        "timestamp"
-      ],
-      "fields": [
+      "base_filter": null,
+      "index_name": "modules_sec_node_id_name_index",
+      "keys": [
         {
           "type": "atom",
-          "value": "parameter_id"
+          "value": "sec_node_id"
         },
         {
           "type": "atom",
-          "value": "timestamp"
+          "value": "name"
         }
       ],
-      "include": null,
-      "message": null,
-      "name": "parameter_values_array_bool_parameter_id_timestamp_index",
-      "nulls_distinct": true,
-      "prefix": null,
-      "table": null,
-      "unique": false,
-      "using": null,
-      "where": null
-    },
-    {
-      "all_tenants?": false,
-      "concurrently": false,
-      "error_fields": [
-        "timestamp"
-      ],
-      "fields": [
-        {
-          "type": "atom",
-          "value": "timestamp"
-        }
-      ],
-      "include": null,
-      "message": null,
-      "name": "parameter_values_array_bool_timestamp_index",
-      "nulls_distinct": true,
-      "prefix": null,
-      "table": null,
-      "unique": false,
-      "using": null,
+      "name": "sec_node_id_name",
+      "nils_distinct?": true,
       "where": null
     }
   ],
-  "custom_statements": [],
-  "has_create_action": true,
-  "hash": "7916838D529DE8CC17D649E2F30782A263002E436EECE2114AD1377849D77FFE",
-  "identities": [],
   "multitenancy": {
     "attribute": null,
     "global": null,
@@ -171,5 +213,5 @@
   },
   "repo": "Elixir.SecantService.Repo",
   "schema": null,
-  "table": "parameter_values_array_bool"
+  "table": "modules"
 }

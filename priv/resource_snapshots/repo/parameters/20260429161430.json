@@ -33,32 +33,20 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "description",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
       "source": "datainfo",
       "type": "map"
     },
     {
       "allow_nil?": true,
       "default": "nil",
-      "generated?": false,
+      "generated?": true,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "custom_properties",
-      "type": "map"
+      "source": "readonly",
+      "type": "boolean"
     },
     {
       "allow_nil?": true,
@@ -69,20 +57,8 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "argument",
-      "type": "map"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "result",
-      "type": "map"
+      "source": "description",
+      "type": "text"
     },
     {
       "allow_nil?": true,
@@ -133,6 +109,42 @@
       "type": "boolean"
     },
     {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "custom_properties",
+      "type": "map"
+    },
+    {
+      "allow_nil?": false,
+      "default": "0",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "datapoint_count",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": false,
+      "default": "0",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "disk_size_bytes",
+      "type": "bigint"
+    },
+    {
       "allow_nil?": false,
       "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
       "generated?": false,
@@ -175,7 +187,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "commands_module_id_fkey",
+        "name": "parameters_module_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -190,15 +202,16 @@
   ],
   "base_filter": null,
   "check_constraints": [],
+  "create_table_options": null,
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "CACC2BCB2C8D93140E710073A8AEAD543098B5EB4F98532BFF70BD95421E01DD",
+  "hash": "B6797C763CAFB47F757E1A72F0B5CF82D63C7E5F571729C75BDA3CF1B82159B7",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "commands_module_id_name_index",
+      "index_name": "parameters_module_id_name_index",
       "keys": [
         {
           "type": "atom",
@@ -221,5 +234,5 @@
   },
   "repo": "Elixir.SecantService.Repo",
   "schema": null,
-  "table": "commands"
+  "table": "parameters"
 }

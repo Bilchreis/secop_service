@@ -22,7 +22,7 @@
       "scale": null,
       "size": null,
       "source": "value",
-      "type": "bigint"
+      "type": "text"
     },
     {
       "allow_nil?": false,
@@ -91,7 +91,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "parameter_values_int_parameter_id_fkey",
+        "name": "parameter_values_string_parameter_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -106,6 +106,7 @@
   ],
   "base_filter": null,
   "check_constraints": [],
+  "create_table_options": null,
   "custom_indexes": [
     {
       "all_tenants?": false,
@@ -126,7 +127,7 @@
       ],
       "include": null,
       "message": null,
-      "name": "parameter_values_int_parameter_id_timestamp_index",
+      "name": "parameter_values_string_parameter_id_timestamp_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
@@ -148,7 +149,7 @@
       ],
       "include": null,
       "message": null,
-      "name": "parameter_values_int_timestamp_index",
+      "name": "parameter_values_string_timestamp_index",
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
@@ -159,7 +160,7 @@
   ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "D49DC68D14E5713D1FD622BBDAFF3F023E960830BC4D405E1F06005D5984CACC",
+  "hash": "1A2956A2CA18F6B0E8FC2B6B32617D7C0319C4AB7958BB465E6A1B8D00338EDC",
   "identities": [],
   "multitenancy": {
     "attribute": null,
@@ -168,5 +169,5 @@
   },
   "repo": "Elixir.SecantService.Repo",
   "schema": null,
-  "table": "parameter_values_int"
+  "table": "parameter_values_string"
 }
