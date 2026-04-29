@@ -1,1 +1,1 @@
-call "%~dp0\secant-service" eval SecantService.Release.migrate
+call "%~dp0\secant_service" eval SecantService.Release.migrate
